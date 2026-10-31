@@ -1,5 +1,15 @@
 # Journal da Mesa
 
+## Sobre como este módulo foi feito
+
+Sei que parte da comunidade não gosta de módulos produzidos com IA, então prefiro ser transparente: este foi desenvolvido com ajuda de IA. Não sou programador.
+
+Tudo começou quando um amigo me disse: “cara, ficou muito mais simples, é só fazer uma macro do que você quer”. Fiz a macro para a minha mesa, fui adaptando conforme a necessidade dos jogos e, no fim, ela virou um módulo. Uso nas minhas próprias sessões e resolvi compartilhar caso seja útil para mais alguém.
+
+Se encontrar bugs ou tiver sugestões, abra uma [issue](https://github.com/Daphenius/journal-mesa/issues). Todo retorno é bem-vindo.
+
+---
+
 **Versão 4.10.5** · Foundry VTT 14 · D&D 5e 6 · Português e English · Licença MIT · ✅ Testado e aprovado no Foundry
 
 ![Journal da Mesa no Foundry VTT: página de divindade](docs/screenshot.png)
@@ -16,7 +26,6 @@ Módulo para Foundry VTT **14** (versão mínima; verificado no 14.369) com D&D 
 - [Tipos de página](#tipos-de-página)
 - [Jornais e Notícias](#jornais-e-notícias--imprensa-do-mundo-47)
 - [Arquivos do código](#arquivos-do-código-410)
-- [Sobre como este módulo foi feito](#sobre-como-este-módulo-foi-feito)
 - [Licença e créditos](#licença-e-créditos)
 - [English summary](#english-summary)
 
@@ -309,16 +318,6 @@ Um erro no console (F12) mostra em qual desses arquivos ele aconteceu.
 | `LICENSE` | licença MIT |
 | `docs/` | imagens deste README (topo e galeria) |
 | `.github/workflows/release.yml` | monta e anexa o ZIP e o `module.json` ao publicar uma release |
-
----
-
-## Sobre como este módulo foi feito
-
-Sei que parte da comunidade não gosta de módulos produzidos com IA, então prefiro ser transparente: este foi desenvolvido com ajuda de IA. Não sou programador.
-
-Tudo começou quando um amigo me disse: “cara, ficou muito mais simples, é só fazer uma macro do que você quer”. Fiz a macro para a minha mesa, fui adaptando conforme a necessidade dos jogos e, no fim, ela virou um módulo. Uso nas minhas próprias sessões e resolvi compartilhar caso seja útil para mais alguém.
-
-Se encontrar bugs ou tiver sugestões, abra uma [issue](https://github.com/Daphenius/journal-mesa/issues). Todo retorno é bem-vindo.
 
 ---
 
