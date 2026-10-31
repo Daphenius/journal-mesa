@@ -2,12 +2,13 @@
 
 **Versão 4.10.5** · Foundry VTT 14 · D&D 5e 6 · Português e English · Licença MIT · ✅ Testado e aprovado no Foundry
 
-![Journal da Mesa no Foundry VTT](docs/screenshot.png)
+![Journal da Mesa no Foundry VTT: página de divindade](docs/screenshot.png)
 
 Módulo para Foundry VTT **14** (versão mínima; verificado no 14.369) com D&D 5e (testado até o 6.0.6). Janela única com abas e pastas para NPCs, locais, organizações, lojas, missões, divindades, baús de saque, História, Regras da Mesa e Jornais e Notícias. É uma alternativa mais simples ao Monk's Enhanced Journal e lê e grava os dados no mesmo formato que ele.
 
 > O Journal da Mesa é um projeto independente: não é afiliado ao Monk's Enhanced Journal nem a seu autor. A compatibilidade é só de formato de dados, para que você possa trocar de um para o outro sem perder nada.
 
+- [Galeria](#galeria)
 - [Compatibilidade](#compatibilidade)
 - [Instalação e atualização](#instalação-e-atualização)
 - [Suporte e sugestões](#suporte-e-sugestões)
@@ -15,8 +16,17 @@ Módulo para Foundry VTT **14** (versão mínima; verificado no 14.369) com D&D 
 - [Tipos de página](#tipos-de-página)
 - [Jornais e Notícias](#jornais-e-notícias--imprensa-do-mundo-47)
 - [Arquivos do código](#arquivos-do-código-410)
+- [Sobre como este módulo foi feito](#sobre-como-este-módulo-foi-feito)
 - [Licença e créditos](#licença-e-créditos)
 - [English summary](#english-summary)
+
+## Galeria
+
+| Jornal do Dia | Loja | Regras da Mesa |
+|---|---|---|
+| [![Jornal de Notícias: edição aberta na janela de jornal](docs/jornal.png)](docs/jornal.png) | [![Loja com estoque, preços e pechincha](docs/loja.png)](docs/loja.png) | [![Regras da Mesa: tópicos da sessão 0](docs/regras-da-mesa.png)](docs/regras-da-mesa.png) |
+
+Clique numa imagem para ver em tamanho maior.
 
 ## Compatibilidade
 
@@ -297,8 +307,18 @@ Um erro no console (F12) mostra em qual desses arquivos ele aconteceu.
 | `CHANGELOG.md` | histórico de versões |
 | `AUDITORIA.md` | auditoria técnica da 4.9 (segurança, achados e o que foi corrigido) |
 | `LICENSE` | licença MIT |
-| `docs/screenshot.png` | imagem do topo deste README |
+| `docs/` | imagens deste README (topo e galeria) |
 | `.github/workflows/release.yml` | monta e anexa o ZIP e o `module.json` ao publicar uma release |
+
+---
+
+## Sobre como este módulo foi feito
+
+Sei que parte da comunidade não gosta de módulos produzidos com IA, então prefiro ser transparente: este foi desenvolvido com ajuda de IA. Não sou programador.
+
+Tudo começou quando um amigo me disse: “cara, ficou muito mais simples, é só fazer uma macro do que você quer”. Fiz a macro para a minha mesa, fui adaptando conforme a necessidade dos jogos e, no fim, ela virou um módulo. Uso nas minhas próprias sessões e resolvi compartilhar caso seja útil para mais alguém.
+
+Se encontrar bugs ou tiver sugestões, abra uma [issue](https://github.com/Daphenius/journal-mesa/issues). Todo retorno é bem-vindo.
 
 ---
 
@@ -319,3 +339,5 @@ Monk's Enhanced Journal, Item Piles, Translate All, Heavy Lore e Ownership Viewe
 **Journal da Mesa** is a single-window journal for Foundry VTT 14 and D&D 5e, with tabs and native folders for NPCs, locations, organizations, shops (weekly stock, daily offers, selling and haggling), quests with rewards and deadlines, deities, loot chests, a world History linked to a timeline, Table Rules (session 0), and an in-world newspaper system with scheduled issues. Everything is stored as native Foundry journals, in the same data format as Monk's Enhanced Journal, so you can switch between the two without losing data (this is an independent project, not affiliated with Monk's Enhanced Journal). The interface is available in Portuguese and English.
 
 Version 4.10.5 was tested and approved by the author in Foundry VTT (14.369) with D&D 5e (6.0.6) before release. Install from Foundry with the manifest URL `https://github.com/Daphenius/journal-mesa/releases/latest/download/module.json` (or extract the release ZIP into `Data/modules/journal-mesa`) and enable it. Optional integrations: Calendário da Mesa, Dados em Cena, Item Piles and Translate All. Issues and suggestions: [GitHub Issues](https://github.com/Daphenius/journal-mesa/issues). Licensed under MIT.
+
+**How this module was made:** I know part of the community doesn't like AI-made modules, so I'd rather be transparent: this one was developed with the help of AI. I'm not a programmer. It started as a macro for my own table, grew as our games needed more, and ended up as a module. I use it in my own sessions and decided to share it in case it's useful to someone else. If you find bugs or have suggestions, please open an issue. All feedback is welcome.
