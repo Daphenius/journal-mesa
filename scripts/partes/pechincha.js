@@ -3,7 +3,7 @@
 import { T, TF } from "../idioma.js";
 import { lojaBloqueada } from "./calendario.js";
 import { Sessao } from "./sessao.js";
-import { LIMITES_REGRAS, LV, MEJ, MOD, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, analisar, aviso, avisoUmaVez, chat, comoLista, diaAtual, dup, ehGM, esc, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, formatarPreco, garantirObjeto, itemParaLoja, mejPadrao, mejSet, naFila, novoId, pedir, precoEmPo, receber, regrasMesa, relatarErro } from "../nucleo.js";
+import { CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, analisar, aviso, avisoUmaVez, chat, comoLista, diaAtual, dup, ehGM, esc, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, formatarPreco, garantirObjeto, itemParaLoja, dadosPadrao, dadosSet, naFila, novoId, pedir, precoEmPo, receber, regrasMesa, relatarErro } from "../nucleo.js";
 
 /* ---------- negociação com o dono da loja ---------- */
 
@@ -65,8 +65,8 @@ const FORMULA_MODO = { normal: "1d20", v: "2d20kh", d: "2d20kl" };
  * O jogador continua rolando de verdade: com o Dados em Cena ativo, a tela de rolagem abre para ele e ele
  * escolhe vantagem/desvantagem e clica no d20 dele; sem o módulo, ele clica no cartão do chat. Nos dois casos
  * os dados 3D (Dice So Nice) aparecem com as cores e o nome do jogador e a rolagem usa a ficha dele. */
-const DADOS = "dados-em-cena";
-const dadosApi = () => (game.modules.get(DADOS)?.active && typeof game.modules.get(DADOS).api?.pedirTestes === "function" ? game.modules.get(DADOS).api : null);
+const DEC = "dados-em-cena";
+const dadosApi = () => (game.modules.get(DEC)?.active && typeof game.modules.get(DEC).api?.pedirTestes === "function" ? game.modules.get(DEC).api : null);
 
 /** Teste de perícia pela ficha (bônus, efeitos e vantagens do sistema), sorteado aqui (no mestre).
  *  Sem ficha ou sem o D&D 5e: d20 + bônus. usuario = dono dos dados 3D na animação. */
@@ -289,13 +289,13 @@ async function executarVender({ entryId, userId, actorUuid, itemId, quantidade =
   await garantirObjeto(page, "items");
   const igual = comoLista(m.items).find(([, it]) => it.name === item.name && it.type === item.type);
   if (igual) {
-    const atual = igual[1].flags?.[MEJ]?.quantity;
-    if (typeof atual === "number") await mejSet(page, `items.${igual[0]}.flags.${MEJ}.quantity`, atual + n);
+    const atual = igual[1].flags?.[MOD]?.qtd;
+    if (typeof atual === "number") await dadosSet(page, `items.${igual[0]}.flags.${MOD}.qtd`, atual + n);
   } else {
     const paraLoja = itemParaLoja(item, {}, n);
-    delete paraLoja.flags?.[MOD];
+    delete paraLoja.flags?.[MOD]?.origem;   // o item da ficha do jogador sai dela; sem link de origem
     if (paraLoja.system && "quantity" in paraLoja.system) paraLoja.system.quantity = 1;
-    await mejSet(page, `items.${paraLoja._id}`, paraLoja);
+    await dadosSet(page, `items.${paraLoja._id}`, paraLoja);
   }
 
   if (tem > n) await item.update({ "system.quantity": tem - n });
@@ -397,7 +397,7 @@ async function gerarDiarioRegras() {
   } else {
     e = await JournalEntry.create({
       name: T("Regras da Mesa"), ownership: { default: LV().OBSERVER }, flags: { [MOD]: { regrasMesa: true } },
-      pages: [{ name: T("Regras da Mesa"), type: "text", text: { content: html }, flags: { [MEJ]: mejPadrao("journalentry"), [MOD]: {} } }]
+      pages: [{ name: T("Regras da Mesa"), type: "text", text: { content: html }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } }]
     });
   }
   ui.notifications.info(`${T("Diário \"Regras da Mesa\" atualizado com")} ${acordadas.length} combinado(s).`);

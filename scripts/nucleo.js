@@ -6,9 +6,14 @@
  *     dentro das Pastas nativas do Foundry;
  *   - a primeira página (tipo "text") guarda a descrição em
  *     text.content e a imagem em src;
- *   - os dados de tipo ficam em flags["monks-enhanced-journal"],
- *     no mesmo formato do Monk's Enhanced Journal;
- *   - só o que o Monk's não tem fica em flags["journal-mesa"].
+ *   - os dados de tipo (NPC, loja, missão, baú...) ficam em
+ *     flags["journal-mesa"].dados, o formato próprio do módulo (desde a 5.0);
+ *   - o resto (segredo, prazo, horário, divindade...) fica ao lado,
+ *     em flags["journal-mesa"].
+ *
+ * Monk's Enhanced Journal: o Journal da Mesa não grava mais no formato dele.
+ * Páginas no formato do Monk's são convertidas (copiadas) para o formato próprio
+ * pelo importador (dadosDeMonks / importarDoMonks); as flags do Monk's ficam intactas.
  * ========================================================= */
 
 // a versão dos dados primeiro: seus ganchos vêm antes de todos os outros
@@ -244,7 +249,15 @@ function extrasPadrao() {
   };
 }
 
-function mejPadrao(tipo) {
+/* ---------- formato próprio: flags["journal-mesa"].dados ----------
+ * O registro de tipo de cada página (NPC, local, organização, loja, missão, baú, anotação). Os nomes dos
+ * campos (type, relationships, items, objectives, rewards, currency, actor, status...) são os do formato
+ * comum de diários aprimorados, para a conversão do Monk's ser direta; o registro é lido e gravado só aqui.
+ * Itens de estoque (lojas e baús) guardam quantidade e preço em flags["journal-mesa"] do próprio item:
+ *   { qtd: número ou ausente (ilimitado), preco: número em po, de: origem (saque), origem: uuid do item }.
+ * Notas pessoais: dados.notas[idDoUsuário]. */
+const CHAVE_DADOS = "dados";
+function dadosPadrao(tipo) {
   const base = { type: tipo, relationships: {} };
   if (tipo === "person") Object.assign(base, { attributes: {}, role: "", location: "" });
   if (tipo === "place") Object.assign(base, { shops: [], townsfolk: [], attributes: {}, placetype: "", location: "" });
@@ -269,35 +282,177 @@ function analisar(entry) {
 
 function analisarAgora(entry) {
   const pages = entry.pages.contents.sort((a, b) => a.sort - b.sort);
-  const page = pages.find((p) => p.flags?.[MEJ]?.type) ?? null;
-  let t = page?.flags?.[MEJ]?.type ?? null;
-  if (t === "base" || t === "oldentry") t = "journalentry";
-  if (t === "checklist") t = "list";
+  const page = pages.find((p) => p.flags?.[MOD]?.[CHAVE_DADOS]?.type) ?? null;
+  let t = normalizarTipo(page?.flags?.[MOD]?.[CHAVE_DADOS]?.type ?? null);
   let tipo = !page ? "diario" : (EDITAVEIS.includes(t) ? t : "outro");
   if (tipo === "journalentry" && page.flags?.[MOD]?.tipo === "deus") tipo = "deus";
   if (tipo === "diario" && entry.flags?.[MOD]?.tipo === "historia") tipo = "historia";
   if (tipo === "diario" && entry.flags?.[MOD]?.tipo === "jornal") tipo = "jornal";
-  const m = page?.flags?.[MEJ] ?? {};
-  const x = foundry.utils.mergeObject(extrasPadrao(), dup(page?.flags?.[MOD] ?? {}), { inplace: false });
-  return { entry, pages, page, tipo, mejTipo: t, m, x };
+  const m = page?.flags?.[MOD]?.[CHAVE_DADOS] ?? {};
+  // os extras (x) são o resto de flags["journal-mesa"], sem o registro de tipo
+  const { [CHAVE_DADOS]: _dados, ...proprios } = page?.flags?.[MOD] ?? {};
+  const x = foundry.utils.mergeObject(extrasPadrao(), dup(proprios), { inplace: false });
+  return { entry, pages, page, tipo, tipoBase: t, m, x };
 }
 
-/* ---------- gravação no espaço do Monk's ----------
- * getFlag/setFlag recusam o escopo de um módulo desativado; por isso o Journal lê e grava
- * flags["monks-enhanced-journal"] direto, com update(), funcionando com o Monk's ligado ou não.
- */
-function mejGet(doc, chave) {
-  return doc ? foundry.utils.getProperty(doc.flags?.[MEJ] ?? {}, chave) : undefined;
+/** Nomes antigos de tipo (de diários aprimorados antigos) → nome atual. */
+function normalizarTipo(t) {
+  if (t === "base" || t === "oldentry") return "journalentry";
+  if (t === "checklist") return "list";
+  return t;
 }
-function mejSet(doc, chave, valor) {
-  return doc?.update({ [`flags.${MEJ}.${chave}`]: valor });
+
+/* ---------- gravação do registro de tipo (flags["journal-mesa"].dados) ----------
+ * Lê e grava com update() e caminhos completos, que é o que o resto do núcleo usa
+ * (substituirMapa, gravarJunto) — assim uma gravação só troca várias chaves de uma vez. */
+const caminhoDados = (chave) => `flags.${MOD}.${CHAVE_DADOS}.${chave}`;
+function dadosGet(doc, chave) {
+  return doc ? foundry.utils.getProperty(doc.flags?.[MOD]?.[CHAVE_DADOS] ?? {}, chave) : undefined;
 }
-function mejUnset(doc, chave) {
+function dadosSet(doc, chave, valor) {
+  return doc?.update({ [caminhoDados(chave)]: valor });
+}
+function dadosUnset(doc, chave) {
   if (!doc) return;
   const partes = chave.split(".");
   const ultimo = partes.pop();
-  const base = [`flags.${MEJ}`, ...partes].join(".");
+  const base = [`flags.${MOD}.${CHAVE_DADOS}`, ...partes].join(".");
   return apagarChave(doc, base, ultimo);
+}
+
+/* ---------- conversão do formato do Monk's Enhanced Journal ----------
+ * Só COPIA: lê flags["monks-enhanced-journal"] da página e grava o equivalente em flags["journal-mesa"].dados.
+ * As flags do Monk's não são alteradas nem apagadas, e a página continua a mesma (mesmo id, mesmo uuid),
+ * então os vínculos entre NPCs, locais, lojas e missões continuam valendo. */
+const TIPOS_MONKS_CONHECIDOS = [...EDITAVEIS, "base", "oldentry", "checklist", "encounter", "poi", "event", "picture", "list", "slideshow"];
+
+/** Converte as flags do Monk's (objeto simples) no registro próprio. Devolve null se não houver tipo. */
+function dadosDeMonks(mej) {
+  if (!mej || typeof mej !== "object" || typeof mej.type !== "string" || !mej.type) return null;
+  const d = {}; const notas = {};
+  for (const [k, v] of Object.entries(mej)) {
+    if (ID_VALIDO.test(k) && v && typeof v === "object" && "notes" in v) { notas[k] = String(v.notes ?? ""); continue; }
+    d[k] = dup(v);
+  }
+  d.type = normalizarTipo(d.type);
+  if (Object.keys(notas).length) d.notas = { ...(d.notas ?? {}), ...notas };
+  // listas antigas (arrays) viram objetos por id, que é o formato do registro próprio
+  for (const chave of ["items", "objectives", "rewards", "relationships"]) {
+    if (chave in d && d[chave] != null) d[chave] = Object.fromEntries(comoLista(d[chave]).map(([k, o]) => [k, { ...o, id: o.id ?? k }]));
+  }
+  // itens de estoque: quantidade e preço do Monk's → flags["journal-mesa"] do item
+  for (const it of Object.values(d.items ?? {})) {
+    const f = it?.flags?.[MEJ];
+    if (!f || typeof f !== "object") continue;
+    const proprio = (it.flags[MOD] ??= {});
+    if (typeof f.quantity === "number") proprio.qtd = f.quantity;
+    else if (f.quantity != null && f.quantity !== "") proprio.qtd = Math.max(0, Number(f.quantity) || 0);
+    proprio.preco = precoDoTexto(f.cost ?? f.price, it);
+    if (f.from) proprio.de = String(f.from);
+    delete it.flags[MEJ];
+  }
+  return d;
+}
+
+/** Diz se uma página (documento ou dados simples) está no formato do Monk's e ainda sem o registro próprio. */
+function paginaPendenteDoMonks(page) {
+  return !!page?.flags?.[MEJ]?.type && !page?.flags?.[MOD]?.[CHAVE_DADOS]?.type;
+}
+
+/** Converte, nos dados simples de um Diário (JSON importado), as páginas que estão só no formato do Monk's. */
+function converterDadosDeEntrada(data) {
+  let n = 0;
+  for (const pg of data?.pages ?? []) {
+    if (!paginaPendenteDoMonks(pg)) continue;
+    const d = dadosDeMonks(pg.flags[MEJ]);
+    if (!d) continue;
+    foundry.utils.setProperty(pg, `flags.${MOD}.${CHAVE_DADOS}`, d);
+    n++;
+  }
+  return n;
+}
+
+/**
+ * Importa do Monk's: converte todas as páginas do mundo que estão no formato do Monk's e ainda não têm o
+ * registro próprio. Uma gravação por Diário. Devolve o relatório: { convertidas, porTipo, limitadas, puladas,
+ * vinculosQuebrados, falhas }.
+ */
+async function importarDoMonks({ entradas = null, silencioso = false } = {}) {
+  const rel = { convertidas: [], porTipo: {}, limitadas: [], puladas: 0, vinculosQuebrados: [], falhas: [] };
+  const lista = entradas ?? game.journal.contents;
+  const vinculos = [];
+  for (const e of lista) {
+    const upds = [];
+    for (const pg of e.pages.contents) {
+      const temMonks = !!pg.flags?.[MEJ]?.type;
+      if (!temMonks) continue;
+      if (!paginaPendenteDoMonks(pg)) { rel.puladas++; continue; }
+      const d = dadosDeMonks(pg.flags[MEJ]);
+      if (!d) continue;
+      upds.push({ _id: pg.id, [`flags.${MOD}.${CHAVE_DADOS}`]: d });
+      const t = d.type;
+      rel.porTipo[t] = (rel.porTipo[t] ?? 0) + 1;
+      if (!EDITAVEIS.includes(t)) rel.limitadas.push({ id: e.id, nome: e.name, tipo: t });
+      for (const [id, r] of comoLista(d.relationships)) vinculos.push({ de: e, para: r?.uuid ?? null, id: r?.id ?? id });
+      rel.convertidas.push({ id: e.id, nome: e.name, tipo: t });
+    }
+    if (!upds.length) continue;
+    try { await e.updateEmbeddedDocuments("JournalEntryPage", upds); }
+    catch (err) {
+      rel.falhas.push({ id: e.id, nome: e.name, erro: err?.message ?? String(err) });
+      rel.convertidas = rel.convertidas.filter((c) => c.id !== e.id);
+      console.error(`${T("Journal da Mesa")} | ${T("importar do Monk's")}: ${e.name}`, err);
+    }
+  }
+  // vínculos que apontam para páginas que não existem mais (já estavam quebrados antes da conversão)
+  for (const v of vinculos) {
+    let existe = false;
+    try { existe = !!(v.para ? fromUuidSync(v.para) : null) || game.journal.has(v.id); } catch { existe = game.journal.has(v.id); }
+    if (!existe) rel.vinculosQuebrados.push({ de: v.de.name, para: v.para ?? v.id });
+  }
+  if (!silencioso) mostrarRelatorioMonks(rel);
+  return rel;
+}
+
+function mostrarRelatorioMonks(rel) {
+  const n = rel.convertidas.length;
+  const tipos = Object.entries(rel.porTipo).map(([t, q]) => `<li>${esc(TIPOS[t]?.rotulo ?? NOMES_MEJ[t] ?? t)}: <b>${q}</b></li>`).join("");
+  const lim = rel.limitadas.length
+    ? `<p><b>${T("Tipos só do Monk's")}</b> (${rel.limitadas.length}): ${T("ficam no Journal da Mesa com edição limitada (nome, imagem e descrição).")}</p><ul>${rel.limitadas.slice(0, 30).map((l) => `<li>${esc(l.nome)} <small>(${esc(NOMES_MEJ[l.tipo] ?? l.tipo)})</small></li>`).join("")}${rel.limitadas.length > 30 ? "<li>…</li>" : ""}</ul>`
+    : "";
+  const vq = rel.vinculosQuebrados.length
+    ? `<p><b>${T("Vínculos quebrados")}</b> (${rel.vinculosQuebrados.length}): ${T("conexões que apontam para páginas que não existem mais. Já estavam assim antes; a conversão não mexe nelas.")}</p><ul>${rel.vinculosQuebrados.slice(0, 30).map((v) => `<li>${esc(v.de)} → <code>${esc(String(v.para))}</code></li>`).join("")}${rel.vinculosQuebrados.length > 30 ? "<li>…</li>" : ""}</ul>`
+    : "";
+  const falhas = rel.falhas.length
+    ? `<p><b>${T("Não convertidas")}</b> (${rel.falhas.length}):</p><ul>${rel.falhas.map((f) => `<li>${esc(f.nome)}: <code>${esc(f.erro)}</code></li>`).join("")}</ul>`
+    : "";
+  const content = `
+    <p><b>${n}</b> ${T("página(s) convertida(s) do formato do Monk's Enhanced Journal.")} ${rel.puladas ? `${rel.puladas} ${T("já estavam no formato do Journal da Mesa e não foram tocadas.")}` : ""}</p>
+    ${tipos ? `<ul>${tipos}</ul>` : ""}
+    <p>${T("Os dados do Monk's ficaram como estavam: a conversão só copia. As páginas continuam as mesmas, então os vínculos entre elas seguem valendo.")}</p>
+    ${lim}${vq}${falhas}`;
+  console.log(`${T("Journal da Mesa")} | ${T("importar do Monk's")}`, rel);
+  return Dialogo().prompt({ window: { title: T("Importar do Monk's Enhanced Journal") }, content, ok: { label: T("Fechar") }, rejectClose: false }).catch(() => null);
+}
+
+/** Conversão automática ao abrir o mundo (uma vez; só o mestre principal). */
+async function migrarFormato() {
+  let v = 0;
+  try { v = Number(game.settings.get(MOD, "formatoDados")) || 0; } catch { v = 0; }
+  if (v >= 5) return;
+  const pendentes = game.journal.contents.filter((e) => e.pages.contents.some(paginaPendenteDoMonks));
+  if (!pendentes.length) { await game.settings.set(MOD, "formatoDados", 5); return; }
+  const ok = await Dialogo().confirm({
+    window: { title: T("Journal da Mesa 5.0: formato novo") },
+    content: `<p>${T("A partir da 5.0, o Journal da Mesa guarda os dados das páginas no formato próprio. Encontrei")} <b>${pendentes.length}</b> ${T("diário(s) com páginas no formato do Monk's Enhanced Journal.")}</p>
+      <p>${T("Converter copia os dados para o formato novo. Nada é apagado: as flags do Monk's continuam como estão, e cada página continua a mesma, com os mesmos vínculos.")}</p>
+      <p><b>${T("Recomendo fazer um backup do mundo antes.")}</b></p>
+      <p>${T("Se escolher Depois, essas páginas aparecem como diário comum até a conversão (botão Importar do Monk's, no topo da lista do Journal da Mesa).")}</p>`,
+    yes: { label: T("Converter agora") }, no: { label: T("Depois") }, rejectClose: false
+  }).catch(() => false);
+  if (!ok) return;
+  const rel = await importarDoMonks({ entradas: pendentes });
+  if (!rel.falhas.length) await game.settings.set(MOD, "formatoDados", 5);
 }
 
 /** Apaga uma chave com o ForcedDeletion do v14; se ele faltar ou falhar, com o "-=" (aceito no v14, obsoleto). */
@@ -317,10 +472,10 @@ const comoLista = (v) => Array.isArray(v)
 /** Converte uma lista antiga (array) do Monk's em objeto por id, numa única gravação: ao gravar um objeto
  *  por cima de um array, o Foundry troca o valor inteiro (não mescla), então não é preciso apagar antes. */
 async function garantirObjeto(page, chave) {
-  const v = mejGet(page, chave);
+  const v = dadosGet(page, chave);
   if (!Array.isArray(v)) return;
   const obj = Object.fromEntries(comoLista(v).map(([k, o]) => [k, { ...o, id: k }]));
-  await mejSet(page, chave, obj);
+  await dadosSet(page, chave, obj);
 }
 
 /** Chave de exclusão de um campo: ForcedDeletion (v14); "-=" só se o operador não existir. */
@@ -579,15 +734,26 @@ function precoEmPo(item) {
   return valor / convDe(den);
 }
 
-/** Preço no formato do Monk's ("10 gp", "2.5", "-5 sp"). */
-function precoMEJ(str, item) {
+/** Preço escrito como texto ("10 gp", "2.5", "-5 sp"; usado na conversão do Monk's) → po. */
+function precoDoTexto(str, item) {
   if (str == null || str === "") return precoEmPo(item);
+  if (typeof str === "number") return Math.abs(str) || 0;
   const s = String(str);
   const valor = Math.abs(parseFloat(s.replace(",", ""))) || 0;
   const moeda = s.replace(/[^a-z]/gi, "").toLowerCase() || "gp";
   return valor / convDe(moeda);
 }
-const precoParaMEJ = (po) => `${Math.round((Number(po) || 0) * 100) / 100} gp`;
+/** Preço de um item de estoque (flags["journal-mesa"].preco, em po); sem ele, o preço da ficha do item. */
+function precoDoItem(it) {
+  const p = it?.flags?.[MOD]?.preco;
+  return typeof p === "number" && Number.isFinite(p) ? p : precoEmPo(it);
+}
+/** Quantidade em estoque de um item (número) ou undefined (ilimitado). */
+function qtdDoItem(it) {
+  const q = it?.flags?.[MOD]?.qtd;
+  return typeof q === "number" ? q : undefined;
+}
+const arredondarPo = (po) => Math.round((Number(po) || 0) * 100) / 100;
 
 /** Quebra um valor em po nas moedas de até 1 po (sem electrum), da maior para a menor. */
 function quebrarEmMoedas(po) {
@@ -674,12 +840,13 @@ async function resultadoParaItem(r) {
   };
 }
 
-/** Item no formato de estoque do Monk's (lojas e baús). */
+/** Item no formato de estoque do Journal da Mesa (lojas e baús). */
 function itemParaLoja(doc, info = {}, quantidade = 1) {
   const data = doc ? (doc.toObject?.() ?? dup(doc)) : { name: info.nome, type: "loot", img: info.img, system: {} };
   data._id = novoId();
-  foundry.utils.setProperty(data, `flags.${MEJ}.price`, precoParaMEJ(doc ? precoEmPo(doc) : info.preco));
-  foundry.utils.setProperty(data, `flags.${MEJ}.quantity`, quantidade);
+  if (data.flags) delete data.flags[MEJ];   // um item copiado de um estoque do Monk's não traz o formato dele
+  foundry.utils.setProperty(data, `flags.${MOD}.preco`, arredondarPo(doc ? precoEmPo(doc) : info.preco));
+  foundry.utils.setProperty(data, `flags.${MOD}.qtd`, quantidade);
   if (doc?.uuid) foundry.utils.setProperty(data, `flags.${MOD}.origem`, doc.uuid);
   return data;
 }
@@ -883,11 +1050,11 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
   let nome, preco, itemData = null, escambo = false, custoOculto = "";
   if (origem === "semanal") {
     const item = Object.fromEntries(comoLista(m.items))[itemId];
-    const estoque = item?.flags?.[MEJ]?.quantity;
+    const estoque = qtdDoItem(item);
     if (!item || estoque === 0 || item.hidden || item.lock) return aviso(userId, T("Esse item não está disponível."), "warn");
     if (typeof estoque === "number" && n > estoque) return aviso(userId, `${T("Só restam")} ${estoque} ${T("na loja.")}`, "warn");
     nome = item.name;
-    preco = precoMEJ(item.flags?.[MEJ]?.cost ?? item.flags?.[MEJ]?.price, item);
+    preco = precoDoItem(item);
     const neg = negociacaoDeHoje(x, userId, `c_${itemId}`);
     if (neg?.mult != null) preco = Math.round(preco * neg.mult * 100) / 100;
     preco = Math.round(preco * n * 100) / 100;
@@ -914,8 +1081,8 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
 
   if (origem === "semanal") {
     await garantirObjeto(page, "items");
-    const estoque = mejGet(page, `items.${itemId}.flags.${MEJ}.quantity`);
-    if (typeof estoque === "number") await mejSet(page, `items.${itemId}.flags.${MEJ}.quantity`, Math.max(0, estoque - n));
+    const estoque = dadosGet(page, `items.${itemId}.flags.${MOD}.qtd`);
+    if (typeof estoque === "number") await dadosSet(page, `items.${itemId}.flags.${MOD}.qtd`, Math.max(0, estoque - n));
   } else {
     await page.setFlag(MOD, `diaria.ofertas.${userId}.comprado`, true);
   }
@@ -936,16 +1103,16 @@ async function executarPegar({ entryId, itemId, actorUuid, userId }) {
   if (!item || item.hidden || item.lock) return aviso(userId, T("Alguém já pegou esse item."), "warn");
   await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
   await garantirObjeto(page, "items");
-  await mejUnset(page, `items.${itemId}`);
+  await dadosUnset(page, `items.${itemId}`);
   await chat(`<i class="fa-solid fa-hand"></i> <b>${esc(ator.name)}</b> pegou <b>${esc(item.name)}</b> de <b>${esc(e.name)}</b>.`, { ator });
   Sessao.registrar("saque", `<b>${esc(ator.name)}</b> pegou <b>${esc(item.name)}</b> de <b>${esc(e.name)}</b>.`);
 }
 
-/** Notas pessoais no mesmo lugar do Monk's (flags.monks-enhanced-journal.<userId>.notes). */
+/** Notas pessoais: dados.notas[idDoUsuário]. */
 async function executarNota({ pageUuid, userId, texto }) {
   const page = await fromUuid(pageUuid);
   // userId já foi conferido (id de um usuário existente), então a chave da flag não pode apontar para outro campo
-  if (page && ID_VALIDO.test(userId) && game.users.get(userId)) await mejSet(page, `${userId}.notes`, String(texto));
+  if (page && ID_VALIDO.test(userId) && game.users.get(userId)) await dadosSet(page, `notas.${userId}`, String(texto));
 }
 
 /** Pegar um item de uma recompensa já entregue. */
@@ -960,8 +1127,8 @@ async function executarPegarRecompensa({ entryId, grupo, itemId, actorUuid, user
   if (!r?.awarded) return aviso(userId, T("Essa recompensa ainda não foi entregue."), "warn");
   if (!item || !(r.itemIds ?? []).includes(itemId)) return aviso(userId, T("Alguém já pegou esse item."), "warn");
   await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
-  await mejSet(page, `rewards.${grupo}.itemIds`, (r.itemIds ?? []).filter((i) => i !== itemId));
-  await mejUnset(page, `items.${itemId}`);
+  await dadosSet(page, `rewards.${grupo}.itemIds`, (r.itemIds ?? []).filter((i) => i !== itemId));
+  await dadosUnset(page, `items.${itemId}`);
   await chat(`<i class="fa-solid fa-gift"></i> <b>${esc(ator.name)}</b> pegou <b>${esc(item.name)}</b> ${T("da recompensa de")} <b>${esc(e.name)}</b>.`, { ator });
   Sessao.registrar("missao", `<b>${esc(ator.name)}</b> pegou <b>${esc(item.name)}</b> ${T("da recompensa de")} <b>${esc(e.name)}</b>.`);
 }
@@ -1044,8 +1211,8 @@ async function criarBauDoCombate(combat) {
       if (!TIPOS_SAQUE.includes(it.type)) continue;
       if (it.system?.type?.value === "natural") continue;
       const data = itemParaLoja(it, {}, Number(it.system?.quantity) || 1);
-      foundry.utils.setProperty(data, `flags.${MEJ}.from`, a.name);
-      delete data.flags[MOD];
+      foundry.utils.setProperty(data, `flags.${MOD}.de`, a.name);
+      delete data.flags[MOD].origem;   // o item da ficha do inimigo some com o token; sem link para ele
       items[data._id] = data;
     }
   }
@@ -1060,7 +1227,7 @@ async function criarBauDoCombate(combat) {
       name: nome, type: "text",
       text: { content: `<p>${T("Saque de")}: ${nomes.map(esc).join(", ")}.</p>` },
       src: "icons/svg/chest.svg",
-      flags: { [MEJ]: { ...mejPadrao("loot"), items, currency: moedas } }
+      flags: { [MOD]: { [CHAVE_DADOS]: { ...dadosPadrao("loot"), items, currency: moedas } } }
     }]
   });
   abrirJournal(e.id);
@@ -1074,8 +1241,8 @@ async function criarTipo(tipo, pastaId = null) {
   const nova = async (nome, pagina) => JournalEntry.create({
     name: nome, folder: pastaId ?? null, sort: ordemNova(pastaId), ownership: { default: LV().NONE }, pages: [{ name: nome, ...pagina }]
   });
-  if (EDITAVEIS.includes(tipo)) return { entry: await nova(`${TIPOS[tipo].rotulo} ${T("sem nome")}`, { type: "text", text: { content: "" }, flags: { [MEJ]: mejPadrao(tipo), [MOD]: {} } }), editar: true };
-  if (tipo === "deus") return { entry: await nova(T("Divindade sem nome"), { type: "text", text: { content: "" }, flags: { [MEJ]: mejPadrao("journalentry"), [MOD]: { tipo: "deus" } } }), editar: true };
+  if (EDITAVEIS.includes(tipo)) return { entry: await nova(`${TIPOS[tipo].rotulo} ${T("sem nome")}`, { type: "text", text: { content: "" }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao(tipo) } } }), editar: true };
+  if (tipo === "deus") return { entry: await nova(T("Divindade sem nome"), { type: "text", text: { content: "" }, flags: { [MOD]: { tipo: "deus", [CHAVE_DADOS]: dadosPadrao("journalentry") } } }), editar: true };
   if (tipo === "diario") return { entry: await nova(T("Novo diário"), { type: "text", text: { content: "" } }), editar: false };
   if (tipo === "historia") return { entry: await criarHistoria(pastaId, historias().length ? T("Nova história") : T("História")), editar: false };
   if (tipo === "jornal") return { entry: await Jornal.criarJornal(pastaId), editar: false, jornal: true };
@@ -1083,7 +1250,7 @@ async function criarTipo(tipo, pastaId = null) {
     const hoje = calHoje();
     if (!Number.isFinite(hoje)) { ui.notifications.warn(T("Ative o Calendário da Mesa para criar eventos.")); return null; }
     if (pastaId == null) pastaId = game.folders.find((f) => f.type === "JournalEntry" && f.getFlag?.(CAL, "pasta"))?.id ?? null;
-    const e = await nova(T("Novo evento"), { type: "text", text: { content: "" }, flags: { [MEJ]: mejPadrao("journalentry"), [MOD]: {} } });
+    const e = await nova(T("Novo evento"), { type: "text", text: { content: "" }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } });
     await e.update({ [`flags.${CAL}.nota`]: notaPadrao(hoje) });
     return { entry: e, editar: true };
   }
@@ -1193,7 +1360,7 @@ async function importarJson(pastaId) {
   const dados = await lerArquivoJson();
   if (!dados) return;
   const limpar = (d) => { const c = dup(d); delete c._id; delete c.folder; delete c._stats; return c; };
-  let criados = 0, itens = 0;
+  let criados = 0, itens = 0, convertidas = 0;
 
   if (dados.formato === "journal-mesa" && Array.isArray(dados.entradas)) {
     const cache = new Map();
@@ -1211,7 +1378,9 @@ async function importarJson(pastaId) {
       return pai;
     };
     for (const { caminho, data } of dados.entradas) {
-      await JournalEntry.create({ ...limpar(data), folder: await pastaPara(caminho ?? []) });
+      const d = limpar(data);
+      convertidas += converterDadosDeEntrada(d);
+      await JournalEntry.create({ ...d, folder: await pastaPara(caminho ?? []) });
       criados++;
     }
   } else {
@@ -1219,7 +1388,9 @@ async function importarJson(pastaId) {
     for (const d of lista) {
       if (!d || typeof d !== "object") continue;
       if (Array.isArray(d.pages)) {
-        await JournalEntry.create({ ...limpar(d), folder: pastaId ?? null });
+        const dd = limpar(d);
+        convertidas += converterDadosDeEntrada(dd);
+        await JournalEntry.create({ ...dd, folder: pastaId ?? null });
         criados++;
       } else if (d.type && d.system && d.name) {
         const raiz = await obterPasta("Item", T("Journal"), "itens");
@@ -1233,7 +1404,7 @@ async function importarJson(pastaId) {
     }
   }
   if (!criados && !itens) return ui.notifications.warn(T("Não encontrei diários nem itens nesse JSON."));
-  ui.notifications.info(`${T("Importado")}: ${criados} ${T("página(s)")}${itens ? ` e ${itens} ${T("item(ns) na aba Itens")}` : ""}.`);
+  ui.notifications.info(`${T("Importado")}: ${criados} ${T("página(s)")}${itens ? ` e ${itens} ${T("item(ns) na aba Itens")}` : ""}${convertidas ? ` (${convertidas} ${T("convertida(s) do formato do Monk's")})` : ""}.`);
 }
 
 /* ---------------- inicialização ---------------- */
@@ -1333,6 +1504,8 @@ Hooks.once("init", () => {
   game.settings.register(MOD, "posRastreador", { scope: "client", config: false, type: Object, default: {} });
   game.settings.register(MOD, "pastasAbertas", { scope: "client", config: false, type: Array, default: [] });
   game.settings.register(MOD, "dia", { scope: "world", config: false, type: Number, default: 1, onChange: atualizarTudo });
+  // versão do formato dos dados (5 = flags["journal-mesa"].dados, desde a 5.0); 0 = ainda não conferido
+  game.settings.register(MOD, "formatoDados", { scope: "world", config: false, type: Number, default: 0 });
 
   /* ficha "Journal" na lista de fichas de Diário (Configurar Ficha) */
   const Base = foundry.applications?.sheets?.journal?.JournalEntrySheet;
@@ -1370,7 +1543,7 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", () => {
   game.modules.get(MOD).api = {
-    abrir: abrirJournal, bauDoCombate: criarBauDoCombate, importarJson, criarPagina: criarTipo,
+    abrir: abrirJournal, bauDoCombate: criarBauDoCombate, importarJson, importarDoMonks, criarPagina: criarTipo,
     /** Dia do mundo das ofertas diárias (usado pelo Calendário da Mesa na virada do dia). */
     dia: {
       get: () => diaAtual(),
@@ -1410,7 +1583,20 @@ Hooks.once("ready", () => {
   document.addEventListener("click", cliqueEmLink, true);
 
   if (temModulo(MEJ) && ehGM()) {
-    ui.notifications.info(T("Journal da Mesa: o Monk's Enhanced Journal também está ativo. Os dois leem os mesmos dados; recomendo deixar só um ativo."));
+    ui.notifications.info(T("Journal da Mesa: o Monk's Enhanced Journal também está ativo. Desde a 5.0 cada um guarda os próprios dados, e o que você muda num não aparece no outro. Recomendo deixar só um ativo."));
+  }
+  if (souGMPrincipal()) {
+    migrarFormato().catch((err) => relatarErro(T("conversão do formato"), err));
+    /* páginas que chegam no formato do Monk's (criadas por ele, importadas de compêndios...) ganham o registro próprio */
+    const converterSeVier = (entry) => {
+      if (!souGMPrincipal() || !entry?.pages?.contents?.some(paginaPendenteDoMonks)) return;
+      importarDoMonks({ entradas: [entry], silencioso: true }).catch((err) => relatarErro(T("importar do Monk's"), err));
+    };
+    Hooks.on("createJournalEntry", (entry) => converterSeVier(entry));
+    Hooks.on("updateJournalEntryPage", (page, changes) => {
+      const c = `flags.${MEJ}.type`;
+      if (foundry.utils.hasProperty(changes, c) || c in (changes ?? {})) converterSeVier(page.parent);
+    });
   }
   Rastreador.render();
   lembrarEstadoInicial();
@@ -1459,4 +1645,4 @@ Hooks.once("i18nInit", () => {
   }
 });
 
-export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, LIMITES_REGRAS, LV, MEJ, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, corDaPasta, criarBauDoCombate, criarTipo, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarJson, infoCon, itemLimpo, itemParaLoja, janela, mejGet, mejPadrao, mejSet, mejUnset, mostrarAosJogadores, mostrarImagem, mostrarMoedas, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoEmPo, precoMEJ, precoParaMEJ, receber, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };
+export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };

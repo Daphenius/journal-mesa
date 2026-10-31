@@ -3,7 +3,7 @@
 import { T, TF } from "../idioma.js";
 import { Tempo, calApi, historicoCal, listaCal, textoPrazo } from "./calendario.js";
 import { criarHistoria, historias, novoAcontecimento } from "./historia.js";
-import { Dialogo, LV, MEJ, MOD, abrirJournal, analisar, avisoUmaVez, chat, comoLista, dup, ehGM, entradas, esc, idsGM, mejPadrao, naFila, novoId, obterPasta, ordemNova, podeLer, podeVer, textoParaHtml } from "../nucleo.js";
+import { CHAVE_DADOS, Dialogo, LV, MOD, abrirJournal, analisar, avisoUmaVez, chat, comoLista, dup, ehGM, entradas, esc, idsGM, dadosPadrao, naFila, novoId, obterPasta, ordemNova, podeLer, podeVer, textoParaHtml } from "../nucleo.js";
 
 /* ---------------- sessão de jogo (diário automático) ---------------- */
 
@@ -87,7 +87,7 @@ const Sessao = {
       name: nome, folder: pasta?.id ?? null, sort: ordemNova(pasta?.id ?? null),
       ownership: { default: dados.jogadores ? LV().OBSERVER : LV().NONE },
       flags: { [MOD]: { sessao: { n: s.n, tdInicio: tdIni, tdFim, real: s.inicio } } },
-      pages: [{ name: nome, type: "text", text: { content: corpo }, flags: { [MEJ]: mejPadrao("journalentry"), [MOD]: {} } }]
+      pages: [{ name: nome, type: "text", text: { content: corpo }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } }]
     });
     await game.settings.set(MOD, "sessaoNumero", s.n);
     await naFila("sessao", () => game.settings.set(MOD, "sessaoAtual", null));

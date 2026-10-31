@@ -10,19 +10,20 @@ Se encontrar bugs ou tiver sugestões, abra uma [issue](https://github.com/Daphe
 
 ---
 
-**Versão 4.10.5** · Foundry VTT 14 · D&D 5e 6 · Português e English · Licença MIT · ✅ Testado e aprovado no Foundry
+**Versão 5.0.0** · Foundry VTT 14 · D&D 5e 6 · Português e English · Licença MIT · ✅ Testado e aprovado no Foundry
 
 ![Journal da Mesa no Foundry VTT: página de divindade](docs/screenshot.png)
 
-Módulo para Foundry VTT **14** (versão mínima; verificado no 14.369) com D&D 5e (testado até o 6.0.6). Janela única com abas e pastas para NPCs, locais, organizações, lojas, missões, divindades, baús de saque, História, Regras da Mesa e Jornais e Notícias. É uma alternativa mais simples ao Monk's Enhanced Journal e lê e grava os dados no mesmo formato que ele.
+Módulo para Foundry VTT **14** (versão mínima; verificado no 14.369) com D&D 5e (testado até o 6.0.6). Janela única com abas e pastas para NPCs, locais, organizações, lojas, missões, divindades, baús de saque, História, Regras da Mesa e Jornais e Notícias. É uma alternativa mais simples ao Monk's Enhanced Journal, com um **importador** que traz os seus diários do Monk's sem perder nada (veja [Vindo do Monk's](#vindo-do-monks-enhanced-journal)).
 
-> O Journal da Mesa é um projeto independente: não é afiliado ao Monk's Enhanced Journal nem a seu autor. A compatibilidade é só de formato de dados, para que você possa trocar de um para o outro sem perder nada.
+> O Journal da Mesa é um projeto independente: não é afiliado ao Monk's Enhanced Journal nem a seu autor. Desde a 5.0 o módulo guarda os dados no formato próprio e só **lê** o formato do Monk's, na importação.
 
 - [Galeria](#galeria)
 - [Compatibilidade](#compatibilidade)
 - [Instalação e atualização](#instalação-e-atualização)
 - [Suporte e sugestões](#suporte-e-sugestões)
 - [Como os dados são guardados](#como-os-dados-são-guardados)
+- [Vindo do Monk's Enhanced Journal](#vindo-do-monks-enhanced-journal)
 - [Tipos de página](#tipos-de-página)
 - [Jornais e Notícias](#jornais-e-notícias--imprensa-do-mundo-47)
 - [Arquivos do código](#arquivos-do-código-410)
@@ -44,7 +45,7 @@ Clique numa imagem para ver em tamanho maior.
 | Foundry VTT | 14 | 14.369 |
 | D&D 5e | 5.0.0 | 6.0.6 |
 
-**Testado e aprovado.** A versão 4.10.5 foi testada e aprovada pelo autor dentro do Foundry VTT, nas versões indicadas acima (Foundry 14.369 e D&D 5e 6.0.6), antes da publicação. Como em qualquer módulo, recomendamos fazer backup do mundo antes de atualizar.
+**Testado e aprovado.** A versão 5.0.0 foi testada e aprovada pelo autor dentro do Foundry VTT, nas versões indicadas acima (Foundry 14.369 e D&D 5e 6.0.6), antes da publicação. A conversão do Monk's Enhanced Journal foi testada uma vez, num mundo real: todas as páginas passaram de primeira, com exceção das páginas do tipo **Imagem** do Monk's, que ficaram para trás e foram transferidas à mão (veja [Vindo do Monk's](#vindo-do-monks-enhanced-journal)). Como em qualquer módulo, recomendamos fazer backup do mundo antes de atualizar.
 
 **Foundry 13 não é mais suportado a partir da 4.9.0.** Quem ainda usa o Foundry 13 deve ficar no Journal 4.8.3 (o Foundry não deixa ativar a 4.9 num mundo v13). Os dados dos mundos não mudam: um mundo que passar do v13 para o v14 abre na 4.9 sem migração.
 
@@ -99,12 +100,30 @@ Para relatar um problema, inclua:
 
 ## Como os dados são guardados
 
-Tudo é Diário nativo do Foundry, nas Pastas comuns. A descrição fica no texto da página, a imagem no campo de imagem da página, e tipo, conexões, estoque, baús, objetivos, ator ligado e notas pessoais ficam no **mesmo formato do Monk's Enhanced Journal**. Desativar o Journal da Mesa ou o Monk's não apaga os dados, que continuam nos Diários do mundo, e o Journal da Mesa funciona com o Monk's ligado ou desligado.
+Tudo é Diário nativo do Foundry, nas Pastas comuns. A descrição fica no texto da página, a imagem no campo de imagem da página, e tipo, conexões, estoque, baús, objetivos, recompensas, ator ligado e notas pessoais ficam em `flags["journal-mesa"].dados`, o **formato próprio do módulo** (desde a 5.0). Desativar o Journal da Mesa não apaga nada: os dados continuam nos Diários do mundo.
+
+**Atualizando da 4.x:** até a 4.10 o Journal da Mesa gravava no formato do Monk's. Ao abrir o mundo pela primeira vez na 5.0, o mestre vê um aviso com quantos diários estão nesse formato e pode converter na hora (ou depois, pelo botão **Importar do Monk's**). A conversão só **copia** os dados para o formato novo, dentro do mesmo Diário: nada é apagado, os IDs não mudam e os vínculos continuam. Faça um backup do mundo antes, como em qualquer atualização.
+
+## Vindo do Monk's Enhanced Journal
+
+O Journal da Mesa lê o formato do Monk's Enhanced Journal e converte os diários para o formato próprio, **sem mexer nos originais**:
+
+1. Faça um backup do mundo.
+2. Ative o Journal da Mesa. Ao abrir o mundo, o mestre vê o aviso de conversão; ou use o botão de **quebra-cabeça** (Importar do Monk's) no topo da lista do Journal da Mesa, ao lado de Importar JSON.
+3. No fim aparece um **relatório**: quantas páginas foram convertidas, por tipo; quais já estavam no formato novo (não são tocadas); as páginas de tipos só do Monk's (Encontro, Ponto de interesse, Evento, Imagem, Lista, Apresentação), que ficam com edição limitada — nome, imagem e descrição; e os **vínculos quebrados**, conexões que já apontavam para páginas que não existem mais.
+
+**Teste real (5.0.0):** a conversão foi feita uma vez num mundo com NPCs, locais, lojas, missões e baús, e tudo passou na primeira tentativa. Só as páginas do tipo **Imagem** do Monk's ficaram para trás: elas são um tipo exclusivo dele e o Journal da Mesa não as recria como página de imagem nativa. Se você tiver páginas assim, crie uma página de **Imagem** no Journal da Mesa (botão Imagem em "Nova página") e aponte para o mesmo arquivo; o relatório da conversão lista quais são.
+
+O que a conversão preserva: NPC, Local, Organização, Loja (estoque, quantidades, preços, horário, vendedor), Missão (objetivos, recompensas, status), Baú (itens e moedas), Anotação, conexões entre páginas, ator ligado e notas pessoais de cada jogador. As flags do Monk's ficam intactas, então dá para voltar ao Monk's se quiser; as mudanças feitas no Journal da Mesa depois da conversão não aparecem lá.
+
+Também vale para diários que chegam depois (importados de um compêndio ou criados pelo Monk's com os dois módulos ativos): o mestre principal converte sozinho. **Importar JSON** converte na hora os diários exportados pelo Monk's.
+
+> Com os dois módulos ativos, cada um guarda os próprios dados, e o que você muda num não aparece no outro. Deixe só um ativo.
 
 ## Tipos de página
 
-- NPC, Local, Organização, Loja, Missão, Anotação e Baú — mesmo formato do Monk's.
-- **Divindade** — abas Visão geral (posição, panteão, domínios, símbolos sagrados com imagem, aparência, mitos), Fé e clero (dogmas, tabus, clero, ritos, dias sagrados, quem cultua) e Poder e relíquias (dádivas, castigos, Caminhos e Sequências, relíquias arrastáveis). Para o Monk's ela aparece como uma Anotação normal.
+- NPC, Local, Organização, Loja, Missão, Anotação e Baú.
+- **Divindade** — abas Visão geral (posição, panteão, domínios, símbolos sagrados com imagem, aparência, mitos), Fé e clero (dogmas, tabus, clero, ritos, dias sagrados, quem cultua) e Poder e relíquias (dádivas, castigos, Caminhos e Sequências, relíquias arrastáveis).
 - **Diário** — o diário comum do Foundry, com várias páginas: texto, imagem, PDF, vídeo e os tipos do D&D 5e (regra, lista de magias, classe, subclasse, mapa). Adicione páginas pelos botões no fim do diário.
 - **História** — diário dos acontecimentos do mundo, ligado à Linha do tempo (veja abaixo).
 - **Jornal** — uma publicação do mundo, com edições (veja **Jornais e Notícias**).
@@ -131,7 +150,7 @@ Dias de folga: clique nos dias na aba Configurar da loja; marcar uma folga liga 
 
 ## Recompensas de missão
 
-No formato do Monk's: XP, moedas com ícone (as moedas habilitadas no mundo, inclusive as do **Custom DnD5e**) e itens, talentos ou magias arrastados para o painel. **Entregar** abre uma janela para escolher quem recebe, o XP de cada um, como dividir as moedas e para quem vai cada item (ou deixar para pegar).
+XP, moedas com ícone (as moedas habilitadas no mundo, inclusive as do **Custom DnD5e**) e itens, talentos ou magias arrastados para o painel. **Entregar** abre uma janela para escolher quem recebe, o XP de cada um, como dividir as moedas e para quem vai cada item (ou deixar para pegar).
 
 ## Fixar páginas (4.4)
 
@@ -282,7 +301,7 @@ Com "Abrir diários sempre no Journal da Mesa" ligado (padrão), **qualquer** ab
 ## Lojas com o Calendário da Mesa (4.4)
 
 - Opção **Renovar o estoque das lojas a cada nova semana**: quando o calendário vira a semana, as lojas com tabela de estoque rolam o estoque novo sozinhas. Desligada, o calendário só lembra você no chat (como antes).
-- O horário das lojas segue a mesma regra nas duas telas: loja só do Monk's usa a abertura e o fechamento dele também no Journal da Mesa.
+- O horário das lojas convertidas do Monk's (abertura e fechamento) é mantido.
 - **Pechincha** (4.5): o jogador rola. Com o **Dados em Cena** ativo, a tela de rolagem abre para ele (e para você, com o vendedor, se ele tiver ficha): ele escolhe vantagem ou desvantagem e clica no d20. Sem o módulo, ele clica no cartão do chat. Nos dois casos o teste usa a ficha dele, os dados 3D aparecem com as cores dele, e o número é sorteado no computador do mestre, o que impede o jogador de escolher o resultado pelo console.
 
 ## Links
@@ -293,7 +312,7 @@ Links para diários e páginas (`@UUID[...]`, inclusive para um título dentro d
 
 - Se o editor de descrição não deixar digitar, mude **Editor de descrição** para "Simples" nas configurações do módulo, ou use o botão de expandir no título da Descrição para abrir o editor completo do Foundry.
 
-- Deixe só um ativo, Journal da Mesa ou Monk's, para não abrirem duas janelas.
+- Deixe só um ativo, Journal da Mesa ou Monk's: cada um guarda os próprios dados e os dois abrem janelas.
 - Para comprar ou pegar itens, o jogador precisa ter o personagem definido ou o token selecionado, e o mestre precisa estar online.
 - Macro para abrir: `game.modules.get("journal-mesa").api.abrir()`
 - API nova (4.4): `api.dia.get()`, `api.dia.somar(n)`, `api.renovarEstoques()`, `api.fixados()`.
@@ -318,6 +337,7 @@ Um erro no console (F12) mostra em qual desses arquivos ele aconteceu.
 | `LICENSE` | licença MIT |
 | `docs/` | imagens deste README (topo e galeria) |
 | `.github/workflows/release.yml` | monta e anexa o ZIP e o `module.json` ao publicar uma release |
+| `tests/` | Foundry simulado em Node e os testes do formato próprio e da conversão do Monk's (`node tests/formato.test.mjs`) |
 
 ---
 
@@ -335,8 +355,8 @@ Monk's Enhanced Journal, Item Piles, Translate All, Heavy Lore e Ownership Viewe
 
 ## English summary
 
-**Journal da Mesa** is a single-window journal for Foundry VTT 14 and D&D 5e, with tabs and native folders for NPCs, locations, organizations, shops (weekly stock, daily offers, selling and haggling), quests with rewards and deadlines, deities, loot chests, a world History linked to a timeline, Table Rules (session 0), and an in-world newspaper system with scheduled issues. Everything is stored as native Foundry journals, in the same data format as Monk's Enhanced Journal, so you can switch between the two without losing data (this is an independent project, not affiliated with Monk's Enhanced Journal). The interface is available in Portuguese and English.
+**Journal da Mesa** is a single-window journal for Foundry VTT 14 and D&D 5e, with tabs and native folders for NPCs, locations, organizations, shops (weekly stock, daily offers, selling and haggling), quests with rewards and deadlines, deities, loot chests, a world History linked to a timeline, Table Rules (session 0), and an in-world newspaper system with scheduled issues. Everything is stored as native Foundry journals in the module's own format. Coming from Monk's Enhanced Journal? The built-in importer converts your journals (NPCs, places, organizations, shops with stock, quests with objectives and rewards, loot, links, personal notes) by copying — the originals are left untouched, IDs don't change and links keep working — and shows a report at the end. This is an independent project, not affiliated with Monk's Enhanced Journal. The interface is available in Portuguese and English.
 
-Version 4.10.5 was tested and approved by the author in Foundry VTT (14.369) with D&D 5e (6.0.6) before release. Install from Foundry with the manifest URL `https://github.com/Daphenius/journal-mesa/releases/latest/download/module.json` (or extract the release ZIP into `Data/modules/journal-mesa`) and enable it. Optional integrations: Calendário da Mesa, Dados em Cena, Item Piles and Translate All. Issues and suggestions: [GitHub Issues](https://github.com/Daphenius/journal-mesa/issues). Licensed under MIT.
+Version 5.0.0 was tested and approved by the author in Foundry VTT (14.369) with D&D 5e (6.0.6) before release; the conversion from Monk's Enhanced Journal was tried once on a real world and went through on the first attempt, except for Monk's "Picture" pages, which had to be moved by hand. Install from Foundry with the manifest URL `https://github.com/Daphenius/journal-mesa/releases/latest/download/module.json` (or extract the release ZIP into `Data/modules/journal-mesa`) and enable it. Optional integrations: Calendário da Mesa, Dados em Cena, Item Piles and Translate All. Issues and suggestions: [GitHub Issues](https://github.com/Daphenius/journal-mesa/issues). Licensed under MIT.
 
 **How this module was made:** I know part of the community doesn't like AI-made modules, so I'd rather be transparent: this one was developed with the help of AI. I'm not a programmer. It started as a macro for my own table, grew as our games needed more, and ended up as a module. I use it in my own sessions and decided to share it in case it's useful to someone else. If you find bugs or have suggestions, please open an issue. All feedback is welcome.

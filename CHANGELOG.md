@@ -1,5 +1,16 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.0.0
+
+- **Testada e aprovada pelo autor no Foundry VTT e no D&D 5e** antes da publicação. A conversão do Monk's foi testada uma vez num mundo real e deu certo na primeira tentativa; só as páginas do tipo Imagem do Monk's ficaram para trás e foram transferidas à mão.
+- **Formato próprio.** O Journal da Mesa passou a guardar os dados das páginas (tipo, conexões, estoque, objetivos, recompensas, moedas, ator ligado, notas pessoais) em `flags["journal-mesa"].dados`, em vez do formato do Monk's Enhanced Journal. Quantidade e preço dos itens de estoque ficam em `flags["journal-mesa"]` do item (`qtd`, `preco` em po, `de`). O módulo não depende mais do formato de outro módulo.
+- **Conversão automática.** Ao abrir o mundo na 5.0, o mestre principal vê quantos diários estão no formato do Monk's (inclusive os que o próprio Journal da Mesa gravou até a 4.10) e pode converter na hora ou depois. A conversão só copia: as flags do Monk's ficam intactas, os IDs não mudam e os vínculos entre páginas continuam valendo.
+- **Importar do Monk's.** Botão de quebra-cabeça ao lado de Importar JSON (só o mestre) e `api.importarDoMonks()`. Diários que chegam depois no formato do Monk's (compêndios, Monk's ativo) são convertidos sozinhos; Importar JSON converte os exportados pelo Monk's.
+- **Relatório da conversão**: páginas convertidas por tipo, páginas já no formato novo (não tocadas), tipos só do Monk's (edição limitada) e vínculos quebrados.
+- Testes: Foundry simulado em Node (`tests/`) com 134 verificações da conversão, da migração, da criação de páginas, de compra, venda, saque, estoque semanal, recompensas e notas.
+- Correção: "Nova página em…" agora traduz o "em" ("in") na interface em inglês.
+- Aviso com o Monk's ativo atualizado: cada módulo guarda os próprios dados.
+
 ## 4.10.5
 
 - **Testada e aprovada pelo autor no Foundry VTT e no D&D 5e** antes da publicação.

@@ -5,7 +5,7 @@ import * as Jornal from "../jornal/index.js";
 import { CAL, Tempo, calApi, horarioLoja, lojaFechadaPor } from "./calendario.js";
 import { ligarCartaoNegocio } from "./pechincha.js";
 import { Sessao, souGMPrincipal } from "./sessao.js";
-import { Dialogo, FichaJournalClasse, MOD, analisar, atualizarTudo, avisoUmaVez, chat, criarBauDoCombate, derrotadosDo, ehGM, esc, idsGM, janela, mejSet, obterJanela, podeVer, relatarErro } from "../nucleo.js";
+import { Dialogo, FichaJournalClasse, MOD, analisar, atualizarTudo, avisoUmaVez, chat, criarBauDoCombate, derrotadosDo, ehGM, esc, idsGM, janela, dadosSet, obterJanela, podeVer, relatarErro } from "../nucleo.js";
 
 /* ---------------- passagem do tempo: prazos de missão, dias no diário de sessão, lojas abrindo/fechando ---------------- */
 
@@ -27,7 +27,7 @@ async function verificarPrazos(hoje) {
     if (!Number.isFinite(prazo) || hoje <= prazo) continue;
     const falhar = a.x.aoVencer === "falhar";
     await a.page.update({ [`flags.${MOD}.prazoAvisado`]: true, ...(falhar ? { [`flags.${MOD}.concluidaEm`]: hoje } : {}) });
-    if (falhar) await mejSet(a.page, "status", "failed");
+    if (falhar) await dadosSet(a.page, "status", "failed");
     const texto = `${T("Prazo da missão")} <b>${esc(j.name)}</b> venceu${falhar ? ` — ${T("marcada como")} <b>falhou</b>` : ""}.`;
     await chat(`<i class="fa-solid fa-hourglass-end"></i> ${texto}`, { whisper: idsGM() });
     Sessao.registrar("missao", texto);

@@ -7,7 +7,7 @@ import { CAL, CAL_AVISOS, CAL_CORES_ELEMENTO, CAL_FIM, CAL_ICONES, CAL_ICONES_GR
 import { HIST_ICONES, acontecimento, calHoje, calNormalizar, calProxima, calProximas, calResumoRepeticao, calSalvar, calTextoDia, calTirar, campoData, criarHistoria, ehHistoria, historias, notaPadrao, ordenarAcontecimentos, paginasHistoria, registradosNaHistoria, registrarNaHistoria } from "./historia.js";
 import { PERICIAS_VENDEDOR, RESULTADOS, atorDoDono, bonusPericia, gerarDiarioRegras, multVendaPadrao, negociacaoDeHoje, tabelaNegocio } from "./pechincha.js";
 import { NEXUS_ICONES, Nexus, NexusClima, Sessao, souGMPrincipal } from "./sessao.js";
-import { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, ICONES_PAGINA, LIMITES_REGRAS, LV, MEJ, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarEntrada, atorDoJogador, atualizarTudo, avatar, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, corDaPasta, criarBauDoCombate, criarTipo, diaAtual, dicaNota, editarNotaMestre, ehGM, entradaOculta, entradas, esc, estaVisivel, estadoSecao, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarJson, infoCon, itemLimpo, itemParaLoja, mejGet, mejPadrao, mejSet, mejUnset, mostrarAosJogadores, mostrarImagem, mostrarMoedas, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterPasta, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoEmPo, precoMEJ, precoParaMEJ, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade } from "../nucleo.js";
+import { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarEntrada, atorDoJogador, atualizarTudo, avatar, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, corDaPasta, criarBauDoCombate, criarTipo, diaAtual, dicaNota, editarNotaMestre, ehGM, entradaOculta, entradas, esc, estaVisivel, estadoSecao, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarJson, infoCon, itemLimpo, itemParaLoja, dadosGet, dadosPadrao, dadosSet, dadosUnset, mostrarAosJogadores, mostrarImagem, mostrarMoedas, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterPasta, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDoItem, arredondarPo, importarDoMonks, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade } from "../nucleo.js";
 
 /* ---------------- janela principal ---------------- */
 
@@ -91,6 +91,7 @@ class JournalApp extends ApplicationV2 {
       exportarItens: JournalApp._exportarItens,
       bauCombate: JournalApp._bauCombate,
       importar: JournalApp._importar,
+      importarMonks: JournalApp._importarMonks,
       novoDia: JournalApp._novoDia,
       rastreador: JournalApp._rastreador,
       tema: JournalApp._tema,
@@ -239,7 +240,7 @@ class JournalApp extends ApplicationV2 {
   _itemLista(j) {
     const a = analisar(j);
     const t = TIPOS[a.tipo];
-    let sub = a.tipo === "outro" ? (NOMES_MEJ[a.mejTipo] ?? a.mejTipo) : t.rotulo;
+    let sub = a.tipo === "outro" ? (NOMES_MEJ[a.tipoBase] ?? a.tipoBase) : t.rotulo;
     if (a.tipo === "person" && a.m.role) sub = a.m.role;
     if (a.tipo === "quest") sub = STATUS[a.m.status]?.rotulo ?? sub;
     if (a.tipo === "shop" && a.x.dono && game.journal.get(a.x.dono)) sub = game.journal.get(a.x.dono).name;
@@ -298,10 +299,11 @@ class JournalApp extends ApplicationV2 {
       return `<button type="button" data-action="criar" data-tipo="${k}" data-tooltip="${T("Novo(a)")} ${rot}"><i class="${ic}"></i></button>`;
     }).join("");
     const criar = gm ? `<div class="jm-criar">
-      <div class="jm-criar-topo"><span>${T("Nova página")} ${alvo ? `em <b>${esc(alvo.name)}</b>${this.pastaAlvo ? "" : ` <small class="jm-da-aberta">(${T("pasta da página aberta")})</small>`} <a data-action="limparAlvo" data-tooltip="${T("Criar na raiz")}"><i class="fa-solid fa-xmark"></i></a>` : `<em>${T("na raiz")}</em>`}
+      <div class="jm-criar-topo"><span>${T("Nova página")} ${alvo ? `${T("em")} <b>${esc(alvo.name)}</b>${this.pastaAlvo ? "" : ` <small class="jm-da-aberta">(${T("pasta da página aberta")})</small>`} <a data-action="limparAlvo" data-tooltip="${T("Criar na raiz")}"><i class="fa-solid fa-xmark"></i></a>` : `<em>${T("na raiz")}</em>`}
         <small class="jm-posicao-nova" data-tooltip="${T("Mude nas configurações do módulo")}">${game.settings.get(MOD, "posicaoNova") === "inicio" ? T("↑ no início") : T("↓ no fim")}</small></span>
         <a data-action="novaPasta" data-tooltip="${T("Nova pasta")}"><i class="fa-solid fa-folder-plus"></i></a>
-        <a data-action="importar" data-tooltip="${T("Importar JSON")}"><i class="fa-solid fa-file-import"></i></a></div>
+        <a data-action="importar" data-tooltip="${T("Importar JSON")}"><i class="fa-solid fa-file-import"></i></a>
+        ${temModulo("monks-enhanced-journal") || game.journal.some((j) => j.pages.some((pg) => pg.flags?.["monks-enhanced-journal"]?.type)) ? `<a data-action="importarMonks" data-tooltip="${T("Importar do Monk's Enhanced Journal: converte as páginas no formato do Monk's para o formato do Journal da Mesa (só copia; nada é apagado)")}"><i class="fa-solid fa-puzzle-piece"></i></a>` : ""}</div>
       <div class="jm-criar-btns">${botoesNovos}</div>
     </div>` : "";
 
@@ -719,7 +721,7 @@ class JournalApp extends ApplicationV2 {
     const traduzir = temModulo("translate-all");
 
     /* cabeçalho */
-    const selo = tipo === "outro" ? (NOMES_MEJ[a.mejTipo] ?? a.mejTipo) : t.rotulo;
+    const selo = tipo === "outro" ? (NOMES_MEJ[a.tipoBase] ?? a.tipoBase) : t.rotulo;
     let detalhes = "";
     const campos = tipo === "deus" ? CAMPOS_DEUS.map(([k, r]) => [`x:deus.${k}`, r, x.deus[k]])
       : (DETALHES[tipo] ?? []).map(([k, r]) => [`m:${k}`, r, m[k]]);
@@ -896,7 +898,7 @@ class JournalApp extends ApplicationV2 {
       "", "", gm ? `<a class="jm-mini-btn" data-action="traduzir" data-tooltip="${T("Abrir no editor completo do Foundry")}"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></a>` : "", "descricao"));
 
     if (tipo === "outro") blocos.push(secao(T("Monk's Enhanced Journal"), "fa-solid fa-puzzle-piece",
-      `<p class="jm-dica">${T("Este é um")} "${esc(NOMES_MEJ[a.mejTipo] ?? a.mejTipo)}" ${T("do Monk's. Aqui dá para editar nome, imagem e descrição")} <i class="fa-solid fa-pen"></i>${T("; o resto dos dados dele fica intacto e pode ser editado na ficha padrão")} <i class="fa-solid fa-up-right-from-square"></i>.</p>`));
+      `<p class="jm-dica">${T("Este é um")} "${esc(NOMES_MEJ[a.tipoBase] ?? a.tipoBase)}" ${T("do Monk's. Aqui dá para editar nome, imagem e descrição")} <i class="fa-solid fa-pen"></i>${T("; o resto dos dados dele fica intacto e pode ser editado na ficha padrão")} <i class="fa-solid fa-up-right-from-square"></i>.</p>`));
 
     /* ---- divindade: seções da aba ---- */
     if (tipo === "deus") {
@@ -1327,24 +1329,24 @@ class JournalApp extends ApplicationV2 {
 
   _notas(page, secao) {
     if (!page) return "";
-    const nota = page.flags?.[MEJ]?.[game.user.id]?.notes ?? "";
+    const nota = page.flags?.[MOD]?.[CHAVE_DADOS]?.notas?.[game.user.id] ?? "";
     return secao(`${T("Minhas notas")} <small>pessoais</small>`, "fa-solid fa-feather",
       `<textarea data-nota rows="4" placeholder="${T("Suas suspeitas, nomes, pistas...")}">${esc(String(nota).replace(/<\/?p>/g, ""))}</textarea>`, "jm-notas");
   }
 
-  /** Lista de itens (formato Monk's) usada pela loja e pelo baú. */
+  /** Lista de itens de estoque usada pela loja e pelo baú. */
   async _listaItens(m, ed, modo, x = null) {
     const gm = ehGM();
     const linhas = [];
     for (const [id, it] of comoLista(m.items)) {
       if (!gm && it.hidden) continue;
-      const f = it.flags?.[MEJ] ?? {};
-      const qtd = f.quantity;
-      const preco = precoMEJ(f.cost ?? f.price, it);
+      const f = it.flags?.[MOD] ?? {};
+      const qtd = qtdDoItem(it);
+      const preco = precoDoItem(it);
       const esgotado = modo === "loja" && (qtd === 0 || it.lock);
       const origem = it.flags?.[MOD]?.origem;
       const nome = origem ? await TE().enrichHTML(`@UUID[${origem}]{${String(it.name).replace(/[{}]/g, "")}}`) : esc(it.name);
-      const de = f.from ? `<small class="jm-de">${esc(f.from)}</small>` : "";
+      const de = f.de ? `<small class="jm-de">${esc(f.de)}</small>` : "";
       let colPreco, colQtd, acao;
       if (modo === "loja") {
         const neg = x ? negociacaoDeHoje(x, game.user.id, `c_${id}`) : null;
@@ -1722,7 +1724,7 @@ class JournalApp extends ApplicationV2 {
       const page = a.page ?? a.pages[0];
       if (!page) return;
       const texto = ev.target.value;
-      if (page.isOwner) mejSet(page, `${game.user.id}.notes`, texto);
+      if (page.isOwner) dadosSet(page, `notas.${game.user.id}`, texto);
       else pedir("nota", { pageUuid: page.uuid, userId: game.user.id, texto });
     });
 
@@ -1817,7 +1819,7 @@ class JournalApp extends ApplicationV2 {
     root.querySelectorAll("[data-horario]").forEach((el) => el.addEventListener("change", async () => {
       const min = horaParaMin(el.value);
       if (min == null) return ui.notifications.warn(T("Use o formato HH:MM (ex.: 08:00)."));
-      await mejSet(analisar(this._entry()).page, el.dataset.horario, min);
+      await dadosSet(analisar(this._entry()).page, el.dataset.horario, min);
     }));
     /* dias de folga: sempre clicáveis (antes ficavam travados com o horário desligado, sem nenhum aviso).
      * Marcar uma folga com o horário desligado liga "Respeitar horário e folgas", senão a folga não valeria. */
@@ -1839,15 +1841,16 @@ class JournalApp extends ApplicationV2 {
     root.querySelectorAll("[data-obj-texto]").forEach((el) => el.addEventListener("change", async () => {
       const { page } = analisar(this._entry());
       await garantirObjeto(page, "objectives");
-      await mejSet(page, `objectives.${el.dataset.id}.content`, el.value);
+      await dadosSet(page, `objectives.${el.dataset.id}.content`, el.value);
     }));
 
     root.querySelectorAll("[data-item-campo]").forEach((el) => el.addEventListener("change", async () => {
       const { page } = analisar(this._entry());
       await garantirObjeto(page, "items");
-      const base = `items.${el.dataset.id}.flags.${MEJ}`;
-      if (el.dataset.itemCampo === "preco") await mejSet(page, `${base}.price`, precoParaMEJ(el.value));
-      else await mejSet(page, `${base}.quantity`, el.value === "" ? null : Math.max(0, Number(el.value) || 0));
+      const base = `items.${el.dataset.id}.flags.${MOD}`;
+      if (el.dataset.itemCampo === "preco") await dadosSet(page, `${base}.preco`, arredondarPo(el.value));
+      else if (el.value === "") await dadosUnset(page, `${base}.qtd`);
+      else await dadosSet(page, `${base}.qtd`, Math.max(0, Number(el.value) || 0));
     }));
 
     root.querySelectorAll("[draggable=true][data-uuid]").forEach((el) => el.addEventListener("dragstart", (ev) => {
@@ -2046,10 +2049,10 @@ class JournalApp extends ApplicationV2 {
         await page.update({ [`flags.${MOD}.concluidaEm`]: fim ? Tempo.hoje() : null });
         if (fim) Sessao.registrar("missao", `${T("Missão")} <b>${esc(e.name)}</b>: ${esc(STATUS[v]?.rotulo ?? v)}.`);
       }
-      return mejSet(page, chave, v);
+      return dadosSet(page, chave, v);
     }
     await page.setFlag(MOD, chave, v);
-    if (chave === "doador") await mejSet(page, "source", game.journal.get(v)?.name ?? "");
+    if (chave === "doador") await dadosSet(page, "source", game.journal.get(v)?.name ?? "");
   }
 
   async _soltar(tipo, ev, el, pos = "dentro") {
@@ -2080,7 +2083,7 @@ class JournalApp extends ApplicationV2 {
     }
     if (tipo === "ator") {
       if (doc.documentName !== "Actor") return ui.notifications.warn(T("Arraste um ator."));
-      await mejSet(page, "actor", doc.uuid);
+      await dadosSet(page, "actor", doc.uuid);
       if (!page.src) await page.update({ src: doc.img });
       return;
     }
@@ -2096,16 +2099,16 @@ class JournalApp extends ApplicationV2 {
       await garantirObjeto(page, "items");
       const gid = el.dataset.grupo;
       const data2 = itemParaLoja(doc, {}, 1);
-      await mejSet(page, `items.${data2._id}`, data2);
-      const ids = mejGet(page, `rewards.${gid}.itemIds`) ?? [];
-      await mejSet(page, `rewards.${gid}.itemIds`, [...ids, data2._id]);
+      await dadosSet(page, `items.${data2._id}`, data2);
+      const ids = dadosGet(page, `rewards.${gid}.itemIds`) ?? [];
+      await dadosSet(page, `rewards.${gid}.itemIds`, [...ids, data2._id]);
       return;
     }
     if (tipo === "itemLoja") {
       if (doc.documentName !== "Item") return ui.notifications.warn(T("Arraste um item."));
       await garantirObjeto(page, "items");
       const data2 = itemParaLoja(doc, {}, analisar(e).tipo === "loot" ? null : 1);
-      await mejSet(page, `items.${data2._id}`, data2);
+      await dadosSet(page, `items.${data2._id}`, data2);
     }
   }
 
@@ -2155,11 +2158,11 @@ class JournalApp extends ApplicationV2 {
 
   async _ligar(entry, page, outro, rotulo) {
     await garantirObjeto(page, "relationships");
-    await mejSet(page, `relationships.${outro.id}`, { id: outro.id, uuid: outro.uuid, hidden: false, relationship: rotulo });
+    await dadosSet(page, `relationships.${outro.id}`, { id: outro.id, uuid: outro.uuid, hidden: false, relationship: rotulo });
     const outroPage = analisar(outro).page;
-    if (outroPage && !comoLista(mejGet(outroPage, "relationships")).some(([id, r]) => (r.id ?? id) === entry.id)) {
+    if (outroPage && !comoLista(dadosGet(outroPage, "relationships")).some(([id, r]) => (r.id ?? id) === entry.id)) {
       await garantirObjeto(outroPage, "relationships");
-      await mejSet(outroPage, `relationships.${entry.id}`, { id: entry.id, uuid: entry.uuid, hidden: false });
+      await dadosSet(outroPage, `relationships.${entry.id}`, { id: entry.id, uuid: entry.uuid, hidden: false });
     }
   }
 
@@ -2281,7 +2284,7 @@ class JournalApp extends ApplicationV2 {
     await page.update({ [`flags.${MOD}.fichas.-=${el.dataset.id}`]: null });
   }
 
-  static async _limparAtor() { await mejUnset(analisar(this._entry()).page, "actor"); }
+  static async _limparAtor() { await dadosUnset(analisar(this._entry()).page, "actor"); }
 
   static async _adicionarLink(ev, el) {
     const raiz = el.closest(".jm-add-link");
@@ -2300,16 +2303,16 @@ class JournalApp extends ApplicationV2 {
     const e = this._entry(); const { page } = analisar(e);
     const id = el.dataset.id;
     await garantirObjeto(page, "relationships");
-    await mejUnset(page, `relationships.${id}`);
+    await dadosUnset(page, `relationships.${id}`);
     const outroPage = game.journal.get(id) ? analisar(game.journal.get(id)).page : null;
-    if (mejGet(outroPage, `relationships.${e.id}`)) await mejUnset(outroPage, `relationships.${e.id}`);
+    if (dadosGet(outroPage, `relationships.${e.id}`)) await dadosUnset(outroPage, `relationships.${e.id}`);
   }
 
   static async _ocultarLink(ev, el) {
     const { page } = analisar(this._entry());
     await garantirObjeto(page, "relationships");
-    const atual = !!mejGet(page, `relationships.${el.dataset.id}.hidden`);
-    await mejSet(page, `relationships.${el.dataset.id}.hidden`, !atual);
+    const atual = !!dadosGet(page, `relationships.${el.dataset.id}.hidden`);
+    await dadosSet(page, `relationships.${el.dataset.id}.hidden`, !atual);
   }
 
   static _subLoja(ev, el) { this.subLoja = el.dataset.sub; this.render(); }
@@ -2578,7 +2581,7 @@ class JournalApp extends ApplicationV2 {
         repetir: "anos", cada: Math.max(1, Math.trunc(Number(dados.cada) || 1)), duracao: Math.max(1, Math.trunc(Number(dados.duracao) || 1)),
         icone: "fa-hands-praying", cor: "#d6a92b", aviso: CAL_AVISOS[dados.aviso] ? dados.aviso : "nenhum", divindade: deus.uuid
       }) } },
-      pages: [{ name: nome, type: "text", text: { content: textoParaHtml(dados.texto ?? "") }, flags: { [MEJ]: mejPadrao("journalentry"), [MOD]: {} } }]
+      pages: [{ name: nome, type: "text", text: { content: textoParaHtml(dados.texto ?? "") }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } }]
     });
     ui.notifications.info(`"${nome}" ${T("criado no calendário.")}`);
   }
@@ -2623,20 +2626,20 @@ class JournalApp extends ApplicationV2 {
 
   static async _limparSemanal() {
     const { page } = analisar(this._entry());
-    await substituirMapa(page, `flags.${MEJ}.items`, {});
+    await substituirMapa(page, `flags.${MOD}.${CHAVE_DADOS}.items`, {});
   }
 
   static async _removerItemLoja(ev, el) {
     const { page } = analisar(this._entry());
     await garantirObjeto(page, "items");
-    await mejUnset(page, `items.${el.dataset.id}`);
+    await dadosUnset(page, `items.${el.dataset.id}`);
   }
 
   static async _ocultarItemLoja(ev, el) {
     const { page } = analisar(this._entry());
     await garantirObjeto(page, "items");
-    const atual = !!mejGet(page, `items.${el.dataset.id}.hidden`);
-    await mejSet(page, `items.${el.dataset.id}.hidden`, !atual);
+    const atual = !!dadosGet(page, `items.${el.dataset.id}.hidden`);
+    await dadosSet(page, `items.${el.dataset.id}.hidden`, !atual);
   }
 
   static _comprarSemanal(ev, el) {
@@ -2680,7 +2683,7 @@ class JournalApp extends ApplicationV2 {
       const atual = h.system?.currency ?? {};
       return { _id: h.id, "system.currency": Object.fromEntries(chavesMoedas().map((k) => [k, (Number(atual[k]) || 0) + parte[k]])) };
     }));
-    await mejSet(page, "currency", resto);
+    await dadosSet(page, "currency", resto);
     await chat(`<i class="fa-solid fa-scale-balanced"></i> ${T("As moedas de")} <b>${esc(e.name)}</b> ${T("foram divididas entre")} ${herois.length}: ${T("cada um recebeu")} <b>${esc(formatarMoedas(parte))}</b>.`);
   }
 
@@ -2707,7 +2710,7 @@ class JournalApp extends ApplicationV2 {
         actorOverrides: { name: e.name, system: { currency: Object.fromEntries(chavesMoedas().map((k) => [k, Number(moedas[k]) || 0])) } },
         tokenOverrides: { name: e.name }
       });
-      await substituirMapa(page, `flags.${MEJ}.items`, {}, { [`flags.${MEJ}.currency`]: Object.fromEntries(chavesMoedas().map((k) => [k, 0])) });
+      await substituirMapa(page, `flags.${MOD}.${CHAVE_DADOS}.items`, {}, { [`flags.${MOD}.${CHAVE_DADOS}.currency`]: Object.fromEntries(chavesMoedas().map((k) => [k, 0])) });
       ui.notifications.info(T("Baú colocado no mapa."));
     } catch (err) {
       console.error(err);
@@ -2731,6 +2734,15 @@ class JournalApp extends ApplicationV2 {
   }
 
   static _importar() { importarJson(this.pastaAlvo); }
+  static async _importarMonks() {
+    if (!ehGM()) return;
+    const ok = await Dialogo().confirm({
+      window: { title: T("Importar do Monk's Enhanced Journal") },
+      content: `<p>${T("Converte as páginas que estão no formato do Monk's e ainda não têm o formato do Journal da Mesa. A conversão só copia: nada é apagado, e as páginas continuam as mesmas (mesmos vínculos).")}</p><p>${T("Páginas já convertidas não são tocadas. Recomendo um backup do mundo antes.")}</p>`,
+      yes: { label: T("Converter") }, no: { label: T("Cancelar") }, rejectClose: false
+    }).catch(() => false);
+    if (ok) await importarDoMonks();
+  }
 
   static async _voltarDia() {
     const n = Math.max(1, diaAtual() - 1);
@@ -2758,23 +2770,23 @@ class JournalApp extends ApplicationV2 {
     await garantirObjeto(page, "objectives");
     const id = novoId();
     this.editando = true;
-    await mejSet(page, `objectives.${id}`, { id, content: T("Novo objetivo"), done: 0, required: "", available: true });
+    await dadosSet(page, `objectives.${id}`, { id, content: T("Novo objetivo"), done: 0, required: "", available: true });
   }
 
   static async _alternarObjetivo(ev, el) {
     const { page } = analisar(this._entry());
     await garantirObjeto(page, "objectives");
-    const o = mejGet(page, `objectives.${el.dataset.id}`); if (!o) return;
+    const o = dadosGet(page, `objectives.${el.dataset.id}`); if (!o) return;
     const req = Number(o.required) || 0;
     const feito = req ? (Number(o.done) || 0) >= req : !!Number(o.done) || o.done === true;
-    await mejSet(page, `objectives.${el.dataset.id}.done`, feito ? 0 : (req || 1));
+    await dadosSet(page, `objectives.${el.dataset.id}.done`, feito ? 0 : (req || 1));
   }
 
   static async _ocultarObjetivo(ev, el) {
     const { page } = analisar(this._entry());
     await garantirObjeto(page, "objectives");
-    const o = mejGet(page, `objectives.${el.dataset.id}`); if (!o) return;
-    await mejSet(page, `objectives.${el.dataset.id}.available`, o.available === false);
+    const o = dadosGet(page, `objectives.${el.dataset.id}`); if (!o) return;
+    await dadosSet(page, `objectives.${el.dataset.id}.available`, o.available === false);
   }
 
   /* ---------- negociação e venda ---------- */
@@ -2806,7 +2818,7 @@ class JournalApp extends ApplicationV2 {
     const { page } = analisar(this._entry());
     await garantirObjeto(page, "rewards");
     const id = novoId();
-    await mejSet(page, `rewards.${id}`, {
+    await dadosSet(page, `rewards.${id}`, {
       id, name: T("Recompensas"), active: true, visible: true, awarded: false,
       itemIds: [], xp: 0, additional: "", currency: {}
     });
@@ -2815,8 +2827,8 @@ class JournalApp extends ApplicationV2 {
   static async _recompensaVisivel(ev, el) {
     const { page } = analisar(this._entry());
     await garantirObjeto(page, "rewards");
-    const atual = !!mejGet(page, `rewards.${el.dataset.grupo}.visible`);
-    await mejSet(page, `rewards.${el.dataset.grupo}.visible`, !atual);
+    const atual = !!dadosGet(page, `rewards.${el.dataset.grupo}.visible`);
+    await dadosSet(page, `rewards.${el.dataset.grupo}.visible`, !atual);
   }
 
   static async _apagarRecompensa(ev, el) {
@@ -2827,16 +2839,16 @@ class JournalApp extends ApplicationV2 {
     await garantirObjeto(page, "rewards");
     await garantirObjeto(page, "items");
     // o grupo e os itens dele saem numa gravação só
-    const apagar = (r?.itemIds ?? []).filter((iid) => mejGet(page, `items.${iid}`)).map((iid) => `flags.${MEJ}.items.${iid}`);
-    await gravarJunto(page, {}, [...apagar, `flags.${MEJ}.rewards.${el.dataset.grupo}`]);
+    const apagar = (r?.itemIds ?? []).filter((iid) => dadosGet(page, `items.${iid}`)).map((iid) => `flags.${MOD}.${CHAVE_DADOS}.items.${iid}`);
+    await gravarJunto(page, {}, [...apagar, `flags.${MOD}.${CHAVE_DADOS}.rewards.${el.dataset.grupo}`]);
   }
 
   static async _removerPremio(ev, el) {
     const { page, m } = analisar(this._entry());
     await garantirObjeto(page, "rewards");
     const r = Object.fromEntries(comoLista(m.rewards))[el.dataset.grupo];
-    await mejSet(page, `rewards.${el.dataset.grupo}.itemIds`, (r?.itemIds ?? []).filter((i) => i !== el.dataset.id));
-    if (mejGet(page, `items.${el.dataset.id}`)) await mejUnset(page, `items.${el.dataset.id}`);
+    await dadosSet(page, `rewards.${el.dataset.grupo}.itemIds`, (r?.itemIds ?? []).filter((i) => i !== el.dataset.id));
+    if (dadosGet(page, `items.${el.dataset.id}`)) await dadosUnset(page, `items.${el.dataset.id}`);
   }
 
   static async _entregarRecompensa(ev, el) {
@@ -2936,7 +2948,7 @@ class JournalApp extends ApplicationV2 {
         linhasChat.push(`<b>${esc(alvo.name)}</b> recebeu <b>${esc(it.name)}</b>`);
       }
       restantes = restantes.filter((i) => i !== iid);
-      saem.push(`flags.${MEJ}.items.${iid}`);
+      saem.push(`flags.${MOD}.${CHAVE_DADOS}.items.${iid}`);
     }
     // fichas diferentes são independentes: criadas em paralelo; uma falha é relatada, não escondida
     const criados = await Promise.allSettled([...porFicha].map(([alvo, itens]) => alvo.createEmbeddedDocuments("Item", itens)));
@@ -2946,10 +2958,10 @@ class JournalApp extends ApplicationV2 {
     const resto = Object.fromEntries(chavesMoedas().map((k) => [k, Math.max(0, (Number(moedas[k]) || 0) - (dados.moedas === "dividir" ? parte[k] * escolhidos.length : (dados.moedas === "cada" ? Number(moedas[k]) || 0 : 0)))]));
     // a página da missão numa gravação só: itens que saíram + estado do grupo
     await gravarJunto(page, {
-      [`flags.${MEJ}.rewards.${gid}.currency`]: resto,
-      [`flags.${MEJ}.rewards.${gid}.itemIds`]: restantes,
-      [`flags.${MEJ}.rewards.${gid}.awarded`]: true,
-      [`flags.${MEJ}.rewards.${gid}.visible`]: true
+      [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.currency`]: resto,
+      [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.itemIds`]: restantes,
+      [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.awarded`]: true,
+      [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.visible`]: true
     }, saem);
     Sessao.registrar("missao", `${T("Recompensa de")} <b>${esc(e.name)}</b> entregue.${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}`);
     if (dados.anunciar) await chat(`<i class="fa-solid fa-gift"></i> ${T("Recompensa de")} <b>${esc(e.name)}</b> entregue!${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}${restantes.length ? `<p>${T("Ainda há itens na missão para quem quiser pegar.")}</p>` : ""}`);
@@ -2963,7 +2975,7 @@ class JournalApp extends ApplicationV2 {
   static async _removerObjetivo(ev, el) {
     const { page } = analisar(this._entry());
     await garantirObjeto(page, "objectives");
-    await mejUnset(page, `objectives.${el.dataset.id}`);
+    await dadosUnset(page, `objectives.${el.dataset.id}`);
   }
 }
 
@@ -2983,8 +2995,8 @@ async function renovarEstoqueDaLoja(e, { avisarChat = true } = {}) {
       const { doc, ...info } = await resultadoParaItem(r);
       const chave = info.uuid || info.nome;
       if (porChave[chave]) {
-        const f = novos[porChave[chave]].flags[MEJ];
-        f.quantity = (f.quantity ?? 1) + 1;
+        const f = novos[porChave[chave]].flags[MOD];
+        f.qtd = (f.qtd ?? 1) + 1;
         continue;
       }
       const data = itemParaLoja(doc, info);
@@ -2993,7 +3005,7 @@ async function renovarEstoqueDaLoja(e, { avisarChat = true } = {}) {
     }
   }
   // troca o estoque numa gravação só (antes: apagar tudo e depois gravar; uma falha no meio esvaziava a loja)
-  await substituirMapa(page, `flags.${MEJ}.items`, novos);
+  await substituirMapa(page, `flags.${MOD}.${CHAVE_DADOS}.items`, novos);
   if (avisarChat) await chat(`<i class="fa-solid fa-store"></i> <b>${esc(e.name)}</b> ${T("renovou o estoque da semana.")}`, estaVisivel(e) ? {} : { whisper: idsGM() });
   return Object.keys(novos).length;
 }
