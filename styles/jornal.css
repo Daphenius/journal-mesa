@@ -1,0 +1,369 @@
+/* =========================================================
+ * Journal — Jornal de Notícias (Imprensa do Mundo)
+ * Leitura: ".jl-*" — a folha impressa, igual na janela de leitura e na página do jornal no Journal.
+ * Edição: ".jmj-*" — editor, painel e página da publicação.
+ * A folha tem as próprias cores (papel e tinta) em cada estilo, legível em qualquer tema do Journal.
+ * Só fontes do sistema: nada é baixado de fora.
+ * ========================================================= */
+
+/* ---------- janela de leitura ---------- */
+.jl-leitor .window-content { padding: 0; overflow: hidden; background: #2b2118; }
+.jl-mesa { display: flex; flex-direction: column; height: 100%; min-height: 0; background: radial-gradient(ellipse at top, #3a2c1e, #1d150e); }
+.jl-paginas { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px 18px 24px; scroll-behavior: smooth; }
+.jl-paginas .jl-folha { max-width: 1100px; margin: 0 auto 26px; }
+.jl-barra { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; background: rgba(20, 14, 9, 0.92); border-top: 1px solid #5a4630; color: #e9dcc0; font-family: Georgia, serif; }
+.jl-barra button { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 30px; margin: 0; padding: 0; border: 1px solid #6b5538; border-radius: 6px; background: #3a2c1e; color: #f1e4c6; cursor: pointer; }
+.jl-barra button:hover:not([disabled]) { border-color: #d7b46a; }
+.jl-barra button[disabled] { opacity: 0.35; cursor: default; }
+.jl-barra-pag { min-width: 140px; text-align: center; font-size: 13px; letter-spacing: 0.04em; }
+.jl-vazio { padding: 30px; text-align: center; color: #e9dcc0; }
+.jl-no-journal .jl-folha { margin: 12px 0 22px; }
+
+/* ---------- a folha ---------- */
+.jl-folha {
+  --jl-papel: #efe0bd;
+  --jl-tinta: #241a10;
+  --jl-suave: #5d4a33;
+  --jl-linha: #7d6545;
+  --jl-fonte: Georgia, "Times New Roman", "Liberation Serif", serif;
+  /* "Modesto Condensed" vem com o próprio Foundry: título de jornal sem baixar fonte de fora */
+  --jl-titulos: "Modesto Condensed", "Times New Roman", "Liberation Serif", Georgia, serif;
+  --jl-nome: "UnifrakturMaguntia", "Old English Text MT", "Goudy Text MT", "Modesto Condensed", "Times New Roman", serif;
+  container-type: inline-size;
+  position: relative;
+  padding: 22px 26px 18px;
+  color: var(--jl-tinta);
+  font-family: var(--jl-fonte);
+  font-size: 14.5px;
+  line-height: 1.5;
+  background:
+    radial-gradient(ellipse at 20% 15%, rgba(255, 248, 225, 0.55), transparent 55%),
+    radial-gradient(ellipse at 80% 85%, rgba(150, 105, 50, 0.18), transparent 60%),
+    linear-gradient(180deg, #f1e3c2, #e6d2a6);
+  border-radius: 3px;
+  box-shadow: inset 0 0 70px rgba(110, 66, 20, 0.45), inset 0 0 8px rgba(80, 45, 10, 0.5), 0 6px 22px rgba(0, 0, 0, 0.45);
+  overflow-wrap: anywhere;
+}
+.jl-folha a { color: inherit; }
+.jl-folha img { max-width: 100%; height: auto; }
+.jl-folha h1, .jl-folha h3, .jl-folha h4, .jl-folha h5 { border: none; color: var(--jl-tinta); text-shadow: none; }
+.jl-texto p { margin: 0 0 0.6em; }
+.jl-texto > *:last-child { margin-bottom: 0; }
+
+/* cabeçalho */
+.jl-cabeca { display: grid; grid-template-columns: 1fr 6fr 1fr; align-items: center; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--jl-linha); }
+.jl-ornamento { display: flex; align-items: center; justify-content: center; font-size: clamp(24px, 6cqi, 64px); color: var(--jl-suave); opacity: 0.75; }
+.jl-nome-bloco { text-align: center; }
+.jl-logo { display: block; max-height: 70px; margin: 0 auto 4px; }
+.jl-nome { font-family: var(--jl-nome); font-size: clamp(28px, 6.3cqi, 72px); line-height: 1; font-weight: bold; color: var(--jl-cor, var(--jl-tinta)); letter-spacing: 0.01em; }
+.jl-subtitulo { margin-top: 6px; font-size: clamp(10px, 1.6cqi, 13px); font-variant: small-caps; letter-spacing: 0.14em; color: var(--jl-suave); }
+.jl-subtitulo::before, .jl-subtitulo::after { content: " — "; }
+.jl-faixa { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 2px; margin-bottom: 14px; border-bottom: 3px double var(--jl-linha); font-size: clamp(10px, 1.7cqi, 14px); font-variant: small-caps; letter-spacing: 0.1em; font-weight: bold; }
+.jl-faixa span:nth-child(2) { text-align: center; }
+
+/* manchete + coluna de destaques */
+.jl-topo { display: grid; grid-template-columns: 2.1fr 1fr; gap: 0 22px; padding-bottom: 14px; border-bottom: 3px double var(--jl-linha); }
+.jl-topo.sem-lateral { grid-template-columns: 1fr; }
+.jl-titulo { margin: 0 0 6px; font-family: var(--jl-titulos); font-size: clamp(26px, 5.4cqi, 56px); line-height: 1.04; font-weight: bold; letter-spacing: -0.01em; }
+.jl-sub { margin: 0 0 12px; font-size: clamp(14px, 2.1cqi, 20px); font-style: italic; line-height: 1.3; color: var(--jl-suave); }
+.jl-manchete-corpo { display: block; }
+.jl-manchete-corpo.com-img { display: grid; grid-template-columns: 1fr 1.7fr; gap: 16px; align-items: start; }
+.jl-manchete-corpo:not(.com-img) .jl-texto { columns: 2 240px; column-gap: 22px; column-rule: 1px solid var(--jl-linha); }
+.jl-capitular { text-align: justify; hyphens: auto; }
+.jl-capitular > p:first-of-type::first-letter { float: left; font-family: var(--jl-nome); font-size: 3.4em; line-height: 0.82; margin: 0.04em 0.08em 0 0; color: var(--jl-cor, var(--jl-tinta)); }
+.jl-figura { margin: 0; }
+.jl-figura img { display: block; width: 100%; border: 1px solid var(--jl-linha); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); filter: sepia(0.15); }
+.jl-lateral { padding-left: 18px; border-left: 1px solid var(--jl-linha); }
+.jl-destaque { break-inside: avoid; }
+.jl-destaque + .jl-destaque { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--jl-linha); position: relative; }
+.jl-destaque + .jl-destaque::before { content: "❦"; position: absolute; top: -0.75em; left: 50%; transform: translateX(-50%); padding: 0 6px; background: #ecdcb6; color: var(--jl-suave); font-size: 13px; }
+.jl-destaque h3 { margin: 0 0 6px; font-family: var(--jl-titulos); font-size: clamp(17px, 2.6cqi, 25px); line-height: 1.12; font-weight: bold; }
+.jl-destaque .jl-img { display: block; width: 100%; margin: 4px 0 8px; border: 1px solid var(--jl-linha); filter: sepia(0.15); }
+.jl-chapeu { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; color: var(--jl-cor, var(--jl-suave)); }
+.jl-autor { margin: 0 0 4px; font-size: 12px; font-variant: small-caps; letter-spacing: 0.05em; color: var(--jl-suave); }
+
+/* faixa de baixo: outras notícias, rumores, anúncios */
+.jl-base { display: grid; grid-template-columns: repeat(var(--jl-n, 3), 1fr); gap: 0; margin-top: 12px; }
+.jl-caixa { padding: 0 14px; min-width: 0; }
+.jl-caixa:first-child { padding-left: 0; }
+.jl-caixa:last-child { padding-right: 0; }
+.jl-caixa + .jl-caixa { border-left: 1px solid var(--jl-linha); }
+.jl-folha .jl-caixa-titulo { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--jl-tinta); font-family: var(--jl-titulos); font-size: clamp(15px, 2.2cqi, 21px); font-weight: bold; }
+.jl-caixa-titulo i { color: var(--jl-suave); }
+.jl-outra { padding: 8px 0; }
+.jl-outra + .jl-outra { border-top: 1px dashed var(--jl-linha); }
+.jl-outra.com-img { display: grid; grid-template-columns: minmax(70px, 40%) 1fr; gap: 10px; align-items: start; }
+.jl-outra h4 { margin: 0 0 4px; font-family: var(--jl-titulos); font-size: 16px; line-height: 1.15; font-weight: bold; }
+.jl-miniatura { display: block; width: 100%; border: 1px solid var(--jl-linha); filter: sepia(0.25) contrast(1.05); }
+.jl-rumor { display: grid; grid-template-columns: 30px 1fr; gap: 8px; padding: 8px 0; font-size: 13px; }
+.jl-rumor + .jl-rumor { border-top: 1px solid var(--jl-linha); }
+.jl-rumor > i { font-size: 24px; color: var(--jl-tinta); text-align: center; padding-top: 2px; }
+.jl-rumor h5, .jl-anuncio h5 { margin: 0 0 2px; font-family: var(--jl-titulos); font-size: 14.5px; font-weight: bold; line-height: 1.2; }
+.jl-rumor .jl-texto { color: var(--jl-suave); font-style: italic; }
+.jl-anuncio { display: grid; grid-template-columns: 1fr 44px; gap: 8px; align-items: center; padding: 8px 10px; margin-bottom: 8px; border: 1.5px solid var(--jl-linha); border-radius: 4px; background: rgba(255, 250, 235, 0.25); box-shadow: inset 0 0 0 3px rgba(125, 101, 69, 0.18); font-size: 12.5px; }
+.jl-anuncio h5 { text-transform: uppercase; letter-spacing: 0.04em; }
+.jl-anuncio > i { font-size: 30px; text-align: center; color: var(--jl-suave); }
+.jl-anuncio .jl-miniatura { max-height: 54px; object-fit: contain; border: none; }
+.jl-anuncio.aviso { border-width: 2px; border-color: var(--jl-tinta); }
+.jl-rodape { margin-top: 14px; padding-top: 6px; border-top: 3px double var(--jl-linha); text-align: center; font-size: 12px; font-variant: small-caps; letter-spacing: 0.06em; color: var(--jl-suave); }
+.jl-num-pagina { margin-top: 10px; text-align: right; font-size: 11px; font-variant: small-caps; letter-spacing: 0.1em; color: var(--jl-suave); }
+
+/* páginas de continuação */
+.jl-folha.continuacao { padding-top: 14px; }
+.jl-cabeca-mini { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-bottom: 4px; margin-bottom: 12px; border-bottom: 3px double var(--jl-linha); font-variant: small-caps; letter-spacing: 0.08em; font-size: 12px; }
+.jl-cabeca-mini .jl-nome { font-size: clamp(20px, 3.4cqi, 30px); font-variant: normal; letter-spacing: 0; }
+.jl-cont-secao { margin-bottom: 14px; }
+.jl-colunas { columns: 3 220px; column-gap: 22px; column-rule: 1px solid var(--jl-linha); }
+.jl-colunas > article { break-inside: avoid; margin-bottom: 12px; }
+.jl-colunas .jl-anuncio { display: grid; }
+
+/* ligações e marca do mestre */
+.jl-vincs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.jl-vinc { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-family: system-ui, sans-serif; font-size: 11px; font-style: normal; color: var(--jl-tinta); background: rgba(80, 50, 15, 0.1); border: 1px solid rgba(80, 50, 15, 0.25); cursor: pointer; text-decoration: none; }
+.jl-vinc:hover { background: rgba(80, 50, 15, 0.2); }
+.jl-verdade { display: inline-flex; align-items: center; gap: 4px; margin: 2px 0 4px; padding: 1px 8px; border-radius: 4px; font-family: system-ui, sans-serif; font-size: 11px; font-style: normal; color: #fff; background: var(--jl-v, #5f6b7a); }
+
+/* --- Gazeta Elegante: papel claro, linhas finas, capitais --- */
+.jl-folha.estilo-gazeta {
+  --jl-papel: #faf7ef; --jl-tinta: #1b1b1d; --jl-suave: #55555e; --jl-linha: #b9b3a5;
+  --jl-nome: "Didot", "Bodoni MT", "Bodoni 72", "Times New Roman", serif;
+  --jl-titulos: "Didot", "Bodoni MT", "Bodoni 72", Georgia, serif;
+  background: linear-gradient(180deg, #fbf9f3, #f1ece0);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4);
+  border-top: 6px solid var(--jl-cor, #1b1b1d);
+}
+.jl-folha.estilo-gazeta .jl-nome { font-weight: normal; text-transform: uppercase; letter-spacing: 0.06em; font-size: clamp(24px, 5cqi, 56px); }
+.jl-folha.estilo-gazeta .jl-titulo { font-weight: normal; }
+.jl-folha.estilo-gazeta .jl-figura img, .jl-folha.estilo-gazeta .jl-img, .jl-folha.estilo-gazeta .jl-miniatura { filter: none; }
+.jl-folha.estilo-gazeta .jl-destaque + .jl-destaque::before { background: #f5f1e7; }
+
+/* --- Jornal Clandestino: panfleto datilografado --- */
+.jl-folha.estilo-clandestino {
+  --jl-papel: #dcd8ce; --jl-tinta: #141210; --jl-suave: #47433c; --jl-linha: #6a655b;
+  --jl-fonte: "Courier New", Courier, "Liberation Mono", monospace;
+  --jl-titulos: Impact, "Arial Black", "Helvetica Neue", sans-serif;
+  --jl-nome: Impact, "Arial Black", sans-serif;
+  font-size: 13.5px;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0 2px, transparent 2px 4px), #dcd8ce;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.25), 0 6px 22px rgba(0, 0, 0, 0.45);
+  border: 2px dashed #6a655b;
+}
+.jl-folha.estilo-clandestino .jl-nome { font-size: clamp(24px, 5.4cqi, 60px); text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.18); }
+.jl-folha.estilo-clandestino .jl-titulo { text-transform: uppercase; background: var(--jl-tinta); color: var(--jl-papel); padding: 4px 8px; font-weight: normal; }
+.jl-folha.estilo-clandestino .jl-figura img, .jl-folha.estilo-clandestino .jl-img, .jl-folha.estilo-clandestino .jl-miniatura { filter: grayscale(1) contrast(1.2); }
+.jl-folha.estilo-clandestino .jl-destaque + .jl-destaque::before { background: #dcd8ce; content: "✖"; }
+.jl-folha.estilo-clandestino .jl-capitular > p:first-of-type::first-letter { float: none; font-size: 1.5em; }
+
+/* folha estreita (janela pequena ou tela do jogador menor) */
+@container (max-width: 700px) {
+  .jl-topo, .jl-manchete-corpo.com-img { grid-template-columns: 1fr; }
+  .jl-lateral { padding-left: 0; border-left: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--jl-linha); }
+  .jl-base { grid-template-columns: 1fr; }
+  .jl-caixa { padding: 0; }
+  .jl-caixa + .jl-caixa { border-left: none; margin-top: 12px; }
+  .jl-cabeca { grid-template-columns: 1fr; }
+  .jl-ornamento { display: none; }
+  .jl-faixa { flex-direction: column; gap: 2px; }
+}
+@media (max-width: 640px) { .jl-folha { padding: 14px 12px; } .jl-paginas { padding: 10px 6px; } }
+
+/* chips de vínculo fora da folha (editor, página da publicação) */
+.jmj-vinc { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; background: var(--jm-sup2); border: 1px solid var(--jm-borda); cursor: pointer; text-decoration: none; }
+.jmj-vinc a { cursor: pointer; }
+.jmj-vinc.perdido { opacity: 0.6; font-style: italic; }
+
+/* --- página da publicação no Journal --- */
+.jmj-edicoes { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.jmj-ed-item { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--jm-borda); border-radius: var(--jm-raio, 6px); background: var(--jm-superficie); cursor: pointer; font-size: 12.5px; max-width: 100%; }
+.jmj-ed-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+.jmj-ed-item small { color: var(--jm-suave); }
+.jmj-ed-item.ativo { border-color: var(--jm-destaque); box-shadow: 0 0 0 1px var(--jm-destaque); }
+.jmj-arquivo { flex: 1 1 100%; }
+.jmj-arquivo > summary { cursor: pointer; color: var(--jm-suave); font-size: 12.5px; margin: 2px 0 6px; }
+.jmj-arquivo .jmj-ed-item { display: inline-flex; margin: 0 6px 6px 0; }
+.jmj-controle { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--jm-borda); border-radius: var(--jm-raio, 6px); background: var(--jm-sup2); }
+.jmj-controle-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-left: auto; }
+.jm-raiz .jmj-controle-btns button { padding: 3px 10px; font-size: 12.5px; }
+.jmj-estado { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; background: var(--jm-sup2); color: var(--jm-texto); border: 1px solid var(--jm-borda); white-space: nowrap; }
+.jmj-estado.est-publicado { background: var(--jm-ok, #3f8f4f); color: #fff; border-color: transparent; }
+.jmj-estado.est-programado { background: var(--jm-destaque); color: #fff; border-color: transparent; }
+.jmj-estado.est-arquivado { opacity: 0.75; }
+.jmj-relacionadas { list-style: none; margin: 0; padding: 0; }
+.jmj-relacionadas li { padding: 4px 0; border-bottom: 1px dashed var(--jm-borda); }
+.jmj-relacionadas small { display: block; color: var(--jm-suave); }
+
+/* --- aba Jornais e Notícias --- */
+.jmj-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 12px; }
+.jmj-filtros .jm-con-busca { flex: 1 1 240px; }
+.jmj-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.jmj-card { padding: 10px 12px; border: 1px solid var(--jm-borda); border-top: 4px solid var(--jmj-cor, var(--jm-destaque)); border-radius: var(--jm-raio, 6px); background: var(--jm-superficie); min-width: 0; }
+.jmj-card[hidden] { display: none; }
+.jmj-card-topo { display: flex; gap: 10px; align-items: flex-start; }
+.jmj-card-logo { width: 48px; height: 48px; object-fit: contain; flex: none; border-radius: 4px; }
+.jmj-card-logo.icone { display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; background: var(--jmj-cor, var(--jm-destaque)); }
+.jmj-card-txt { flex: 1; min-width: 0; }
+.jmj-card-txt a { cursor: pointer; }
+.jmj-card-txt b { font-size: 15px; }
+.jmj-card-txt small { display: block; color: var(--jm-suave); }
+.jmj-card-info { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: var(--jm-suave); margin-top: 2px; }
+.jmj-card-btns { display: flex; gap: 2px; }
+.jmj-card-numeros { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 8px 0 4px; font-size: 12px; color: var(--jm-suave); }
+.jmj-card-numeros a { cursor: pointer; color: var(--jm-texto); text-decoration: underline; }
+.jmj-card-eds { list-style: none; margin: 4px 0 0; padding: 0; font-size: 12.5px; }
+.jmj-card-eds li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 3px 0; border-top: 1px dashed var(--jm-borda); }
+.jmj-card-eds a { cursor: pointer; flex: 1 1 160px; min-width: 0; }
+.jmj-card-eds small { color: var(--jm-suave); }
+.jm-lt-item.jornal small { color: var(--jm-suave); }
+
+/* --- editor --- */
+/* Rolagem (correção 4.7.1): ".jm-janela .window-content" tem overflow: hidden (a janela principal rola
+ * por dentro dos painéis). O editor e o seletor de vínculos não têm painel: o conteúdo da janela rola. */
+.jm-janela.jmj-editor .window-content, .jm-janela.jmj-seletor .window-content { display: block; padding: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+.jmj-form { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 0; background: var(--jm-fundo); color: var(--jm-texto); min-height: 100%; box-sizing: border-box; }
+.jmj-form > * { flex: none; }
+.jmj-form .jm-editor { max-width: 100%; }
+/* Preserve o layout flex nativo do editor de descrição já funcional.
+   O display:block anterior achatava a superfície visual do ProseMirror. */
+.jmj-form prose-mirror.jm-editor {
+  display: flex;
+  flex-direction: column;
+  max-height: 420px;
+  overflow: hidden;
+}
+.jmj-form prose-mirror.jm-editor .editor-content {
+  flex: 1;
+  min-height: 180px;
+  overflow-y: auto;
+  cursor: text;
+}
+.jmj-form prose-mirror.jm-editor .ProseMirror {
+  min-height: 180px;
+  color: var(--jm-texto);
+  cursor: text;
+  user-select: text;
+}
+.jmj-editor-alternar { align-self: flex-start; margin-top: -3px !important; font-size: 11px !important; }
+.jmj-form label { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; font-weight: bold; }
+.jmj-form label.jm-check { flex-direction: row; font-weight: normal; }
+.jmj-form input[type="text"], .jmj-form input[type="number"], .jmj-form select, .jmj-form textarea { font-weight: normal; width: 100%; }
+.jmj-form input[type="color"] { width: 60px; height: 28px; padding: 0; }
+.jmj-linha2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 8px; }
+.jmj-arquivo { display: flex; gap: 4px; }
+.jmj-arquivo input { flex: 1; }
+.jmj-form fieldset { border: 1px solid var(--jm-borda); border-radius: var(--jm-raio, 6px); padding: 8px 10px; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.jmj-form legend { font-weight: bold; padding: 0 4px; }
+.jmj-form legend small { font-weight: normal; color: var(--jm-suave); }
+.jmj-ed-materia { border: 1px solid var(--jm-borda); border-radius: var(--jm-raio, 6px); background: var(--jm-superficie); }
+.jmj-ed-materia > summary { display: flex; align-items: center; gap: 6px; padding: 6px 8px; cursor: pointer; }
+.jmj-ed-materia > summary small { color: var(--jm-suave); }
+.jmj-ed-ctrl { margin-left: auto; display: flex; gap: 2px; }
+.jmj-ed-campos { display: flex; flex-direction: column; gap: 8px; padding: 0 10px 10px; }
+.jmj-ed-vinc { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px; border: 1px dashed var(--jm-borda); border-radius: var(--jm-raio, 6px); font-size: 12px; }
+.jmj-ed-vinc.sobre { border-color: var(--jm-destaque); background: var(--jm-sup2); }
+.jmj-ed-vinc select { flex: 1 1 220px; width: auto; }
+.jmj-ed-vinc .jmj-vinc { background: var(--jm-sup2); border-color: var(--jm-borda); }
+.jmj-segredo { border-style: dashed !important; background: var(--jm-sup2); }
+.jmj-form .jm-editor { min-height: 140px; }
+.jmj-rodape-form { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px 0 12px; background: var(--jm-fundo); border-top: 1px solid var(--jm-borda); }
+.jmj-rodape-form .jm-dica { margin: 0 auto 0 0; }
+.jmj-rodape-form .jm-dica.pendente { color: var(--jm-destaque); font-weight: bold; }
+.jmj-rodape-form button { width: auto; }
+
+@media (max-width: 640px) {
+  .jmj-controle-btns { margin-left: 0; }
+}
+
+/* botões do editor (fora da janela principal, mesmo visual) */
+.jmj-form button { display: inline-flex; align-items: center; gap: 6px; width: auto; height: auto; margin: 0; padding: 6px 11px; border: 1px solid var(--jm-borda); border-radius: 8px; background: var(--jm-sup2); color: var(--jm-texto); font-size: 13px; line-height: 1.2; cursor: pointer; box-shadow: none; }
+.jmj-form button:hover { border-color: var(--jm-destaque); }
+.jmj-form .jmj-rodape-form button:last-child { background: var(--jm-destaque); color: #fff; border-color: transparent; }
+.jmj-form .jm-add { align-self: flex-start; }
+
+/* vínculos no editor */
+.jmj-ed-vinc-titulo { font-weight: bold; margin-right: 4px; }
+.jmj-ed-vinc button { padding: 3px 9px; font-size: 12px; }
+
+/* seletor de vínculos */
+.jmj-sel { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 0; min-height: 100%; box-sizing: border-box; background: var(--jm-fundo); color: var(--jm-texto); }
+.jmj-sel-lista { display: flex; flex-direction: column; gap: 4px; }
+.jmj-sel-grupo > summary { cursor: pointer; font-weight: bold; padding: 4px 0; }
+.jmj-sel-grupo > summary small { color: var(--jm-suave); font-weight: normal; }
+.jmj-sel-item { display: flex; align-items: center; gap: 6px; padding: 3px 6px 3px 18px; border-radius: 6px; cursor: pointer; }
+.jmj-sel-item:hover { background: var(--jm-sup2); }
+.jmj-sel-item.ja { opacity: 0.6; }
+.jmj-sel-item small { color: var(--jm-suave); }
+.jmj-sel-item[hidden], .jmj-sel-grupo[hidden] { display: none; }
+.jmj-sel-uuid { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; font-weight: bold; }
+.jmj-sel button { display: inline-flex; align-items: center; gap: 6px; width: auto; padding: 6px 11px; border: 1px solid transparent; border-radius: 8px; background: var(--jm-destaque); color: #fff; cursor: pointer; }
+.jmj-chat-ler { cursor: pointer; text-decoration: underline; }
+
+/* retratos dos vínculos dentro da matéria (NPC, cidade, ator...) */
+.jl-retratos { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; }
+.jl-retrato { margin: 0; width: 112px; cursor: pointer; text-align: center; }
+.jl-retrato img { display: block; width: 112px; height: 112px; object-fit: cover; object-position: top; border: 1px solid var(--jl-linha); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); filter: sepia(0.2) contrast(1.05); background: rgba(0, 0, 0, 0.05); }
+.jl-retrato figcaption { margin-top: 3px; font-size: 11.5px; line-height: 1.2; }
+.jl-retrato figcaption b { display: block; }
+.jl-retrato figcaption small { color: var(--jl-suave); font-style: italic; }
+.jl-retratos.pequenos .jl-retrato { width: 72px; }
+.jl-retratos.pequenos .jl-retrato img { width: 72px; height: 72px; }
+.jl-folha.estilo-clandestino .jl-retrato img { filter: grayscale(1) contrast(1.2); }
+.jl-folha.estilo-gazeta .jl-retrato img { filter: none; border-radius: 50%; }
+.jmj-vinc-img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; margin-left: -4px; }
+.jmj-foto { opacity: 0.45; }
+.jmj-foto.ativo { opacity: 1; color: var(--jm-destaque); }
+
+/* ---------- editor em etapas (4.8) ---------- */
+.jm-janela.jmj-editor .window-content { overflow: hidden; }
+.jmj-ed2 { display: grid; grid-template-columns: 210px 1fr; height: 100%; min-height: 0; background: var(--jm-fundo); color: var(--jm-texto); }
+.jmj-ed2-menu { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; border-right: 1px solid var(--jm-borda); background: var(--jm-superficie); overflow-y: auto; }
+.jmj-ed2-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 8px; cursor: pointer; color: var(--jm-texto); text-decoration: none; }
+.jmj-ed2-item:hover { background: var(--jm-sup2); }
+.jmj-ed2-item.ativo { background: var(--jm-destaque); color: #fff; }
+.jmj-ed2-item small { margin-left: auto; min-width: 22px; padding: 0 6px; border-radius: 999px; text-align: center; font-size: 11px; background: var(--jm-sup2); color: var(--jm-texto); }
+.jmj-ed2-item.ativo small { background: rgba(255, 255, 255, 0.25); color: #fff; }
+.jmj-ed2-item.previa { margin-top: 6px; border-top: 1px dashed var(--jm-borda); padding-top: 10px; }
+.jmj-passo { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; font-weight: bold; background: var(--jm-sup2); color: var(--jm-texto); }
+.jmj-ed2-item.ativo .jmj-passo { background: #fff; color: var(--jm-destaque); }
+.jmj-ed2-json { display: flex; flex-direction: column; gap: 4px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--jm-borda); }
+.jmj-ed2-json button { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-start; width: 100%; padding: 5px 9px; border: 1px solid var(--jm-borda); border-radius: 8px; background: var(--jm-sup2); color: var(--jm-texto); font-size: 12.5px; cursor: pointer; }
+.jmj-ed2-corpo { min-height: 0; height: 100%; overflow-y: auto; overscroll-behavior: contain; padding: 14px 18px 0; }
+.jmj-ed2-cab h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 2px; border: none; font-size: 20px; }
+.jmj-ed2-cab .jm-dica { margin: 0 0 6px; font-size: 13px; }
+.jmj-materia-titulo { font-size: 16px !important; font-weight: bold !important; }
+.jmj-card-materia { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--jm-borda); border-radius: 8px; background: var(--jm-superficie); }
+.jmj-card-materia:hover { border-color: var(--jm-destaque); }
+.jmj-card-materia-abrir { flex: 1; min-width: 0; display: flex; flex-direction: column; cursor: pointer; color: var(--jm-texto); text-decoration: none; }
+.jmj-card-materia-abrir small { color: var(--jm-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jmj-card-materia-info { font-size: 11px; color: var(--jm-suave); }
+.jmj-materia-aberta { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 2px solid var(--jm-destaque); border-radius: 10px; background: var(--jm-superficie); }
+.jmj-materia-topo { display: flex; align-items: center; gap: 6px; }
+.jmj-materia-topo input { flex: 1; }
+.jmj-mais { border: 1px solid var(--jm-borda); border-radius: 8px; padding: 4px 10px; }
+.jmj-mais > summary { cursor: pointer; padding: 4px 0; font-size: 12.5px; font-weight: bold; color: var(--jm-suave); }
+.jmj-mais > summary small { font-weight: normal; margin-left: 4px; }
+.jmj-mais[open] { padding-bottom: 10px; }
+.jmj-mais .jmj-linha2 { margin-top: 6px; }
+.jmj-vazio-etapa { padding: 18px; text-align: center; color: var(--jm-suave); border: 2px dashed var(--jm-borda); border-radius: 10px; }
+.jmj-vazio-etapa > i { font-size: 28px; opacity: 0.5; }
+.jmj-vazio-etapa p { margin: 6px 0 0; }
+.jmj-form .jmj-add-grande { align-self: stretch; justify-content: center; padding: 10px; border: 2px dashed var(--jm-destaque); background: transparent; color: var(--jm-destaque); font-weight: bold; }
+.jmj-resumo-final ul { list-style: none; margin: 4px 0; padding: 0; }
+.jmj-resumo-final li { padding: 2px 0; }
+.jmj-ok { color: var(--jm-ok, #3f8f4f); }
+.jmj-falta { color: var(--jm-borda); }
+.jmj-previa .jl-folha { margin-bottom: 14px; }
+.jmj-importar textarea { font-family: monospace; font-size: 12px; }
+@media (max-width: 760px) { .jmj-ed2 { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .jmj-ed2-menu { flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--jm-borda); } .jmj-ed2-item span:not(.jmj-passo) { white-space: nowrap; } .jmj-ed2-json { flex-direction: row; margin: 0; padding: 0; border: none; } }
+
+/* Campo alternativo apenas do editor de edições do Jornal de Notícias. */
+.jm-janela.jmj-editor .jmj-editor-fallback {
+  display: block; box-sizing: border-box; min-height: 220px; width: 100%;
+  padding: 12px 14px; overflow-y: auto; overflow-wrap: anywhere;
+  background: var(--jm-sup2); color: var(--jm-texto);
+  border: 1px solid var(--jm-borda); border-radius: 9px;
+  cursor: text; white-space: normal; user-select: text;
+}
+.jm-janela.jmj-editor .jmj-editor-fallback:focus {
+  outline: 2px solid var(--jm-destaque); outline-offset: 1px;
+}
+.jm-janela.jmj-editor .jmj-editor-fallback p { margin: 0 0 0.65em; }
