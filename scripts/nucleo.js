@@ -60,7 +60,7 @@ const infoCon = (k) => (k === "ficha" ? TIPO_FICHA : TIPOS[k]);
 /** Fichas ligadas a uma página: flags.journal-mesa.fichas = { idDoAtor: { uuid, relacao, hidden } } */
 const fichasDe = (page) => Object.entries(page?.flags?.[MOD]?.fichas ?? {}).filter(([, f]) => f?.uuid);
 
-/* tipos que o Journal edita (todos no formato do Monk's) */
+/* tipos que o Journal edita (registro de tipo em flags["journal-mesa"].dados) */
 const EDITAVEIS = ["person", "place", "organization", "shop", "quest", "loot", "journalentry"];
 
 /* botões de "Nova página" */
@@ -88,7 +88,7 @@ const ICONES_PAGINA = {
   subclass: "fa-solid fa-shield", map: "fa-solid fa-map"
 };
 
-/* campos simples gravados no formato do Monk's */
+/* campos simples do registro de tipo (papel, local, tendência...) */
 const DETALHES = {
   person: [["role", "Papel"], ["location", "Local"]],
   place: [["placetype", "Tipo"], ["location", "Região"]],
@@ -324,7 +324,6 @@ function dadosUnset(doc, chave) {
  * Só COPIA: lê flags["monks-enhanced-journal"] da página e grava o equivalente em flags["journal-mesa"].dados.
  * As flags do Monk's não são alteradas nem apagadas, e a página continua a mesma (mesmo id, mesmo uuid),
  * então os vínculos entre NPCs, locais, lojas e missões continuam valendo. */
-const TIPOS_MONKS_CONHECIDOS = [...EDITAVEIS, "base", "oldentry", "checklist", "encounter", "poi", "event", "picture", "list", "slideshow"];
 
 /** Converte as flags do Monk's (objeto simples) no registro próprio. Devolve null se não houver tipo. */
 function dadosDeMonks(mej) {
@@ -431,7 +430,7 @@ function mostrarRelatorioMonks(rel) {
     ${tipos ? `<ul>${tipos}</ul>` : ""}
     <p>${T("Os dados do Monk's ficaram como estavam: a conversão só copia. As páginas continuam as mesmas, então os vínculos entre elas seguem valendo.")}</p>
     ${lim}${vq}${falhas}`;
-  console.log(`${T("Journal da Mesa")} | ${T("importar do Monk's")}`, rel);
+  console.info(`${T("Journal da Mesa")} | ${T("importar do Monk's")}`, rel);
   return Dialogo().prompt({ window: { title: T("Importar do Monk's Enhanced Journal") }, content, ok: { label: T("Fechar") }, rejectClose: false }).catch(() => null);
 }
 
@@ -486,9 +485,8 @@ function chaveApagar(upd, base, chave) {
   return upd;
 }
 
-/** Troca o conteúdo de um objeto-mapa (ex.: estoque da loja) por `novo` numa ÚNICA gravação:
- *  apaga as chaves que saem e grava as novas juntas. Antes eram duas gravações (apagar tudo, depois gravar),
- *  e uma falha entre elas deixava a lista vazia. `extras` entra na mesma gravação. */
+/** Troca o conteúdo de um objeto-mapa (ex.: estoque da loja) por `novo` numa ÚNICA gravação (apaga as chaves
+ *  que saem e grava as novas juntas), para uma falha no meio não deixar a lista vazia. `extras` entra na mesma gravação. */
 async function substituirMapa(doc, base, novo, extras = {}) {
   const atual = foundry.utils.getProperty(doc, base);
   const upd = { ...extras };
@@ -825,7 +823,7 @@ async function resultadoParaItem(r) {
   let uuid = r.documentUuid ?? null;
   if (!uuid && r.documentCollection && r.documentId) {
     uuid = r.documentCollection.includes(".")
-      ? `${T("Compendium.")}${r.documentCollection}.Item.${r.documentId}`
+      ? `Compendium.${r.documentCollection}.Item.${r.documentId}`
       : `${r.documentCollection}.${r.documentId}`;
   }
   let doc = uuid ? await fromUuid(uuid).catch(() => null) : null;
@@ -929,8 +927,19 @@ function nomeDoTipoDePagina(t) {
   return chave ? game.i18n.localize(chave) : t;
 }
 
+/** Abre o seletor de arquivos do Foundry. Devolve o caminho escolhido, ou null se a janela for fechada sem escolher. */
 function escolherArquivo(tipo) {
-  return new Promise((resolve) => new (FP())({ type: tipo, callback: (path) => resolve(path) }).render(true));
+  return new Promise((resolve) => {
+    let escolhido = false;
+    const fp = new (FP())({ type: tipo, callback: (path) => { escolhido = true; resolve(path || null); } });
+    const fecharOriginal = fp.close.bind(fp);
+    fp.close = async (...args) => {
+      const r = await fecharOriginal(...args);
+      setTimeout(() => { if (!escolhido) resolve(null); }, 0);   // o callback da escolha vem antes do fechar
+      return r;
+    };
+    fp.render(true);
+  });
 }
 
 async function obterPasta(tipoDoc, nome, chave, pai = null) {
@@ -944,17 +953,24 @@ function baixarJson(dados, nome) {
   salvar(texto, "text/json", `${nome.replace(/[^\p{L}\p{N}_-]+/gu, "-")}.json`);
 }
 
+/** Pede um arquivo JSON ao usuário. Devolve o conteúdo, ou null se ele cancelar ou o arquivo não for JSON. */
 function lerArquivoJson() {
   return new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".json,application/json";
+    let resolvido = false;
+    // cancelar: o navegador avisa com "cancel"; se não avisar, o foco volta para a janela sem nenhum arquivo
+    const aoVoltar = () => setTimeout(() => { if (!input.files?.length) terminar(null); }, 1000);
+    const terminar = (v) => { if (resolvido) return; resolvido = true; window.removeEventListener("focus", aoVoltar); resolve(v); };
     input.addEventListener("change", async () => {
       const arq = input.files?.[0];
-      if (!arq) return resolve(null);
-      try { resolve(JSON.parse(await arq.text())); }
-      catch { ui.notifications.error(T("Esse arquivo não é um JSON válido.")); resolve(null); }
+      if (!arq) return terminar(null);
+      try { terminar(JSON.parse(await arq.text())); }
+      catch { ui.notifications.error(T("Esse arquivo não é um JSON válido.")); terminar(null); }
     });
+    input.addEventListener("cancel", () => terminar(null));
+    window.addEventListener("focus", aoVoltar);
     input.click();
   });
 }
@@ -1031,7 +1047,7 @@ async function executarRolagemDiaria({ entryId, userId }) {
   const user = game.users.get(userId);
   await chat(
     `<i class="fa-solid fa-dice-d20"></i> <b>${esc(user?.name)}</b> ${T("rolou a oferta do dia em")} <b>${esc(e.name)}</b>: ` +
-    `${esc(info.nome)} <span class="jm-tag ${tipo}">${cfg.rotulo}</span> por ${formatarPreco(preco)}.`,
+    `${esc(info.nome)} <span class="jm-tag ${tipo}">${cfg.rotulo}</span> ${T("por")} ${formatarPreco(preco)}.`,
     { whisper: [...new Set([userId, ...idsGM()])] }
   );
   if (tipo === "escambo") await chat(`<i class="fa-solid fa-lock"></i> ${T("Custo oculto do escambo de")} <b>${esc(user?.name)}</b>: <i>${esc(custoOculto)}</i>`, { whisper: idsGM() });
@@ -1076,8 +1092,14 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
   const moedas = pagar(ator, preco);
   if (!moedas) return aviso(userId, `${ator.name} ${T("não tem dinheiro suficiente")} (${formatarPreco(preco)}).`, "warn");
 
-  await ator.update({ "system.currency": moedas });
-  await ator.createEmbeddedDocuments("Item", [itemData]);
+  // entrega primeiro e cobra depois: se a cobrança falhar, o item entregue é apagado (mesma reversão do estoque)
+  const criados = await ator.createEmbeddedDocuments("Item", [itemData]);
+  try { await ator.update({ "system.currency": moedas }); }
+  catch (err) {
+    try { await ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id)); }
+    catch (err2) { console.error(`${T("Journal da Mesa")} | ${T("não consegui desfazer a entrega do item")}`, err2); }
+    throw err;
+  }
 
   if (origem === "semanal") {
     await garantirObjeto(page, "items");
@@ -1087,8 +1109,9 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
     await page.setFlag(MOD, `diaria.ofertas.${userId}.comprado`, true);
   }
 
-  await chat(`<i class="fa-solid fa-coins"></i> <b>${esc(ator.name)}</b> comprou ${n > 1 ? `<b>${n}×</b> ` : ""}<b>${esc(nome)}</b> por ${formatarPreco(preco)} em <b>${esc(e.name)}</b>.`, { ator });
-  Sessao.registrar("loja", `<b>${esc(ator.name)}</b> comprou ${n > 1 ? `${n}× ` : ""}<b>${esc(nome)}</b> por ${formatarPreco(preco)} em <b>${esc(e.name)}</b>.`);
+  const linha = TF("{quem} comprou {n}{item} por {preco} em {loja}.", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(nome)}</b>`, preco: formatarPreco(preco), loja: `<b>${esc(e.name)}</b>` });
+  await chat(`<i class="fa-solid fa-coins"></i> ${linha}`, { ator });
+  Sessao.registrar("loja", linha);
   if (escambo) await chat(`<i class="fa-solid fa-skull"></i> <b>${esc(ator.name)}</b> ${T("aceitou o escambo por")} <b>${esc(nome)}</b>. ${T("Preço verdadeiro")}: <i>${esc(custoOculto)}</i>`, { whisper: idsGM() });
 }
 
@@ -1104,8 +1127,9 @@ async function executarPegar({ entryId, itemId, actorUuid, userId }) {
   await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
   await garantirObjeto(page, "items");
   await dadosUnset(page, `items.${itemId}`);
-  await chat(`<i class="fa-solid fa-hand"></i> <b>${esc(ator.name)}</b> pegou <b>${esc(item.name)}</b> de <b>${esc(e.name)}</b>.`, { ator });
-  Sessao.registrar("saque", `<b>${esc(ator.name)}</b> pegou <b>${esc(item.name)}</b> de <b>${esc(e.name)}</b>.`);
+  const linha = TF("{quem} pegou {item} de {bau}.", { quem: `<b>${esc(ator.name)}</b>`, item: `<b>${esc(item.name)}</b>`, bau: `<b>${esc(e.name)}</b>` });
+  await chat(`<i class="fa-solid fa-hand"></i> ${linha}`, { ator });
+  Sessao.registrar("saque", linha);
 }
 
 /** Notas pessoais: dados.notas[idDoUsuário]. */
@@ -1129,8 +1153,9 @@ async function executarPegarRecompensa({ entryId, grupo, itemId, actorUuid, user
   await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
   await dadosSet(page, `rewards.${grupo}.itemIds`, (r.itemIds ?? []).filter((i) => i !== itemId));
   await dadosUnset(page, `items.${itemId}`);
-  await chat(`<i class="fa-solid fa-gift"></i> <b>${esc(ator.name)}</b> pegou <b>${esc(item.name)}</b> ${T("da recompensa de")} <b>${esc(e.name)}</b>.`, { ator });
-  Sessao.registrar("missao", `<b>${esc(ator.name)}</b> pegou <b>${esc(item.name)}</b> ${T("da recompensa de")} <b>${esc(e.name)}</b>.`);
+  const linha = `<b>${esc(ator.name)}</b> ${T("pegou")} <b>${esc(item.name)}</b> ${T("da recompensa de")} <b>${esc(e.name)}</b>.`;
+  await chat(`<i class="fa-solid fa-gift"></i> ${linha}`, { ator });
+  Sessao.registrar("missao", linha);
 }
 
 /* ---------- validação dos pedidos ----------
@@ -1218,7 +1243,7 @@ async function criarBauDoCombate(combat) {
   }
 
   const pasta = await obterPasta("JournalEntry", T("Saques"), "saques");
-  const nome = `${T("Baú")} — ${combat.scene?.name ?? T("Combate")} (${new Date().toLocaleDateString("pt-BR")})`;
+  const nome = `${T("Baú")} — ${combat.scene?.name ?? T("Combate")} (${new Date().toLocaleDateString(game.i18n.lang)})`;
   const e = await JournalEntry.create({
     name: nome,
     folder: pasta?.id ?? null,
@@ -1281,7 +1306,7 @@ async function escolherTipoECriar(pastaId = null) {
   const tipo = await Dialogo().wait({
     window: { title: T("Nova página do Journal da Mesa"), icon: "fa-solid fa-book-open" },
     position: { width: 460 },
-    content: `<p class="jm-dica">${T("Criar")} ${pasta ? `em <b>${esc(pasta.name)}</b>` : T("na raiz")}:</p>`,
+    content: `<p class="jm-dica">${T("Criar")} ${pasta ? `${T("em")} <b>${esc(pasta.name)}</b>` : T("na raiz")}:</p>`,
     buttons: lista.map(([k, r, i]) => ({ action: k, label: r, icon: i })),
     classes: ["jm-dialogo-tipos"],
     rejectClose: false
@@ -1404,7 +1429,7 @@ async function importarJson(pastaId) {
     }
   }
   if (!criados && !itens) return ui.notifications.warn(T("Não encontrei diários nem itens nesse JSON."));
-  ui.notifications.info(`${T("Importado")}: ${criados} ${T("página(s)")}${itens ? ` e ${itens} ${T("item(ns) na aba Itens")}` : ""}${convertidas ? ` (${convertidas} ${T("convertida(s) do formato do Monk's")})` : ""}.`);
+  ui.notifications.info(`${T("Importado")}: ${criados} ${T("página(s)")}${itens ? ` ${T("e")} ${itens} ${T("item(ns) na aba Itens")}` : ""}${convertidas ? ` (${convertidas} ${T("convertida(s) do formato do Monk's")})` : ""}.`);
 }
 
 /* ---------------- inicialização ---------------- */
@@ -1511,31 +1536,43 @@ Hooks.once("init", () => {
   const Base = foundry.applications?.sheets?.journal?.JournalEntrySheet;
   const Config = foundry.applications?.apps?.DocumentSheetConfig;
   if (Base && Config?.registerSheet) {
+    /** Abre o diário da ficha na janela do Journal da Mesa, na página/âncora pedidas (pageId, page, anchor). */
+    const abrirPelaFicha = (ficha, opcoes, resto) => {
+      const extra = typeof opcoes === "object" && opcoes ? opcoes : (resto[0] ?? {});
+      janela ??= new JournalApp();
+      janela.abrirPagina(ficha.document.id, { pagina: extra.pageId ?? extra.page?.id ?? null, ancora: extra.anchor ?? null });
+    };
+    /* ficha "Journal da Mesa": renderizar = abrir o diário na janela do módulo (a ficha nativa não aparece).
+     * Um diário que não está no mundo (compêndio) não tem como abrir na janela: fica com a ficha nativa. */
     class FichaJournal extends Base {
-      async render() { abrirJournal(this.document.id); return this; }
+      async render(opcoes, ...resto) {
+        if (!this.document || !game.journal.get(this.document.id)) return super.render(opcoes, ...resto);
+        abrirPelaFicha(this, opcoes, resto);
+        return this;
+      }
     }
     FichaJournalClasse = FichaJournal;
     Config.registerSheet(JournalEntry, MOD, FichaJournal, { label: T("Journal da Mesa (janela única)"), makeDefault: false });
 
-    /* Qualquer abertura da ficha padrão de um Diário (nota no mapa, link, macro, outro módulo, botão do
-     * Foundry) vai para o Journal, na página certa. Só intercepta a ABERTURA (render forçado de uma ficha
-     * fechada); redesenhos de uma ficha já aberta seguem normais. "Abrir na ficha padrão" do Journal
-     * marca a ficha com _jmNativo para passar direto. Fichas de outros módulos (Monk's, Heavy Lore...)
-     * não são afetadas: a regra é a mesma de abreNoJournal. */
+    /* A opção "Abrir diários sempre no Journal da Mesa" vale também para diários que usam a ficha padrão do
+     * Foundry ou do sistema (a ficha do módulo registrada acima só vale para quem a escolheu em Configurar
+     * Ficha). Por isso a abertura da ficha padrão é interceptada aqui: só a ABERTURA (render forçado de
+     * uma ficha fechada) de um diário do mundo que o usuário pode ver e que abreNoJournal aceita (ficha do
+     * núcleo, do sistema ou deste módulo). Fichas de outros módulos (Monk's, Heavy Lore...) e as marcadas
+     * com _jmNativo ("Abrir na ficha padrão") seguem para o render original, com o resultado dele. */
     const renderOriginal = Base.prototype.render;
     Base.prototype.render = function (opcoes, ...resto) {
+      let interceptar = false;
       try {
         const forcar = opcoes === true || opcoes?.force === true;
-        const extra = typeof opcoes === "object" && opcoes ? opcoes : (resto[0] ?? {});
         const doc = this.document;
-        if (forcar && !this.rendered && !this._jmNativo && game.ready && game.settings.get(MOD, "abrirAqui")
-          && doc?.documentName === "JournalEntry" && !doc.pack && game.journal.get(doc.id) && podeVer(doc) && abreNoJournal(doc)) {
-          const pagina = extra.pageId ?? extra.page?.id ?? null;
-          janela ??= new JournalApp();
-          janela.abrirPagina(doc.id, { pagina, ancora: extra.anchor ?? null });
-          return Promise.resolve(this);
-        }
-      } catch (err) { avisoUmaVez(T("abrir no Journal da Mesa"), err); }
+        interceptar = forcar && !this.rendered && !this._jmNativo && game.ready && game.settings.get(MOD, "abrirAqui")
+          && doc?.documentName === "JournalEntry" && !doc.pack && !!game.journal.get(doc.id) && podeVer(doc) && abreNoJournal(doc);
+      } catch (err) { avisoUmaVez(T("abrir no Journal da Mesa"), err); interceptar = false; }
+      if (interceptar) {
+        try { abrirPelaFicha(this, opcoes, resto); return Promise.resolve(this); }   // mesma forma do original (Promise da ficha); a nativa fica fechada
+        catch (err) { avisoUmaVez(T("abrir no Journal da Mesa"), err); }
+      }
       return renderOriginal.call(this, opcoes, ...resto);
     };
   }
@@ -1595,7 +1632,7 @@ Hooks.once("ready", () => {
     Hooks.on("createJournalEntry", (entry) => converterSeVier(entry));
     Hooks.on("updateJournalEntryPage", (page, changes) => {
       const c = `flags.${MEJ}.type`;
-      if (foundry.utils.hasProperty(changes, c) || c in (changes ?? {})) converterSeVier(page.parent);
+      if (foundry.utils.hasProperty(changes ?? {}, c)) converterSeVier(page.parent);
     });
   }
   Rastreador.render();

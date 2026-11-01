@@ -33,7 +33,7 @@ function textoNegocio(x, modo, res) {
   const v = Number(tabelaNegocio(x, modo)[res]) || 0;
   const quem = res.endsWith("J") ? "jogador" : (res === "empate" ? "" : "vendedor");
   const abre = res.startsWith("crit") ? `${T("Crítico do")} ${quem}! ` : (res === "empate" ? T("Empate: ") : (quem === "jogador" ? T("Boa conversa! ") : T("O vendedor leva a melhor: ")));
-  if (modo === "compra") return abre + (v === 0 ? T("preço normal.") : `${T("o preço")} ${v < 0 ? "cai" : "sobe"} ${Math.abs(v)}%.`);
+  if (modo === "compra") return abre + (v === 0 ? T("preço normal.") : `${T("o preço")} ${v < 0 ? T("cai") : T("sobe")} ${Math.abs(v)}%.`);
   return abre + `${T("a loja paga")} ${v}${T("% do valor.")}`;
 }
 
@@ -120,16 +120,6 @@ async function conduzirPechinchaEmCena(msgId) {
     await m2.update({ content: htmlNegocio(e), [`flags.${MOD}.negocio`]: e });
     if (e.j.roll && e.n.roll) await resolverNegocio(m2);
   });
-}
-
-async function rolarD20(bonus, modo = "normal") {
-  const r = await new Roll(`${FORMULA_MODO[modo] ?? "1d20"} + ${Number(bonus) || 0}`).evaluate();
-  if (game.dice3d) await game.dice3d.showForRoll(r, game.user, true).catch(() => null);
-  const d = r.dice[0];
-  return {
-    total: r.total, nat: d?.total ?? 0, modo, bonus: Number(bonus) || 0,
-    dados: (d?.results ?? []).map((x) => ({ v: x.result, ativo: x.active !== false }))
-  };
 }
 
 /** Prepara a disputa (o mestre executa). Cria o cartão interativo no chat ou rola tudo de uma vez. */
@@ -233,7 +223,7 @@ function htmlNegocio(est) {
           <button type="button" data-jm-rolar="${k}" data-modo="normal" data-tooltip="${T("Rolar")} ${esc(l.pericia)} (${sinal(l.bonus)})"><i class="fa-solid fa-dice-d20"></i></button>
         </span>`;
     return `<div class="jm-neg-rotulo ${k}">${rotulo} · ${esc(l.pericia.toUpperCase())}</div>
-      <div class="jm-neg-linha ${k} ${r ? "rolado" : ""}" ${r ? `data-jm-ver="${k}" data-tooltip="Clique para ver os dados"` : ""}>
+      <div class="jm-neg-linha ${k} ${r ? "rolado" : ""}" ${r ? `data-jm-ver="${k}" data-tooltip="${T("Clique para ver os dados")}"` : ""}>
         <img src="${esc(l.img)}" alt=""><b>${esc(l.nome)}</b>${acoes}
       </div>${detalhe}`;
   };
@@ -241,7 +231,7 @@ function htmlNegocio(est) {
     ? `<div class="jm-neg-res ${est.res}"><i class="fa-solid fa-trophy"></i> ${esc(est.texto)}</div>`
     : `<div class="jm-neg-espera">${T("Aguardando as rolagens…")}</div>`;
   return `<div class="jm-chat jm-neg" data-jm-negocio>
-    <div class="jm-neg-titulo"><i class="fa-solid fa-handshake"></i> ${T("Pechincha")}: ${est.modo === "compra" ? "comprar" : "vender"} <b>${esc(est.nome)}</b></div>
+    <div class="jm-neg-titulo"><i class="fa-solid fa-handshake"></i> ${T("Pechincha")}: ${est.modo === "compra" ? T("comprar") : T("vender")} <b>${esc(est.nome)}</b></div>
     ${lado("j", T("Jogador"))}${lado("n", T("Vendedor"))}${rodape}
     <div class="jm-neg-loja">${esc(est.loja)}</div>
   </div>`;
@@ -285,25 +275,40 @@ async function executarVender({ entryId, userId, actorUuid, itemId, quantidade =
   const valor = Math.round(base * mult * n * 100) / 100;
   if (valor <= 0) return aviso(userId, T("Esse item não tem valor de venda."), "warn");
 
-  /* vai para o estoque da loja: junta com um item igual, se houver */
-  await garantirObjeto(page, "items");
-  const igual = comoLista(m.items).find(([, it]) => it.name === item.name && it.type === item.type);
-  if (igual) {
-    const atual = igual[1].flags?.[MOD]?.qtd;
-    if (typeof atual === "number") await dadosSet(page, `items.${igual[0]}.flags.${MOD}.qtd`, atual + n);
-  } else {
-    const paraLoja = itemParaLoja(item, {}, n);
-    delete paraLoja.flags?.[MOD]?.origem;   // o item da ficha do jogador sai dela; sem link de origem
-    if (paraLoja.system && "quantity" in paraLoja.system) paraLoja.system.quantity = 1;
-    await dadosSet(page, `items.${paraLoja._id}`, paraLoja);
-  }
+  /* ordem segura: o item sai da ficha, o jogador recebe o ouro e só então o item entra no estoque da loja.
+   * Se algum passo falhar, os anteriores são desfeitos (o jogador não fica sem o item e sem o ouro,
+   * e a loja não fica com um item duplicado). */
+  const copia = item.toObject();
+  const moedasAntes = dup(ator.system?.currency ?? {});
+  const desfazer = [];
+  try {
+    if (tem > n) { await item.update({ "system.quantity": tem - n }); desfazer.push(() => item.update({ "system.quantity": tem })); }
+    else { await item.delete(); desfazer.push(() => ator.createEmbeddedDocuments("Item", [copia], { keepId: true })); }
+    await ator.update({ "system.currency": receber(ator, valor) });
+    desfazer.push(() => ator.update({ "system.currency": moedasAntes }));
 
-  if (tem > n) await item.update({ "system.quantity": tem - n });
-  else await item.delete();
-  await ator.update({ "system.currency": receber(ator, valor) });
+    /* vai para o estoque da loja: junta com um item igual, se houver */
+    await garantirObjeto(page, "items");
+    const igual = comoLista(m.items).find(([, it]) => it.name === item.name && it.type === item.type);
+    if (igual) {
+      const atual = igual[1].flags?.[MOD]?.qtd;
+      if (typeof atual === "number") await dadosSet(page, `items.${igual[0]}.flags.${MOD}.qtd`, atual + n);
+    } else {
+      const paraLoja = itemParaLoja(item, {}, n);
+      delete paraLoja.flags?.[MOD]?.origem;   // o item da ficha do jogador sai dela; sem link de origem
+      if (paraLoja.system && "quantity" in paraLoja.system) paraLoja.system.quantity = 1;
+      await dadosSet(page, `items.${paraLoja._id}`, paraLoja);
+    }
+  } catch (err) {
+    for (const passo of desfazer.reverse()) {
+      try { await passo(); } catch (err2) { console.error(`${T("Journal da Mesa")} | ${T("não consegui desfazer a venda")}`, err2); }
+    }
+    throw err;
+  }
   if (neg) await page.unsetFlag(MOD, `negociacoes.${userId}.v_${itemId}`);
-  await chat(`<i class="fa-solid fa-hand-holding-dollar"></i> <b>${esc(ator.name)}</b> vendeu ${n > 1 ? `<b>${n}×</b> ` : ""}<b>${esc(item.name)}</b> para <b>${esc(e.name)}</b> por ${formatarPreco(valor)}.`, { ator });
-  Sessao.registrar("loja", `<b>${esc(ator.name)}</b> vendeu ${n > 1 ? `${n}× ` : ""}<b>${esc(item.name)}</b> para <b>${esc(e.name)}</b> por ${formatarPreco(valor)}.`);
+  const linha = TF("{quem} vendeu {n}{item} para {loja} por {preco}.", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(item.name)}</b>`, loja: `<b>${esc(e.name)}</b>`, preco: formatarPreco(valor) });
+  await chat(`<i class="fa-solid fa-hand-holding-dollar"></i> ${linha}`, { ator });
+  Sessao.registrar("loja", linha);
 }
 
 /** Regras da Mesa: executado pelo mestre (pedido dele mesmo ou de um jogador, já validado). */
@@ -383,7 +388,7 @@ async function gerarDiarioRegras() {
   const { itens, sessao0 } = regrasMesa();
   const acordadas = itens.filter((i) => i.status === "acordada");
   if (!acordadas.length) return ui.notifications.warn(T("Nenhum tópico está como Combinado ainda."));
-  let html = `<p>${sessao0?.concluida ? `${T("Combinados da sessão 0")} (${esc(new Date(sessao0.quando).toLocaleDateString("pt-BR"))}).` : T("Combinados da mesa até agora.")}</p>`;
+  let html = `<p>${sessao0?.concluida ? `${T("Combinados da sessão 0")} (${esc(new Date(sessao0.quando).toLocaleDateString(game.i18n.lang))}).` : T("Combinados da mesa até agora.")}</p>`;
   for (const [k, [rot]] of Object.entries(REGRAS_CATS)) {
     const l = acordadas.filter((i) => i.cat === k);
     if (!l.length) continue;
@@ -400,7 +405,7 @@ async function gerarDiarioRegras() {
       pages: [{ name: T("Regras da Mesa"), type: "text", text: { content: html }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } }]
     });
   }
-  ui.notifications.info(`${T("Diário \"Regras da Mesa\" atualizado com")} ${acordadas.length} combinado(s).`);
+  ui.notifications.info(`${T("Diário \"Regras da Mesa\" atualizado com")} ${acordadas.length} ${T("combinado(s).")}`);
   return e;
 }
 

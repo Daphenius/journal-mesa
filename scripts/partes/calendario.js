@@ -121,11 +121,11 @@ const Tempo = {
     return (this.cal()?.days?.values ?? []).map((x, i) => game.i18n.localize(x.name ?? `${T("Dia")} ${i + 1}`));
   },
   texto(td) {
-    if (!this.ok()) return `dia ${td}`;
+    if (!this.ok()) return `${T("dia")} ${td}`;
     const d = this.d();
     if (d) return d.partes(td).textoCurto;
     const p = this.partes(td);
-    return `${p.dia} de ${this.meses(p.ano)[p.mes]?.nome ?? "?"} de ${p.ano}`;
+    return TF("{dia} de {mes} de {ano}", { dia: p.dia, mes: this.meses(p.ano)[p.mes]?.nome ?? "?", ano: p.ano });
   },
   /** dia (1..), mês (0..), ano mostrado → td; null se a data não existe */
   tdDe(ano, mes, dia) {
@@ -219,7 +219,7 @@ function textoPrazo(td) {
 const festasDe = (deus) => game.journal.filter((j) => j.flags?.[CAL]?.nota?.divindade === deus.uuid);
 const deusDaFesta = (entry) => {
   const u = entry?.flags?.[CAL]?.nota?.divindade;
-  return typeof u === "string" && u.startsWith(T("JournalEntry.")) ? game.journal.get(u.split(".")[1]) ?? null : null;
+  return typeof u === "string" && u.startsWith("JournalEntry.") ? game.journal.get(u.split(".")[1]) ?? null : null;
 };
 
 export { CAL, CAL_ANTIGOS, CAL_AVISOS, CAL_CORES_ELEMENTO, CAL_FIM, CAL_ICONES, CAL_ICONES_GRUPOS, CAL_MODOS_MES, CAL_REPETIR, Tempo, calApi, calNota, deusDaFesta, doCalendarioAtual, festasDe, historicoCal, historicoCalVisivel, horaParaMin, horarioLoja, iconeSeguro, listaCal, lojaBloqueada, lojaFechadaPor, minParaHora, textoHorarioLoja, textoPrazo };

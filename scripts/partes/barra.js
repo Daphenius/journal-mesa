@@ -1,6 +1,6 @@
 /* Journal — barra lateral nativa: dono das páginas, menus de botão direito, botões do Journal.
  * Parte do journal.js (dividido na 4.10); depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
-import { T, TF } from "../idioma.js";
+import { T } from "../idioma.js";
 import { abreNoJournal } from "./tempo.js";
 import { MOD, abrirJournal, bolinhasDono, dicaNota, ehGM, esc, escolherTipoECriar, notaMestre, pastaMarcadaOculta, revelarPara } from "../nucleo.js";
 

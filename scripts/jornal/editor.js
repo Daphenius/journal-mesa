@@ -2,15 +2,8 @@
  * Dois modos: "jornal" (identidade da publicação) e "edicao" (dados da edição e matérias).
  * Trabalha numa cópia: nada é gravado até "Salvar". O texto rico usa a caixa de texto nativa do
  * Foundry (ProseMirror); sem ela (ou com o editor "simples" do Journal), uma caixa de texto comum.
- *
- * Correções da 4.7.1:
- *  - rolagem: a janela usava a classe da janela principal (".jm-janela .window-content { overflow: hidden }",
- *    feita para a janela que rola por dentro dos painéis). O editor não tem painel: o que passava da
- *    altura ficava inalcançável — inclusive a área de vínculos, no fim de cada matéria. Agora o conteúdo
- *    da janela do editor rola (jornal.css), com o rodapé de salvar sempre visível.
- *  - Enter num campo de texto enviava o <form> (o navegador recarregava a página e a edição se perdia).
- *  - vínculos: botão "Vincular" com janela de busca (vinculos.js), arrastar e soltar, e colar UUID;
- *    cada vínculo mostra nome e tipo, abre o documento e sai com o X. */
+ * O conteúdo da janela rola (classe jmj-editor em jornal.css) com o rodapé de salvar sempre visível, e o Enter
+ * nos campos não envia o <form> (senão o navegador recarregava a página e a edição se perdia). */
 import { J } from "./contexto.js";
 import { t } from "./i18n.js";
 import {
@@ -20,7 +13,7 @@ import {
 import { segredosDe, gravarSegredos } from "./redacao.js";
 import { SeletorVinculo, descreverVinculo } from "./vinculos.js";
 import { abrirVinculo, imagemDe, fotoAutomatica, paginasEdicao, ouvirVinculos } from "./leitura.js";
-import { exportarEdicao, dialogoImportar, lerJson, converterEdicao, mostrarRelatorio, edicaoParaJson, baixarJson } from "./json.js";
+import { exportarEdicao, dialogoImportar, lerJson, converterEdicao, mostrarRelatorio } from "./json.js";
 
 const e = (s) => J.esc(s);
 const ApplicationV2 = foundry.applications.api.ApplicationV2;

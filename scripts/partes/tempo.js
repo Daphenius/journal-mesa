@@ -28,7 +28,7 @@ async function verificarPrazos(hoje) {
     const falhar = a.x.aoVencer === "falhar";
     await a.page.update({ [`flags.${MOD}.prazoAvisado`]: true, ...(falhar ? { [`flags.${MOD}.concluidaEm`]: hoje } : {}) });
     if (falhar) await dadosSet(a.page, "status", "failed");
-    const texto = `${T("Prazo da missão")} <b>${esc(j.name)}</b> venceu${falhar ? ` — ${T("marcada como")} <b>falhou</b>` : ""}.`;
+    const texto = `${T("Prazo da missão")} <b>${esc(j.name)}</b> ${T("venceu")}${falhar ? ` — ${T("marcada como")} <b>${T("falhou")}</b>` : ""}.`;
     await chat(`<i class="fa-solid fa-hourglass-end"></i> ${texto}`, { whisper: idsGM() });
     Sessao.registrar("missao", texto);
     try { await calApi()?.registrar?.(`${T("Prazo vencido")}: ${j.name}`, "fa-hourglass-end"); } catch (err) { avisoUmaVez(T("histórico do Calendário"), err); }
@@ -45,7 +45,7 @@ Hooks.on("updateWorldTime", async () => {
       if (hoje > antes) {
         let eventos = [];
         try { eventos = calApi()?.notasDoDia?.(hoje) ?? []; } catch (err) { avisoUmaVez(T("eventos do dia pelo Calendário"), err); }
-        Sessao.registrar("dia", `${T("Chegou")} <b>${esc(Tempo.texto(hoje))}</b>${hoje - antes > 1 ? ` (passaram ${hoje - antes} dias)` : ""}.${eventos.length ? ` ${T("Eventos")}: ${eventos.map((j) => esc(j.name)).join(", ")}.` : ""}`);
+        Sessao.registrar("dia", `${T("Chegou")} <b>${esc(Tempo.texto(hoje))}</b>${hoje - antes > 1 ? ` (${TF("passaram {n} dias", { n: hoje - antes })})` : ""}.${eventos.length ? ` ${T("Eventos")}: ${eventos.map((j) => esc(j.name)).join(", ")}.` : ""}`);
       }
       await verificarPrazos(hoje);
       await Jornal.verificarProgramadas().catch((err) => relatarErro(T("edições programadas"), err));
@@ -82,18 +82,15 @@ for (const h of ["createFolder", "updateFolder", "deleteFolder"]) {
   Hooks.on(h, (f) => { if (f.type === "JournalEntry") atualizarTudo(); });
 }
 
-/* combate no diário de sessão */
-Hooks.on("deleteCombat", (combat) => {
-  if (!souGMPrincipal() || (!combat.started && !combat.round)) return;
-  const caidos = derrotadosDo(combat).map((c) => esc(c.name ?? c.actor?.name)).filter(Boolean);
-  Sessao.registrar("combate", `${T("Combate encerrado")}${combat.round ? ` em ${combat.round} rodada(s)` : ""}.${caidos.length ? ` ${T("Derrotados")}: ${caidos.join(", ")}.` : ""}`);
-});
-
-/* baú de saque ao encerrar o combate */
+/* fim do combate: anotação no diário de sessão (mestre principal) e oferta do baú de saque (quem encerrou) */
 Hooks.on("deleteCombat", async (combat, options, userId) => {
-  if (userId !== game.user.id || !ehGM() || !game.settings.get(MOD, "bauFimCombate")) return;
   if (!combat.started && !combat.round) return;
-  if (!derrotadosDo(combat).length) return;
+  const derrotados = derrotadosDo(combat);
+  if (souGMPrincipal()) {
+    const caidos = derrotados.map((c) => esc(c.name ?? c.actor?.name)).filter(Boolean);
+    Sessao.registrar("combate", `${T("Combate encerrado")}${combat.round ? ` ${TF("em {n} rodada(s)", { n: combat.round })}` : ""}.${caidos.length ? ` ${T("Derrotados")}: ${caidos.join(", ")}.` : ""}`);
+  }
+  if (userId !== game.user.id || !ehGM() || !game.settings.get(MOD, "bauFimCombate") || !derrotados.length) return;
   const ok = await Dialogo().confirm({
     window: { title: T("Saque do combate"), icon: "fa-solid fa-box-open" },
     content: `<p>${T("Criar um")} <b>${T("Baú")}</b> ${T("no Journal da Mesa com os itens e moedas dos inimigos derrotados?")}</p>`

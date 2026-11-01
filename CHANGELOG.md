@@ -1,5 +1,17 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.0.1
+
+- **Testada e aprovada pelo autor no Foundry VTT e no D&D 5e** antes da publicação.
+- **Compra mais segura.** O item vai para a ficha antes de o ouro ser cobrado; se a cobrança falhar, o item é tirado de volta e o jogador recebe o aviso de que nada foi cobrado. Antes, uma falha entre a cobrança e a entrega podia deixar o personagem sem o ouro e sem o item.
+- **Venda mais segura.** A venda segue a ordem item sai da ficha → jogador recebe o ouro → item entra no estoque da loja, e qualquer falha no meio desfaz os passos anteriores. Nem item duplicado na loja, nem jogador sem o item e sem o ouro.
+- **Datas e ordem alfabética no idioma do Foundry.** A data real no diário de sessão, nas Regras da Mesa e no nome do baú do combate, e a ordem das pastas, páginas, magias e itens à venda seguiam sempre o formato brasileiro; agora seguem o idioma escolhido no Foundry.
+- **Mais textos traduzidos.** Frases que ainda apareciam em português na interface em inglês (compras, vendas e saques no chat e no diário de sessão, "Buscar...", "Trocar imagem", "esgotado", "un.", "peso", "jogador", "dia N", "Sessão N", "Clique para ver os dados", unidades de repetição no calendário, entre outras) passaram para os arquivos de idioma.
+- **Janela de arquivo cancelada.** Cancelar a escolha de imagem/PDF ao criar uma página, ou a escolha do arquivo em Importar JSON, não deixa mais a ação pendurada: ela simplesmente termina.
+- **Ficha "Journal da Mesa" e abertura automática.** A ficha do módulo agora respeita a página e a âncora pedidas pelo link (antes só abria o diário), e a interceptação da ficha padrão (opção "Abrir diários sempre no Journal da Mesa") ficou mais estrita: só abre no Journal o que a regra de fichas aceita; todo o resto passa pela ficha original, com o resultado dela.
+- Pequenos ajustes internos: dois ganchos de fim de combate viraram um; remoção de ficha ligada usa o mesmo caminho de exclusão do resto do módulo; código sem uso removido (lista de tipos do Monk's, rolagem de d20 antiga, importações sobrando); comentários antigos sobre "formato do Monk's" atualizados; o relatório da conversão vai para o console como informação, não como log. `AUDITORIA.md` foi para a pasta `docs/`.
+- Testes: `node tests/formato.test.mjs` continua passando (1 arquivo, 134 verificações).
+
 ## 5.0.0
 
 - **Testada e aprovada pelo autor no Foundry VTT e no D&D 5e** antes da publicação. A conversão do Monk's foi testada uma vez num mundo real e deu certo na primeira tentativa; só as páginas do tipo Imagem do Monk's ficaram para trás e foram transferidas à mão.

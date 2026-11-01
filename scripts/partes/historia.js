@@ -179,10 +179,10 @@ function notaPadrao(td, campos = {}) {
 function calResumoRepeticao(entry) {
   try { const t = calApi()?.notas?.descrever?.(entry); if (t) return t; } catch (err) { avisoUmaVez(T("descrição da repetição pelo Calendário"), err); }
   const n = calNormalizar(calNota(entry));
-  if (!n || n.repetir === "nao") return n?.duracao > 1 ? `${n.duracao} dias` : T("Não repete");
-  const un = { dias: "dias", semanas: "semanas", meses: "meses", anos: "anos" }[n.repetir];
+  if (!n || n.repetir === "nao") return n?.duracao > 1 ? TF("{n} dias", { n: n.duracao }) : T("Não repete");
+  const un = { dias: T("dias"), semanas: T("semanas"), meses: T("meses"), anos: T("anos") }[n.repetir];
   const base = n.cada === 1 ? { dias: T("Todo dia"), semanas: T("Toda semana"), meses: T("Todo mês"), anos: T("Todo ano") }[n.repetir] : `${T("A cada")} ${n.cada} ${un}`;
-  return `${base}${n.duracao > 1 ? `, durando ${n.duracao} dias` : ""}`;
+  return `${base}${n.duracao > 1 ? `, ${TF("durando {n} dias", { n: n.duracao })}` : ""}`;
 }
 
 /** Regra simplificada (só quando o calendário não está ativo). */

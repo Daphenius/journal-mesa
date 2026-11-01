@@ -1,6 +1,6 @@
 /* Journal — sessão de jogo (diário automático), medidor dos Nexus, anomalias e rastreador de missões.
  * Parte do journal.js (dividido na 4.10); depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
-import { T, TF } from "../idioma.js";
+import { T } from "../idioma.js";
 import { Tempo, calApi, historicoCal, listaCal, textoPrazo } from "./calendario.js";
 import { criarHistoria, historias, novoAcontecimento } from "./historia.js";
 import { CHAVE_DADOS, Dialogo, LV, MOD, abrirJournal, analisar, avisoUmaVez, chat, comoLista, dup, ehGM, entradas, esc, idsGM, dadosPadrao, naFila, novoId, obterPasta, ordemNova, podeLer, podeVer, textoParaHtml } from "../nucleo.js";
@@ -44,7 +44,7 @@ const Sessao = {
       window: { title: `${T("Encerrar a sessão")} ${s.n}`, icon: "fa-solid fa-book-bookmark" },
       position: { width: 480 },
       content: `<div class="jm-form-dialogo">
-        <label>${T("Título")} <input type="text" name="titulo" value="Sessão ${s.n}"></label>
+        <label>${T("Título")} <input type="text" name="titulo" value="${T("Sessão")} ${s.n}"></label>
         <p><button type="button" data-jm-copiar-registro><i class="fa-solid fa-copy"></i> ${T("Copiar o registro da sessão")}</button>
           <span class="jm-dica">${T("Para o Transcritor da Mesa (campo Contexto): ajuda com os nomes e a ordem dos acontecimentos.")}</span></p>
         <label>${T("Resumo (opcional — pode colar aqui o diário do Transcritor da Mesa)")} <textarea name="resumo" rows="8" placeholder="${T("O que aconteceu, em poucas linhas")}"></textarea></label>
@@ -70,8 +70,8 @@ const Sessao = {
     const ROT = { compra: T("Compras e vendas"), loja: T("Compras e vendas"), missao: T("Missões"), recompensa: T("Recompensas"), combate: T("Combates"), nexus: T("Nexus"), jornal: T("Jornais"), evento: T("Eventos do calendário"), dia: T("Passagem do tempo"), outro: T("Outros") };
     const grupos = {};
     for (const r of s.registros ?? []) (grupos[ROT[r.tipo] ? r.tipo === "loja" ? "compra" : r.tipo : "outro"] ??= []).push(r);
-    let corpo = `<p><b>${T("Data real")}:</b> ${esc(real.toLocaleDateString("pt-BR"))} · ${esc(real.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }))}</p>`;
-    if (Tempo.ok()) corpo += `<p><b>${T("No jogo")}:</b> ${esc(Tempo.texto(tdIni))}${tdFim !== tdIni ? ` → ${esc(Tempo.texto(tdFim))}` : ""} (${dias ? `${dias} dia(s) ` : ""}${horas ? `${horas} h` : (dias ? "" : T("menos de 1 h"))})</p>`;
+    let corpo = `<p><b>${T("Data real")}:</b> ${esc(real.toLocaleDateString(game.i18n.lang))} · ${esc(real.toLocaleTimeString(game.i18n.lang, { hour: "2-digit", minute: "2-digit" }))}</p>`;
+    if (Tempo.ok()) corpo += `<p><b>${T("No jogo")}:</b> ${esc(Tempo.texto(tdIni))}${tdFim !== tdIni ? ` → ${esc(Tempo.texto(tdFim))}` : ""} (${dias ? `${dias} ${T("dia(s)")} ` : ""}${horas ? `${horas} h` : (dias ? "" : T("menos de 1 h"))})</p>`;
     if (dados.resumo?.trim()) corpo += `<h2>${T("Resumo")}</h2>${textoParaHtml(dados.resumo.trim())}`;
     for (const k of ["missao", "recompensa", "combate", "compra", "nexus", "jornal", "evento", "dia", "outro"]) {
       if (!grupos[k]?.length) continue;
@@ -215,7 +215,7 @@ const NexusClima = {
     const onde = this.onde(nx);
     const ondeOp = [...(this.porRegiao() ? [["regiao", T("na região da anomalia")]] : []), ["zona", T("numa região inteira")]];
     const at = this.ativa(nx);
-    const estado = at == null ? "" : `<span class="jm-nexus-estado ${at ? "ligada" : ""}">${at ? "ativa" : "inativa"}</span>
+    const estado = at == null ? "" : `<span class="jm-nexus-estado ${at ? "ligada" : ""}">${at ? T("ativa") : T("inativa")}</span>
       <a class="jm-mini-btn" data-action="nexusAnomalia" data-id="${nx.id}" data-ligar="${at ? 0 : 1}" data-tooltip="${at ? T("Desligar a anomalia agora") : T("Ligar a anomalia agora")}"><i class="fa-solid ${at ? "fa-power-off" : "fa-bolt"}"></i></a>`;
     const aviso = onde === "zona" && !m.regiaoInteira
       ? `<span class="jm-dica jm-nexus-aviso"><i class="fa-solid fa-triangle-exclamation"></i> ${T("Para cobrir uma região inteira, ligue \"Anomalia cobrindo uma região inteira\" no Calendário")}${this.porRegiao() ? `, ${T("ou escolha \"na região da anomalia")}"` : ""}.</span>`
@@ -263,7 +263,7 @@ const Rastreador = {
         const req = Number(o.required) || 0;
         const feito = req ? (Number(o.done) || 0) >= req : !!Number(o.done) || o.done === true;
         const texto = String(o.content ?? "").replace(/<[^>]+>/g, "");
-        return `<li class="${feito ? "feito" : ""}"><i class="fa-${feito ? T("solid fa-square-check") : T("regular fa-square")}"></i> ${esc(texto)}${req ? ` <small>${Number(o.done) || 0}/${req}</small>` : ""}</li>`;
+        return `<li class="${feito ? "feito" : ""}"><i class="fa-${feito ? "solid fa-square-check" : "regular fa-square"}"></i> ${esc(texto)}${req ? ` <small>${Number(o.done) || 0}/${req}</small>` : ""}</li>`;
       }).join("");
       corpo += `<div class="missao" data-id="${j.id}">
         <div class="topo">${img ? `<img src="${esc(img)}" alt="">` : ""}

@@ -1,13 +1,13 @@
 /* Journal — janela principal do Journal (JournalApp).
  * Parte do journal.js (dividido na 4.10); depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
-import { T, TF } from "../idioma.js";
+import { T } from "../idioma.js";
 import * as Jornal from "../jornal/index.js";
 import { tabelasDasLojas, tabelaDaLoja, nomeTabela } from "../lojas/tabelas.js";
 import { CAL, CAL_AVISOS, CAL_CORES_ELEMENTO, CAL_FIM, CAL_ICONES, CAL_ICONES_GRUPOS, CAL_MODOS_MES, CAL_REPETIR, Tempo, calApi, calNota, deusDaFesta, doCalendarioAtual, festasDe, historicoCal, historicoCalVisivel, horaParaMin, horarioLoja, iconeSeguro, listaCal, minParaHora, textoHorarioLoja, textoPrazo } from "./calendario.js";
 import { HIST_ICONES, acontecimento, calHoje, calNormalizar, calProxima, calProximas, calResumoRepeticao, calSalvar, calTextoDia, calTirar, campoData, criarHistoria, ehHistoria, historias, notaPadrao, ordenarAcontecimentos, paginasHistoria, registradosNaHistoria, registrarNaHistoria } from "./historia.js";
 import { PERICIAS_VENDEDOR, RESULTADOS, atorDoDono, bonusPericia, gerarDiarioRegras, multVendaPadrao, negociacaoDeHoje, tabelaNegocio } from "./pechincha.js";
 import { NEXUS_ICONES, Nexus, NexusClima, Sessao, souGMPrincipal } from "./sessao.js";
-import { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarEntrada, atorDoJogador, atualizarTudo, avatar, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, corDaPasta, criarBauDoCombate, criarTipo, diaAtual, dicaNota, editarNotaMestre, ehGM, entradaOculta, entradas, esc, estaVisivel, estadoSecao, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarJson, infoCon, itemLimpo, itemParaLoja, dadosGet, dadosPadrao, dadosSet, dadosUnset, mostrarAosJogadores, mostrarImagem, mostrarMoedas, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterPasta, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDoItem, arredondarPo, importarDoMonks, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade } from "../nucleo.js";
+import { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, corDaPasta, criarBauDoCombate, criarTipo, diaAtual, dicaNota, editarNotaMestre, ehGM, entradaOculta, entradas, esc, estaVisivel, estadoSecao, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarJson, infoCon, itemLimpo, itemParaLoja, dadosGet, dadosPadrao, dadosSet, dadosUnset, mostrarAosJogadores, mostrarImagem, mostrarMoedas, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterPasta, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDoItem, arredondarPo, importarDoMonks, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade } from "../nucleo.js";
 
 /* ---------------- janela principal ---------------- */
 
@@ -19,7 +19,7 @@ function seletorDe(el) {
   }
   if (el.dataset.objTexto !== undefined) return `[data-obj-texto][data-id="${el.dataset.id}"]`;
   if (el.dataset.itemCampo) return `[data-item-campo="${el.dataset.itemCampo}"][data-id="${el.dataset.id}"]`;
-  if (el.closest(".jm-busca")) return T(".jm-busca input");
+  if (el.closest(".jm-busca")) return ".jm-busca input";
   return null;
 }
 
@@ -194,8 +194,8 @@ class JournalApp extends ApplicationV2 {
       porPasta.get(pid).push(j);
     }
     const ordenar = (lista, modo) => lista.sort((a, b) => (modo === "a"
-      ? a.name.localeCompare(b.name, "pt-BR")
-      : (a.sort - b.sort) || a.name.localeCompare(b.name, "pt-BR")));
+      ? a.name.localeCompare(b.name, game.i18n.lang)
+      : (a.sort - b.sort) || a.name.localeCompare(b.name, game.i18n.lang)));
 
     const contagem = new Map();
     const conta = (pid) => {
@@ -246,7 +246,7 @@ class JournalApp extends ApplicationV2 {
     if (a.tipo === "shop" && a.x.dono && game.journal.get(a.x.dono)) sub = game.journal.get(a.x.dono).name;
     if (a.tipo === "deus" && a.x.deus.dominios) sub = a.x.deus.dominios;
     if (a.tipo === "diario") sub = j.pages.size === 1 ? nomeDoTipoDePagina(a.pages[0].type) : `${j.pages.size} ${T("páginas")}`;
-    if (a.tipo === "historia") { const n = paginasHistoria(j).length; sub = n === 1 ? "1 acontecimento" : `${n} acontecimentos`; }
+    if (a.tipo === "historia") { const n = paginasHistoria(j).length; sub = n === 1 ? T("1 acontecimento") : `${n} ${T("acontecimentos")}`; }
     if (a.tipo === "jornal") { const n = Jornal.edicoes(j).filter(({ ed }) => Jornal.publicaEstado(ed.estado)).length; sub = n === 1 ? T("1 edição") : `${n} ${T("edições")}`; }
     const nCal = calNota(j);
     if (nCal && calApi() && ["diario", "journalentry"].includes(a.tipo)) {
@@ -345,7 +345,7 @@ class JournalApp extends ApplicationV2 {
 
     return `<div class="jm-raiz">
       <aside class="jm-lateral">
-        <div class="jm-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Buscar..." value="${esc(this.filtro)}"></div>
+        <div class="jm-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="${T("Buscar...")}" value="${esc(this.filtro)}"></div>
         <div class="jm-chips">${chips}</div>
         ${this.verOcultas ? `<div class="jm-ocultos-titulo"><i class="fa-solid fa-eye-slash"></i> ${T("Pastas ocultas")} <small>${T("não aparecem no Journal da Mesa nem na aba de Diários")}</small></div>` : ""}
         ${!this.verOcultas && fix.length ? `<div class="jm-fixados"><div class="jm-fixados-titulo"><i class="fa-solid fa-thumbtack"></i> ${T("Fixados")}</div>${fix.map((id) => this._itemLista(game.journal.get(id))).join("")}</div>` : ""}
@@ -467,7 +467,7 @@ class JournalApp extends ApplicationV2 {
     }).join("");
     const proximos = futuros.map((x2) => `<li class="jm-lt-item" data-lt-td="${x2.td}"><span class="jm-lt-quando">${esc(Tempo.relativo(x2.td))}</span>
       ${x2.hist ? `<i class="${x2.hist.icone}" style="color:${esc(x2.hist.cor)}"></i> <a data-action="abrir" data-id="${x2.j.id}" data-pagina="${x2.hist.pagina}"><b>${esc(x2.hist.nome)}</b></a> <small><i class="fa-solid fa-landmark"></i> ${esc(x2.j.name)}</small>`
-        : x2.prazo ? `<i class="fa-solid fa-hourglass-half"></i> <a data-action="abrir" data-id="${x2.j.id}"><b>${esc(x2.j.name)}</b></a> <small>prazo</small>`
+        : x2.prazo ? `<i class="fa-solid fa-hourglass-half"></i> <a data-action="abrir" data-id="${x2.j.id}"><b>${esc(x2.j.name)}</b></a> <small>${T("prazo")}</small>`
         : x2.jornal ? `<i class="fa-solid fa-clock"></i> <a data-action="jornal" data-op="ver" data-id="${x2.jornal.j.id}" data-page="${x2.jornal.pagina}"><b>${esc(x2.jornal.nome)}</b></a> <small>${esc(x2.jornal.rotulo)}: ${esc(x2.jornal.texto)}</small>`
         : x2.ceu ? `<i class="fa-solid ${x2.ceu.icone}" ${x2.ceu.cor ? `style="color:${esc(x2.ceu.cor)}"` : ""}></i> <b>${esc(x2.ceu.texto)}</b> <small>${T("no céu")}</small>`
         : x2.contador != null ? `<i class="fa-solid fa-hourglass-end"></i> <b>${esc(x2.contador)}</b> <small>${T("contador do calendário termina")}</small>`
@@ -540,7 +540,7 @@ class JournalApp extends ApplicationV2 {
     const { itens, sessao0 } = regrasMesa();
     const eu = game.user.id;
     const nome = (uid) => (uid ? esc(game.users.get(uid)?.name ?? "?") : `<i>${T("Anônimo")}</i>`);
-    const quando = (t) => esc(new Date(t).toLocaleDateString("pt-BR"));
+    const quando = (t) => esc(new Date(t).toLocaleDateString(game.i18n.lang));
     const opCat = (sel) => Object.entries(REGRAS_CATS).map(([k, [r]]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${esc(r)}</option>`).join("");
     const contagem = Object.fromEntries(Object.keys(REGRAS_STATUS).map((k) => [k, itens.filter((i) => i.status === k).length]));
     const filtro = REGRAS_STATUS[this.filtroRegras] ? this.filtroRegras : "";
@@ -555,7 +555,7 @@ class JournalApp extends ApplicationV2 {
         <div class="jm-regra-topo">
           <span class="jm-regra-status st-${esc(i.status)}"><i class="${stIc}"></i> ${stRot}</span>
           <b class="jm-regra-titulo">${esc(i.titulo)}</b>
-          <small>por ${nome(i.autor)} · ${quando(i.criado)}</small>
+          <small>${T("por")} ${nome(i.autor)} · ${quando(i.criado)}</small>
           <span class="jm-sec-ctrl">
             ${gm ? `<select data-regra-status>${Object.entries(REGRAS_STATUS).map(([k, [r]]) => `<option value="${k}" ${k === i.status ? "selected" : ""}>${r}</option>`).join("")}</select>` : ""}
             ${pode ? `<a class="jm-mini-btn" data-regra="editar" data-tooltip="${T("Editar")}"><i class="fa-solid fa-pen"></i></a>
@@ -786,7 +786,7 @@ class JournalApp extends ApplicationV2 {
     const caminho = entry.folder ? `<span class="jm-caminho"><i class="fa-solid fa-folder"></i> ${esc(caminhoDaPasta(entry.folder).join(" / "))}</span>` : "";
     const imgCab = tipo === "jornal" ? (Jornal.identidade(entry).logo || null) : page?.src ?? (["diario", "historia"].includes(tipo) ? a.pages.find((p) => p.type === "image")?.src : null);
     blocos.push(`<header class="jm-cabecalho">
-      <div class="jm-retrato ${ed ? "editavel" : ""}" ${ed ? `data-action="imagem" data-tooltip="Trocar imagem"` : ""}>${avatar(imgCab, tipo, "grande")}</div>
+      <div class="jm-retrato ${ed ? "editavel" : ""}" ${ed ? `data-action="imagem" data-tooltip="${T("Trocar imagem")}"` : ""}>${avatar(imgCab, tipo, "grande")}</div>
       <div class="jm-cab-texto">
         <div class="jm-selos"><span class="jm-selo tipo-${tipo}"><i class="${t.icone}"></i> ${esc(selo)}</span>${caminho}</div>
         ${ed ? `<input class="jm-titulo" data-campo="__nome" value="${esc(entry.name)}">` : `<h1 class="jm-titulo">${esc(entry.name)}</h1>`}
@@ -818,7 +818,7 @@ class JournalApp extends ApplicationV2 {
         ${gm ? `<button type="button" data-action="histNovo"><i class="fa-solid fa-feather-pointed"></i> ${T("Novo acontecimento")}</button>` : ""}
         <button type="button" class="sec" data-action="histOrdem" data-tooltip="${T("Trocar a ordem")}"><i class="fa-solid ${this.histDesc ? "fa-arrow-up-wide-short" : "fa-arrow-down-short-wide"}"></i> ${this.histDesc ? T("Mais recentes primeiro") : T("Mais antigos primeiro")}</button>
         ${Tempo.ok() ? `<button type="button" class="sec" data-action="histLinha" data-tooltip="${T("Abrir a linha do tempo mostrando só a História")}"><i class="fa-solid fa-timeline"></i> ${T("Linha do tempo")}</button>` : ""}
-        <span class="jm-hist-conta">${paginas.length} acontecimento(s)${paginas.length !== comData ? ` · ${paginas.length - comData} ${T("sem data")}` : ""}</span>
+        <span class="jm-hist-conta">${paginas.length} ${T("acontecimento(s)")}${paginas.length !== comData ? ` · ${paginas.length - comData} ${T("sem data")}` : ""}</span>
       </div>`);
       let anoAtual;
       for (const p of ordenarAcontecimentos(paginas, this.histDesc)) {
@@ -826,7 +826,7 @@ class JournalApp extends ApplicationV2 {
         const ano = ac.td != null && Tempo.ok() ? Tempo.partes(ac.td).ano : null;
         if (ano !== anoAtual) { blocos.push(`<div class="jm-hist-ano"><span>${ano != null ? `${T("Ano")} ${esc(ano)}` : T("Sem data")}</span></div>`); anoAtual = ano; }
         let origem = "";
-        if (ac.origem.startsWith(T("JournalEntry."))) {
+        if (ac.origem.startsWith("JournalEntry.")) {
           const doc = fromUuidSync(ac.origem);
           const id = doc?.documentName === "JournalEntry" ? doc.id : doc?.parent?.id;
           if (id) origem = chipPagina(id, "origem");
@@ -834,7 +834,7 @@ class JournalApp extends ApplicationV2 {
         const naLinha = ac.td != null && hoje != null && ac.td <= hoje + 30;
         const quando = `<div class="jm-hist-quando">
           <i class="fa-solid ${ac.icone}" style="color:${ac.cor}"></i>
-          <div><b>${ac.td != null ? esc(Tempo.ok() ? Tempo.texto(ac.td) : `dia ${ac.td}`) : T("Sem data")}</b>
+          <div><b>${ac.td != null ? esc(Tempo.ok() ? Tempo.texto(ac.td) : `${T("dia")} ${ac.td}`) : T("Sem data")}</b>
             ${ac.td != null && Tempo.ok() ? `<small>${esc(Tempo.relativo(ac.td))}${ac.td > hoje ? T(" · ainda vai acontecer") : ""}</small>` : ""}</div>
           ${origem ? `<div class="jm-hist-origem">${origem}</div>` : ""}
         </div>`;
@@ -939,7 +939,7 @@ class JournalApp extends ApplicationV2 {
         const feito = req ? (Number(o.done) || 0) >= req : !!Number(o.done) || o.done === true;
         linhas.push(`<div class="jm-obj ${feito ? "feito" : ""} ${o.available === false ? "oculto" : ""}">
           ${gm ? `<a class="caixa" data-action="alternarObjetivo" data-id="${id}">` : `<span class="caixa">`}
-            <i class="fa-${feito ? T("solid fa-square-check") : T("regular fa-square")}"></i>${gm ? "</a>" : "</span>"}
+            <i class="fa-${feito ? "solid fa-square-check" : "regular fa-square"}"></i>${gm ? "</a>" : "</span>"}
           ${ed ? `<input data-obj-texto data-id="${id}" value="${esc(String(o.content ?? "").replace(/<[^>]+>/g, ""))}">`
                : `<span class="texto">${await enr(o.content)}</span>`}
           ${req ? `<small class="jm-contador">${Number(o.done) || 0}/${req}</small>` : ""}
@@ -970,7 +970,7 @@ class JournalApp extends ApplicationV2 {
         <a class="jm-mini-btn" data-action="removerFicha" data-id="${id}" data-tooltip="${T("Remover conexão")}"><i class="fa-solid fa-xmark"></i></a>` : ""}</div>` : "";
       const pode = gm || ator.testUserPermission(game.user, "LIMITED");
       const dono = game.users.find((u) => !u.isGM && u.character?.id === ator.id) ?? game.users.find((u) => !u.isGM && ator.testUserPermission(u, "OWNER"));
-      const extra = [f.relacao, dono ? `jogador: ${dono.name}` : ""].filter(Boolean).join(" · ");
+      const extra = [f.relacao, dono ? `${T("jogador")}: ${dono.name}` : ""].filter(Boolean).join(" · ");
       const busca = esc(`${ator.name} ${f.relacao ?? ""} ${dono?.name ?? ""}`.toLowerCase());
       const miolo = `<img class="jm-av mini" src="${esc(ator.img)}" alt=""><span><b>${esc(ator.name)}</b>${extra ? `<small>${esc(extra)}</small>` : ""}</span><i class="fa-solid fa-user-shield jm-ficha-ico"></i>`;
       const chip = pode
@@ -991,7 +991,7 @@ class JournalApp extends ApplicationV2 {
       else if (aj.tipo === "quest" && aj.x.doador === entry.id) reversos.push(chipPagina(j.id, T("missão oferecida")));
       else {
         const r = comoLista(aj.m.relationships).find(([id, rr]) => (rr.id ?? id) === entry.id);
-        if (r && (gm || !r[1].hidden)) reversos.push(chipPagina(j.id, r[1].relationship || "menciona", false, true));
+        if (r && (gm || !r[1].hidden)) reversos.push(chipPagina(j.id, r[1].relationship || T("menciona"), false, true));
       }
     }
     const outros = visiveis.filter((j) => j.id !== entry.id && analisar(j).page)
@@ -1135,25 +1135,25 @@ class JournalApp extends ApplicationV2 {
 
     const op = (obj, sel) => Object.entries(obj).map(([k, v]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${esc(v)}</option>`).join("");
     const semana = Tempo.semana();
-    const unidade = { dias: "dia(s)", semanas: "semana(s)", meses: T("mês(es)"), anos: "ano(s)" }[n.repetir];
+    const unidade = { dias: T("dia(s)"), semanas: T("semana(s)"), meses: T("mês(es)"), anos: T("ano(s)") }[n.repetir];
     const repeticao = `<div class="jm-cal-campos">
         <label>${T("Repetir")} <select data-cal-campo="repetir">${op(CAL_REPETIR, n.repetir)}</select></label>
         ${n.repetir !== "nao" ? `<label class="curto">${T("A cada")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="cada" value="${n.cada}"> ${unidade}</span></label>` : ""}
         ${["meses", "anos"].includes(n.repetir) ? `<label>${T("Qual dia")} <select data-cal-campo="modoMes">${op(CAL_MODOS_MES, n.modoMes)}</select></label>` : ""}
-        <label class="curto">${T("Dura")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="duracao" value="${n.duracao}"> dia(s)</span></label>
+        <label class="curto">${T("Dura")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="duracao" value="${n.duracao}"> ${T("dia(s)")}</span></label>
       </div>
       ${n.repetir === "semanas" && semana.length ? `<div class="jm-cal-semana">${semana.map((nome, i) =>
         `<label class="jm-dia-sem ${n.diasSemana.includes(i) ? "marcado" : ""}"><input type="checkbox" data-cal-semana="${i}" ${n.diasSemana.includes(i) ? "checked" : ""}>${esc(nome)}</label>`).join("")}</div>` : ""}
       ${n.repetir !== "nao" ? `<div class="jm-cal-campos">
         <label>${T("Termina")} <select data-cal-campo="fim.tipo">${op(CAL_FIM, n.fim.tipo)}</select></label>
         ${n.fim.tipo === "data" ? `<label>${T("Em")} ${campoData("calFim", n.fim.td)}</label>` : ""}
-        ${n.fim.tipo === "vezes" ? `<label class="curto">${T("Depois de")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="fim.vezes" value="${n.fim.vezes}"> vez(es)</span></label>` : ""}
+        ${n.fim.tipo === "vezes" ? `<label class="curto">${T("Depois de")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="fim.vezes" value="${n.fim.vezes}"> ${T("vez(es)")}</span></label>` : ""}
       </div>` : ""}`;
     const corpo = `${quando}
       ${Tempo.ok() ? `<div class="jm-cal-data"><span>${T("Começa em")}:</span>${campoData("cal", n.td)}</div>` : ""}
       <div class="jm-cal-mover">
         <span>${T("Mover")}:</span>
-        ${[[-7, "−7"], [-1, "−1"], [1, "+1"], [7, "+7"]].map(([d, r]) => `<button type="button" data-action="calMover" data-dias="${d}" data-tooltip="${d > 0 ? T("Adiar") : T("Antecipar")} ${Math.abs(d)} dia(s)">${r}</button>`).join("")}
+        ${[[-7, "−7"], [-1, "−1"], [1, "+1"], [7, "+7"]].map(([d, r]) => `<button type="button" data-action="calMover" data-dias="${d}" data-tooltip="${d > 0 ? T("Adiar") : T("Antecipar")} ${Math.abs(d)} ${T("dia(s)")}">${r}</button>`).join("")}
         <button type="button" data-action="calHoje" data-tooltip="${T("Marcar para hoje")}"><i class="fa-solid fa-calendar-check"></i> ${T("Hoje")}</button>
         ${api ? `<button type="button" data-action="calAbrir" data-tooltip="${T("Abrir o calendário")}"><i class="fa-solid fa-calendar-days"></i></button>` : ""}
       </div>
@@ -1260,7 +1260,7 @@ class JournalApp extends ApplicationV2 {
         const rotNivel = (nv) => nv === "todas" ? T("Magias")
           : (CONFIG.DND5E?.spellLevels?.[nv] ? game.i18n.localize(CONFIG.DND5E.spellLevels[nv]) : (nv === 0 ? T("Truques") : `${nv}${T("º círculo")}`));
         const grupos = [...porNivel.keys()].sort((a, b) => (a === "todas" ? 0 : a) - (b === "todas" ? 0 : b)).map((nv) => {
-          const lista = porNivel.get(nv).sort((a, b) => a.d.name.localeCompare(b.d.name, "pt-BR")).map(({ u, d }) =>
+          const lista = porNivel.get(nv).sort((a, b) => a.d.name.localeCompare(b.d.name, game.i18n.lang)).map(({ u, d }) =>
             `<a class="content-link jm-magia" draggable="true" data-link data-uuid="${esc(u)}" data-type="Item" data-tooltip="${esc(d.name)}"><img src="${esc(d.img)}" alt="">${esc(d.name)}</a>`).join("");
           return `<div class="jm-magias-grupo"><h4>${esc(rotNivel(nv))}</h4><div class="jm-magias">${lista}</div></div>`;
         }).join("");
@@ -1330,7 +1330,7 @@ class JournalApp extends ApplicationV2 {
   _notas(page, secao) {
     if (!page) return "";
     const nota = page.flags?.[MOD]?.[CHAVE_DADOS]?.notas?.[game.user.id] ?? "";
-    return secao(`${T("Minhas notas")} <small>pessoais</small>`, "fa-solid fa-feather",
+    return secao(`${T("Minhas notas")} <small>${T("pessoais")}</small>`, "fa-solid fa-feather",
       `<textarea data-nota rows="4" placeholder="${T("Suas suspeitas, nomes, pistas...")}">${esc(String(nota).replace(/<\/?p>/g, ""))}</textarea>`, "jm-notas");
   }
 
@@ -1357,7 +1357,7 @@ class JournalApp extends ApplicationV2 {
         colPreco = ed ? `<input type="number" step="0.01" min="0" data-item-campo="preco" data-id="${id}" value="${Math.round(preco * 100) / 100}" data-tooltip="${T("Preço em po")}">`
           : (mult != null && mult !== 1 ? `<s>${formatarPreco(preco)}</s> ${formatarPreco(precoFinal)}${etiqueta}` : formatarPreco(preco));
         colQtd = gm ? `<input type="number" min="0" class="jm-estoque" data-item-campo="quantidade" data-id="${id}" value="${qtd ?? ""}" placeholder="∞" data-tooltip="${T("Estoque da loja (vazio = ilimitado)")}">`
-          : (qtd === 0 ? "esgotado" : (qtd == null ? T("à vontade") : `${qtd} un.`));
+          : (qtd === 0 ? T("esgotado") : (qtd == null ? T("à vontade") : `${qtd} ${T("un.")}`));
         const pendente = neg && mult == null;
         const botaoNeg = esgotado || neg ? (pendente ? `<span class="jm-neg-pendente" data-tooltip="${T("Pechincha em andamento no chat")}"><i class="fa-solid fa-hourglass-half"></i></span>` : "")
           : `<button type="button" class="sec" data-action="negociarCompra" data-id="${id}" data-nome="${esc(it.name)}" data-tooltip="${T("Pechinchar: Persuasão contra o vendedor (uma vez por dia)")}"><i class="fa-solid fa-handshake"></i></button>`;
@@ -1389,7 +1389,7 @@ class JournalApp extends ApplicationV2 {
       const h = horarioLoja(entry);
       return secao(T("Balcão"), "fa-solid fa-store", `<div class="jm-loja-fechada"><i class="fa-solid fa-door-closed"></i>
         <b>${fechada.texto === T("Folga hoje") ? T("A loja está de folga hoje.") : T("A loja está fechada.")}</b>
-        <span>${h.abre !== h.fecha ? `${T("Funciona das")} ${minParaHora(h.abre)} ${T("às")} ${minParaHora(h.fecha)}` : ""}${h.folga.length ? ` · folga: ${h.folga.map((i) => Tempo.semana()[i] ?? "?").join(", ")}` : ""}</span></div>`, "jm-loja");
+        <span>${h.abre !== h.fecha ? `${T("Funciona das")} ${minParaHora(h.abre)} ${T("às")} ${minParaHora(h.fecha)}` : ""}${h.folga.length ? ` · ${T("folga")}: ${h.folga.map((i) => Tempo.semana()[i] ?? "?").join(", ")}` : ""}</span></div>`, "jm-loja");
     }
     const sub = this.subLoja;
     const tabs = [["semanal", T("Estoque da semana"), "fa-solid fa-calendar-week"], ["diaria", T("Oferta do dia"), "fa-solid fa-sun"], ["vender", T("Vender"), "fa-solid fa-hand-holding-dollar"]];
@@ -1422,7 +1422,7 @@ class JournalApp extends ApplicationV2 {
       let topo;
       if (minha && minha.dia === dia) topo = await this._cartaOferta(minha, false, linkItem);
       else if (tabelaDaLoja(x.diaria.tabela, "diaria")) topo = `<div class="jm-rolar">
-          <p>${T("O balcão muda todo dia. Tente a sorte: pode sair um")} <b>achado</b>, uma <b>raridade</b>... ${T("ou um")} <b>escambo</b> ${T("barato demais para ser verdade.")}</p>
+          <p>${T("O balcão muda todo dia. Tente a sorte: pode sair um")} <b>${T("achado")}</b>, ${T("uma")} <b>${T("raridade")}</b>... ${T("ou um")} <b>${T("escambo")}</b> ${T("barato demais para ser verdade.")}</p>
           <button type="button" class="primario grande" data-action="rolarDiaria"><i class="fa-solid fa-dice-d20"></i> ${T("Rolar oferta do dia")}</button>
         </div>`;
       else topo = `<p class="jm-vazio">${gm ? T("Defina a tabela das ofertas diárias na aba Configurar.") : T("Hoje não há ofertas especiais.")}</p>`;
@@ -1441,7 +1441,7 @@ class JournalApp extends ApplicationV2 {
       if (!ator) corpo = `<p class="jm-vazio">${T("Selecione seu token ou defina seu personagem para ver o que dá para vender.")}</p>`;
       else {
         const vendiveis = ator.items.filter((i) => TIPOS_SAQUE.includes(i.type) && precoEmPo(i) > 0)
-          .sort((a2, b2) => a2.name.localeCompare(b2.name, "pt-BR"));
+          .sort((a2, b2) => a2.name.localeCompare(b2.name, game.i18n.lang));
         const padrao = multVendaPadrao(x);
         const linhas = vendiveis.map((it) => {
           const base = precoEmPo(it);
@@ -1452,7 +1452,7 @@ class JournalApp extends ApplicationV2 {
           const pendente = neg && neg.mult == null;
           return `<div class="jm-produto venda">
             <img src="${esc(it.img)}" alt="">
-            <div class="nome">${esc(it.name)}<small class="jm-de">vale ${formatarPreco(base)} cada${qtd > 1 ? ` · ${T("você tem")} ${qtd}` : ""}</small></div>
+            <div class="nome">${esc(it.name)}<small class="jm-de">${T("vale")} ${formatarPreco(base)} ${T("cada")}${qtd > 1 ? ` · ${T("você tem")} ${qtd}` : ""}</small></div>
             <div class="preco">${formatarPreco(oferta)}<small class="jm-ajuste ${neg?.mult != null ? (mult >= padrao ? "bom" : "ruim") : ""}">${Math.round(mult * 100)}%</small></div>
             <div class="qtd">${neg?.mult != null ? `<i class="fa-solid fa-handshake" data-tooltip="${T("Já negociado hoje")}"></i>` : ""}</div>
             <div class="acoes">
@@ -1494,7 +1494,7 @@ class JournalApp extends ApplicationV2 {
         ${["compra", "venda"].map((modo) => {
           const t = tabelaNegocio(x, modo);
           return `<div class="jm-tabela-negocio">
-            <h4><i class="fa-solid ${modo === "compra" ? "fa-coins" : "fa-hand-holding-dollar"}"></i> ${T("Pechincha na")} ${modo}
+            <h4><i class="fa-solid ${modo === "compra" ? "fa-coins" : "fa-hand-holding-dollar"}"></i> ${T("Pechincha na")} ${T(modo)}
               <small>${modo === "compra" ? T("% somado ao preço (negativo = desconto)") : T("% do valor que a loja paga (empate = oferta padrão)")}</small></h4>
             <div class="jm-chances cinco">
               ${RESULTADOS.map(([k, r, cor]) => `<label><span class="jm-tag ${cor}">${r}</span>
@@ -1504,7 +1504,7 @@ class JournalApp extends ApplicationV2 {
         <label>${T("Tabela das ofertas diárias")} <select data-campo="x:diaria.tabela">${opcoes(tabelas, x.diaria.tabela, vazioTabela("diaria"))}</select></label>
         <div class="jm-chances">
           ${Object.entries(OFERTAS).map(([k, o]) => `<label><span class="jm-tag ${k}">${o.rotulo}</span><small>${o.desc}</small>
-            <input type="number" min="0" data-campo="x:diaria.chances.${k}" data-num value="${ch[k]}"> peso</label>`).join("")}
+            <input type="number" min="0" data-campo="x:diaria.chances.${k}" data-num value="${ch[k]}"> ${T("peso")}</label>`).join("")}
         </div>
         <label>${T("Custos ocultos do escambo")} <small>(${T("um por linha — sorteado e revelado só a você")})</small>
           <textarea data-campo="x:diaria.custos" rows="6">${esc(x.diaria.custos)}</textarea></label>
@@ -1642,10 +1642,8 @@ class JournalApp extends ApplicationV2 {
     setTimeout(() => alvo.classList.remove("jm-destaque-link"), 1600);
   }
 
-  /* Editor da descrição. O texto é gravado 400 ms depois da última tecla. Se a janela for redesenhada
-   * nesse meio-tempo (outra pessoa mexeu em outro Diário, o relógio andou...), o texto pendente é gravado
-   * na hora e o editor novo já nasce com ele — antes ele nascia com a versão anterior e a digitação
-   * seguinte apagava o trecho que ainda não tinha sido salvo. */
+  /* Editor da descrição. O texto é gravado 400 ms depois da última tecla; se a janela for redesenhada nesse
+   * meio-tempo, o texto pendente é gravado na hora e o editor novo já nasce com ele (nada digitado se perde). */
   _montarEditor(alvo) {
     const { page } = analisar(this._entry());
     if (!page) return;
@@ -1728,7 +1726,7 @@ class JournalApp extends ApplicationV2 {
       else pedir("nota", { pageUuid: page.uuid, userId: game.user.id, texto });
     });
 
-    const busca = root.querySelector(T(".jm-busca input"));
+    const busca = root.querySelector(".jm-busca input");
     busca?.addEventListener("input", () => {
       const antes = !!this.filtro;
       this.filtro = busca.value;
@@ -1930,7 +1928,7 @@ class JournalApp extends ApplicationV2 {
     }));
 
     /* botão direito em imagens: mostrar aos jogadores */
-    root.querySelectorAll(T(".jm-conteudo img, .jm-conteudo .jm-av-icone")).forEach((img) => img.addEventListener("contextmenu", (ev) => this._menuImagem(ev, img)));
+    root.querySelectorAll(".jm-conteudo img, .jm-conteudo .jm-av-icone").forEach((img) => img.addEventListener("contextmenu", (ev) => this._menuImagem(ev, img)));
 
     /* botão direito */
     root.querySelectorAll(".jm-item, .jm-aba").forEach((el) => el.addEventListener("contextmenu", (ev) => this._menuEntrada(ev, el.dataset.id)));
@@ -2202,7 +2200,7 @@ class JournalApp extends ApplicationV2 {
     const id = el?.dataset?.id ?? this.ativa;
     if (!id || !game.journal.get(id)) return;
     const agora = await alternarFixado(id);
-    ui.notifications.info(agora ? `"${game.journal.get(id).name}" fixada.` : `"${game.journal.get(id).name}" desafixada.`);
+    ui.notifications.info(`"${game.journal.get(id).name}" ${agora ? T("fixada.") : T("desafixada.")}`);
     if (agora && !this.abas.includes(id)) this.abas.push(id);
     this.render();
   }
@@ -2281,7 +2279,7 @@ class JournalApp extends ApplicationV2 {
   }
   static async _removerFicha(ev, el) {
     const { page } = analisar(this._entry());
-    await page.update({ [`flags.${MOD}.fichas.-=${el.dataset.id}`]: null });
+    await apagarChave(page, `flags.${MOD}.fichas`, el.dataset.id);
   }
 
   static async _limparAtor() { await dadosUnset(analisar(this._entry()).page, "actor"); }
@@ -2406,7 +2404,7 @@ class JournalApp extends ApplicationV2 {
     const td = d.td != null ? Number(d.td) : null;
     const origem = d.origem ?? "";
     let texto = d.texto ?? "";
-    if (origem.startsWith(T("JournalEntry."))) {
+    if (origem.startsWith("JournalEntry.")) {
       const nome = d.nome ?? "";
       const extra = { missao: texto ? `${T("Missão")}: ${texto}.` : T("Missão."), sessao: `${texto}.`, evento: T("Evento do calendário."), jornal: `${T("Manchete")}: ${texto}.` }[d.tipoItem] ?? "";
       texto = `@UUID[${origem}]{${nome}} — ${extra}\n`;
@@ -2560,7 +2558,7 @@ class JournalApp extends ApplicationV2 {
           <input type="number" name="dia" min="1" value="${p.dia}">
           <select name="mes">${Tempo.meses(p.ano).map((m) => `<option value="${m.i}" ${m.i === p.mes ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select>
           <input type="number" name="ano" value="${p.ano}"></span></label>
-        <label>${T("Repete a cada")} <span class="jm-linha-curta"><input type="number" name="cada" min="1" value="1"> ano(s)</span></label>
+        <label>${T("Repete a cada")} <span class="jm-linha-curta"><input type="number" name="cada" min="1" value="1"> ${T("ano(s)")}</span></label>
         <label>${T("Dura quantos dias")} <input type="number" name="duracao" min="1" value="1"></label>
         <label>${T("Quando chegar")} <select name="aviso">${op(CAL_AVISOS, "nenhum")}</select></label>
         <label>${T("Descrição")} <textarea name="texto" rows="3"></textarea></label>
@@ -2754,7 +2752,7 @@ class JournalApp extends ApplicationV2 {
   static async _novoDia() {
     const n = diaAtual() + 1;
     await game.settings.set(MOD, "dia", n);
-    await chat(`<i class="fa-solid fa-sun"></i> ${T("Amanhece o")} <b>dia ${n}</b>. ${T("As lojas têm novas ofertas do dia.")}`);
+    await chat(`<i class="fa-solid fa-sun"></i> ${T("Amanhece o")} <b>${T("dia")} ${n}</b>. ${T("As lojas têm novas ofertas do dia.")}`);
   }
 
   static _rastreador() { game.settings.set(MOD, "rastreador", !game.settings.get(MOD, "rastreador")); }
@@ -2807,7 +2805,7 @@ class JournalApp extends ApplicationV2 {
     const quantidade = Number(el.closest(".jm-produto")?.querySelector(".jm-qtd")?.value) || 1;
     const ok = await Dialogo().confirm({
       window: { title: T("Vender") },
-      content: `<p>${T("Vender")} ${quantidade > 1 ? `<b>${quantidade}×</b> ` : ""}<b>${esc(item?.name)}</b> para <b>${esc(this._entry().name)}</b>?</p>`
+      content: `<p>${T("Vender")} ${quantidade > 1 ? `<b>${quantidade}×</b> ` : ""}<b>${esc(item?.name)}</b> ${T("para")} <b>${esc(this._entry().name)}</b>?</p>`
     });
     if (ok) pedir("vender", { entryId: this.ativa, userId: game.user.id, actorUuid: ator.uuid, itemId: el.dataset.id, quantidade });
   }
@@ -2945,7 +2943,7 @@ class JournalApp extends ApplicationV2 {
       for (const alvo of alvos) {
         if (!porFicha.has(alvo)) porFicha.set(alvo, []);
         porFicha.get(alvo).push(itemLimpo(it));
-        linhasChat.push(`<b>${esc(alvo.name)}</b> recebeu <b>${esc(it.name)}</b>`);
+        linhasChat.push(`<b>${esc(alvo.name)}</b> ${T("recebeu")} <b>${esc(it.name)}</b>`);
       }
       restantes = restantes.filter((i) => i !== iid);
       saem.push(`flags.${MOD}.${CHAVE_DADOS}.items.${iid}`);
