@@ -10,7 +10,7 @@ Se encontrar bugs ou tiver sugestões, abra uma [issue](https://github.com/Daphe
 
 ---
 
-**Versão 5.0.1** · Foundry VTT 14 · D&D 5e 6 · Português e English · Licença MIT · ✅ Testado e aprovado no Foundry
+**Versão 5.1.0** · Foundry VTT 14 · D&D 5e 6 · Português e English · Licença MIT · ✅ Testado e aprovado no Foundry
 
 ![Journal da Mesa no Foundry VTT: página de divindade](docs/screenshot.png)
 
@@ -45,7 +45,7 @@ Clique numa imagem para ver em tamanho maior.
 | Foundry VTT | 14 | 14.369 |
 | D&D 5e | 5.0.0 | 6.0.6 |
 
-**Testado e aprovado.** A versão 5.0.1 foi testada e aprovada pelo autor dentro do Foundry VTT, nas versões indicadas acima (Foundry 14.369 e D&D 5e 6.0.6), antes da publicação. A conversão do Monk's Enhanced Journal foi testada uma vez, num mundo real: todas as páginas passaram de primeira, com exceção das páginas do tipo **Imagem** do Monk's, que ficaram para trás e foram transferidas à mão (veja [Vindo do Monk's](#vindo-do-monks-enhanced-journal)). Como em qualquer módulo, recomendamos fazer backup do mundo antes de atualizar.
+**Testado e aprovado.** A versão 5.1.0 foi testada e aprovada pelo autor dentro do Foundry VTT, nas versões indicadas acima (Foundry 14.369 e D&D 5e 6.0.6), antes da publicação. A conversão do Monk's Enhanced Journal foi testada uma vez, num mundo real: todas as páginas passaram de primeira, com exceção das páginas do tipo **Imagem** do Monk's, que ficaram para trás e foram transferidas à mão (veja [Vindo do Monk's](#vindo-do-monks-enhanced-journal)). Como em qualquer módulo, recomendamos fazer backup do mundo antes de atualizar.
 
 **Foundry 13 não é mais suportado a partir da 4.9.0.** Quem ainda usa o Foundry 13 deve ficar no Journal 4.8.3 (o Foundry não deixa ativar a 4.9 num mundo v13). Os dados dos mundos não mudam: um mundo que passar do v13 para o v14 abre na 4.9 sem migração.
 
@@ -240,7 +240,7 @@ Diário próprio para a história do mundo e da campanha. Crie pelo botão **His
 
 **Vínculos**: em cada matéria, **Vincular** abre uma busca com NPCs, locais (cidades, reinos), organizações, missões, divindades, lojas, eventos do calendário, outros diários, personagens, atores e itens (marque vários) e aceita colar um UUID; também dá para arrastar da barra lateral. Cada vínculo mostra o nome, abre o documento e sai com o X. Fica guardado só o UUID.
 
-**Idioma**: todo o Journal da Mesa segue o idioma do Foundry (português ou inglês, pasta `lang/`), inclusive as datas reais (diário de sessão, Regras da Mesa, baú do combate) e a ordem alfabética das listas.
+**Idioma**: todo o Journal da Mesa segue o idioma do Foundry (português ou inglês, pasta `lang/`), inclusive as datas reais (diário de sessão, Regras da Mesa, baú do combate) e a ordem alfabética das listas. Para traduzir, veja [Traduzir o módulo](#traduzir-o-módulo).
 
 **Editor em etapas (4.8)**: Capa, Manchete, Notícias, Rumores, Avisos, Classificados, Final e Prévia, com uma explicação em cada etapa.
 
@@ -325,9 +325,13 @@ Links para diários e páginas (`@UUID[...]`, inclusive para um título dentro d
 - `partes/`: janela, calendário, história, pechincha, sessão, tempo, barra lateral e versão dos dados;
 - `jornal/`: Jornal de Notícias;
 - `lojas/`: tabelas das lojas;
-- `idioma.js`: textos.
+- `idioma.js`: textos (`T("Area.Chave")` lê `lang/`); `idioma-mapa.js` é gerado pela ferramenta de idioma.
 
 Um erro no console (F12) mostra em qual desses arquivos ele aconteceu.
+
+### Traduzir o módulo
+
+Os textos ficam em `lang/pt-BR.json` (português) e `lang/en.json` (inglês), sob `JMESA`, agrupados por área da interface (`Janela`, `Pechincha`, `Calendario`, `Jornal`...), com nomes legíveis — `"Fechar": "Close"`. Para melhorar o inglês, edite `lang/en.json`; para outro idioma, copie `en.json`, traduza os valores (mantendo os `{campos}` entre chaves) e inclua o arquivo em `languages` no `module.json`. No código, cada texto é chamado por `T("Janela.Fechar")`; texto novo entra em português como `T("Texto novo")` e `node tools/i18n-migrar.mjs` dá a chave a ele e o leva para os dois arquivos (o inglês fica para traduzir). `npm test` (ou `node tests/i18n.test.mjs`) confere que os dois idiomas têm as mesmas chaves, que toda chamada tem texto e que os `{campos}` batem. `tools/` e `tests/` não vão no ZIP da release.
 
 | Arquivo | Para quê |
 |---|---|
@@ -336,7 +340,8 @@ Um erro no console (F12) mostra em qual desses arquivos ele aconteceu.
 | `LICENSE` | licença MIT |
 | `docs/` | imagens deste README (topo e galeria) e `AUDITORIA.md` (auditoria técnica da 4.9: segurança, achados e o que foi corrigido) |
 | `.github/workflows/release.yml` | monta e anexa o ZIP e o `module.json` ao publicar uma release |
-| `tests/` | Foundry simulado em Node e os testes do formato próprio e da conversão do Monk's (`node tests/formato.test.mjs`) |
+| `tests/` | Foundry simulado em Node, testes do formato próprio e da conversão do Monk's (`node tests/formato.test.mjs`) e dos arquivos de idioma (`node tests/i18n.test.mjs`); `npm test` roda os dois |
+| `tools/` | `i18n-migrar.mjs`: dá chave legível a texto novo e confere `lang/` (não vai na release) |
 
 ---
 
@@ -356,6 +361,6 @@ Monk's Enhanced Journal, Item Piles, Translate All, Heavy Lore e Ownership Viewe
 
 **Journal da Mesa** is a single-window journal for Foundry VTT 14 and D&D 5e, with tabs and native folders for NPCs, locations, organizations, shops (weekly stock, daily offers, selling and haggling), quests with rewards and deadlines, deities, loot chests, a world History linked to a timeline, Table Rules (session 0), and an in-world newspaper system with scheduled issues. Everything is stored as native Foundry journals in the module's own format. Coming from Monk's Enhanced Journal? The built-in importer converts your journals (NPCs, places, organizations, shops with stock, quests with objectives and rewards, loot, links, personal notes) by copying — the originals are left untouched, IDs don't change and links keep working — and shows a report at the end. This is an independent project, not affiliated with Monk's Enhanced Journal. The interface is available in Portuguese and English.
 
-Version 5.0.1 was tested and approved by the author in Foundry VTT (14.369) with D&D 5e (6.0.6) before release; the conversion from Monk's Enhanced Journal was tried once on a real world and went through on the first attempt, except for Monk's "Picture" pages, which had to be moved by hand. Install from Foundry with the manifest URL `https://github.com/Daphenius/journal-mesa/releases/latest/download/module.json` (or extract the release ZIP into `Data/modules/journal-mesa`) and enable it. Optional integrations: Calendário da Mesa, Dados em Cena, Item Piles and Translate All. Issues and suggestions: [GitHub Issues](https://github.com/Daphenius/journal-mesa/issues). Licensed under MIT.
+Version 5.1.0 was tested and approved by the author in Foundry VTT (14.369) with D&D 5e (6.0.6) before release; the conversion from Monk's Enhanced Journal was tried once on a real world and went through on the first attempt, except for Monk's "Picture" pages, which had to be moved by hand. Install from Foundry with the manifest URL `https://github.com/Daphenius/journal-mesa/releases/latest/download/module.json` (or extract the release ZIP into `Data/modules/journal-mesa`) and enable it. Optional integrations: Calendário da Mesa, Dados em Cena, Item Piles and Translate All. Issues and suggestions: [GitHub Issues](https://github.com/Daphenius/journal-mesa/issues). Licensed under MIT.
 
 **How this module was made:** I know part of the community doesn't like AI-made modules, so I'd rather be transparent: this one was developed with the help of AI. I'm not a programmer. It started as a macro for my own table, grew as our games needed more, and ended up as a module. I use it in my own sessions and decided to share it in case it's useful to someone else. If you find bugs or have suggestions, please open an issue. All feedback is welcome.

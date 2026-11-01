@@ -23,16 +23,16 @@ const Sessao = {
       const s = dup(atual);
       s.registros = [...(s.registros ?? []), reg];
       await game.settings.set(MOD, "sessaoAtual", s);
-    }).catch((err) => console.error(T("Journal da Mesa | diário de sessão"), err));
+    }).catch((err) => console.error(T("Sessao.JournalDaMesaDiarioDe"), err));
   },
   async iniciar() {
     if (!ehGM() || this.ativa()) return;
     const n = (Number(game.settings.get(MOD, "sessaoNumero")) || 0) + 1;
     await game.settings.set(MOD, "sessaoAtual", { n, inicio: Date.now(), wt: game.time.worldTime, registros: [] });
-    ui.notifications.info(`${T("Sessão")} ${n} ${T("iniciada. O Journal da Mesa vai anotar o que acontecer.")}`);
+    ui.notifications.info(`${T("Comum.Sessao")} ${n} ${T("Sessao.IniciadaOJournalDaMesa")}`);
   },
   async descartar() {
-    const ok = await Dialogo().confirm({ window: { title: T("Descartar sessão") }, content: `<p>${T("Descartar a sessão aberta sem gerar o diário?")}</p>` });
+    const ok = await Dialogo().confirm({ window: { title: T("Sessao.DescartarSessao") }, content: `<p>${T("Sessao.DescartarASessaoAbertaSem")}</p>` });
     if (ok) await naFila("sessao", () => game.settings.set(MOD, "sessaoAtual", null));
   },
   /** Encerra e cria o Diário da sessão. */
@@ -41,21 +41,21 @@ const Sessao = {
     if (!s?.inicio) return;
     const temHist = !!calApi() && historicoCal().length > 0;
     const dados = await Dialogo().prompt({
-      window: { title: `${T("Encerrar a sessão")} ${s.n}`, icon: "fa-solid fa-book-bookmark" },
+      window: { title: `${T("Sessao.EncerrarASessao")} ${s.n}`, icon: "fa-solid fa-book-bookmark" },
       position: { width: 480 },
       content: `<div class="jm-form-dialogo">
-        <label>${T("Título")} <input type="text" name="titulo" value="${T("Sessão")} ${s.n}"></label>
-        <p><button type="button" data-jm-copiar-registro><i class="fa-solid fa-copy"></i> ${T("Copiar o registro da sessão")}</button>
-          <span class="jm-dica">${T("Para o Transcritor da Mesa (campo Contexto): ajuda com os nomes e a ordem dos acontecimentos.")}</span></p>
-        <label>${T("Resumo (opcional — pode colar aqui o diário do Transcritor da Mesa)")} <textarea name="resumo" rows="8" placeholder="${T("O que aconteceu, em poucas linhas")}"></textarea></label>
-        ${temHist ? `<label class="jm-check"><input type="checkbox" name="hist" checked> ${T("Incluir o histórico do calendário (clima, eventos, viagens...)")}</label>` : ""}
-        <label class="jm-check"><input type="checkbox" name="jogadores"> ${T("Jogadores podem ler")}</label>
-        <label>${T("Registrar na História")} <select name="historia"><option value="">${T("Não registrar")}</option>
+        <label>${T("Comum.Titulo")} <input type="text" name="titulo" value="${T("Comum.Sessao")} ${s.n}"></label>
+        <p><button type="button" data-jm-copiar-registro><i class="fa-solid fa-copy"></i> ${T("Sessao.CopiarORegistroDaSessao")}</button>
+          <span class="jm-dica">${T("Sessao.ParaOTranscritorDaMesa")}</span></p>
+        <label>${T("Sessao.ResumoOpcionalPodeColarAqui")} <textarea name="resumo" rows="8" placeholder="${T("Sessao.OQueAconteceuEmPoucas")}"></textarea></label>
+        ${temHist ? `<label class="jm-check"><input type="checkbox" name="hist" checked> ${T("Sessao.IncluirOHistoricoDoCalendario")}</label>` : ""}
+        <label class="jm-check"><input type="checkbox" name="jogadores"> ${T("Sessao.JogadoresPodemLer")}</label>
+        <label>${T("Comum.RegistrarNaHistoria")} <select name="historia"><option value="">${T("Sessao.NaoRegistrar")}</option>
           ${historias().map((h, i) => `<option value="${h.id}" ${i === 0 ? "selected" : ""}>${esc(h.name)}</option>`).join("")}
-          <option value="__nova">+ ${T("Nova História")}</option></select></label>
-        <p class="jm-dica">${(s.registros ?? []).length} ${T("registro(s) anotado(s) nesta sessão.")}</p>
+          <option value="__nova">+ ${T("Comum.NovaHistoria")}</option></select></label>
+        <p class="jm-dica">${(s.registros ?? []).length} ${T("Sessao.RegistroSAnotadoSNesta")}</p>
       </div>`,
-      ok: { label: T("Gerar diário"), icon: "fa-solid fa-check", callback: (ev, b) => ({ titulo: b.form.elements.titulo.value, resumo: b.form.elements.resumo.value, hist: !!b.form.elements.hist?.checked, jogadores: !!b.form.elements.jogadores.checked, historia: b.form.elements.historia?.value ?? "" }) }
+      ok: { label: T("Sessao.GerarDiario"), icon: "fa-solid fa-check", callback: (ev, b) => ({ titulo: b.form.elements.titulo.value, resumo: b.form.elements.resumo.value, hist: !!b.form.elements.hist?.checked, jogadores: !!b.form.elements.jogadores.checked, historia: b.form.elements.historia?.value ?? "" }) }
     }).catch(() => null);
     if (!dados) return;
     const wtFim = game.time.worldTime;
@@ -67,22 +67,22 @@ const Sessao = {
     const dias = Math.floor(dur / seg), horas = Math.round((dur % seg) / segHora);
     const real = new Date(s.inicio);
 
-    const ROT = { compra: T("Compras e vendas"), loja: T("Compras e vendas"), missao: T("Missões"), recompensa: T("Recompensas"), combate: T("Combates"), nexus: T("Nexus"), jornal: T("Jornais"), evento: T("Eventos do calendário"), dia: T("Passagem do tempo"), outro: T("Outros") };
+    const ROT = { compra: T("Sessao.ComprasEVendas"), loja: T("Sessao.ComprasEVendas"), missao: T("Comum.Missoes"), recompensa: T("Comum.Recompensas"), combate: T("Sessao.Combates"), nexus: T("Comum.Nexus"), jornal: T("Sessao.Jornais"), evento: T("Sessao.EventosDoCalendario"), dia: T("Sessao.PassagemDoTempo"), outro: T("Sessao.Outros") };
     const grupos = {};
     for (const r of s.registros ?? []) (grupos[ROT[r.tipo] ? r.tipo === "loja" ? "compra" : r.tipo : "outro"] ??= []).push(r);
-    let corpo = `<p><b>${T("Data real")}:</b> ${esc(real.toLocaleDateString(game.i18n.lang))} · ${esc(real.toLocaleTimeString(game.i18n.lang, { hour: "2-digit", minute: "2-digit" }))}</p>`;
-    if (Tempo.ok()) corpo += `<p><b>${T("No jogo")}:</b> ${esc(Tempo.texto(tdIni))}${tdFim !== tdIni ? ` → ${esc(Tempo.texto(tdFim))}` : ""} (${dias ? `${dias} ${T("dia(s)")} ` : ""}${horas ? `${horas} h` : (dias ? "" : T("menos de 1 h"))})</p>`;
-    if (dados.resumo?.trim()) corpo += `<h2>${T("Resumo")}</h2>${textoParaHtml(dados.resumo.trim())}`;
+    let corpo = `<p><b>${T("Sessao.DataReal")}:</b> ${esc(real.toLocaleDateString(game.i18n.lang))} · ${esc(real.toLocaleTimeString(game.i18n.lang, { hour: "2-digit", minute: "2-digit" }))}</p>`;
+    if (Tempo.ok()) corpo += `<p><b>${T("Sessao.NoJogo")}:</b> ${esc(Tempo.texto(tdIni))}${tdFim !== tdIni ? ` → ${esc(Tempo.texto(tdFim))}` : ""} (${dias ? `${dias} ${T("Comum.DiaS")} ` : ""}${horas ? `${horas} h` : (dias ? "" : T("Sessao.MenosDe1H"))})</p>`;
+    if (dados.resumo?.trim()) corpo += `<h2>${T("Sessao.Resumo")}</h2>${textoParaHtml(dados.resumo.trim())}`;
     for (const k of ["missao", "recompensa", "combate", "compra", "nexus", "jornal", "evento", "dia", "outro"]) {
       if (!grupos[k]?.length) continue;
       corpo += `<h2>${ROT[k]}</h2><ul>${grupos[k].map((r) => `<li>${r.html}</li>`).join("")}</ul>`;
     }
     if (dados.hist) {
       const itens = historicoCal().filter((i) => i.wt >= s.wt && i.wt <= wtFim);
-      if (itens.length) corpo += `<h2>${T("Histórico do calendário")}</h2><ul>${itens.map((i) => `<li>${Tempo.ok() ? `<b>${esc(Tempo.texto(i.td))}</b>: ` : ""}${esc(i.texto)}</li>`).join("")}</ul>`;
+      if (itens.length) corpo += `<h2>${T("Comum.HistoricoDoCalendario2")}</h2><ul>${itens.map((i) => `<li>${Tempo.ok() ? `<b>${esc(Tempo.texto(i.td))}</b>: ` : ""}${esc(i.texto)}</li>`).join("")}</ul>`;
     }
-    const pasta = await obterPasta("JournalEntry", T("Sessões"), "sessoes");
-    const nome = String(dados.titulo || `${T("Sessão")} ${s.n}`).trim();
+    const pasta = await obterPasta("JournalEntry", T("Comum.Sessoes"), "sessoes");
+    const nome = String(dados.titulo || `${T("Comum.Sessao")} ${s.n}`).trim();
     const e = await JournalEntry.create({
       name: nome, folder: pasta?.id ?? null, sort: ordemNova(pasta?.id ?? null),
       ownership: { default: dados.jogadores ? LV().OBSERVER : LV().NONE },
@@ -91,7 +91,7 @@ const Sessao = {
     });
     await game.settings.set(MOD, "sessaoNumero", s.n);
     await naFila("sessao", () => game.settings.set(MOD, "sessaoAtual", null));
-    try { await calApi()?.registrar?.(`${T("Fim da")} ${nome}`, "fa-book-bookmark"); } catch (err) { avisoUmaVez(T("histórico do Calendário"), err); }
+    try { await calApi()?.registrar?.(`${T("Sessao.FimDa")} ${nome}`, "fa-book-bookmark"); } catch (err) { avisoUmaVez(T("Comum.HistoricoDoCalendario"), err); }
     if (dados.historia) {
       const h = (dados.historia !== "__nova" && game.journal.get(dados.historia)) || await criarHistoria();
       const resumo = dados.resumo?.trim() ? textoParaHtml(dados.resumo.trim()) : "";
@@ -113,7 +113,7 @@ const Nexus = {
   async salvar(l) { if (ehGM()) await game.settings.set(MOD, "nexusLista", l); },
   async novo() {
     const l = this.lista();
-    l.push({ id: novoId(), nome: T("Novo Nexus"), icone: "fa-star", cor: "#4a7fbf", valor: 100, visivel: true, zona: "", anomalia: "", limiares: [] });
+    l.push({ id: novoId(), nome: T("Sessao.NovoNexus"), icone: "fa-star", cor: "#4a7fbf", valor: 100, visivel: true, zona: "", anomalia: "", limiares: [] });
     await this.salvar(l);
   },
   /** Muda o valor e dispara os limiares que foram cruzados para baixo (ou rearma ao subir).
@@ -149,10 +149,10 @@ const Nexus = {
     await this.salvar(l);
     const api = calApi();
     for (const { lim, v, subiu } of cruzados) {
-      if (subiu) { await Sessao.registrar("nexus", `<b>${esc(nx.nome)}</b> ${T("voltou acima de")} ${v}%.`); continue; }
-      await chat(`<i class="fa-solid fa-triangle-exclamation" style="color:${esc(nx.cor)}"></i> <b>${esc(nx.nome)}</b> ${T("caiu abaixo de")} <b>${v}%</b>.${lim.texto ? `<br>${esc(lim.texto)}` : ""}`, { whisper: idsGM() });
-      await Sessao.registrar("nexus", `<b>${esc(nx.nome)}</b> ${T("caiu abaixo de")} ${v}%${lim.texto ? `: ${esc(lim.texto)}` : ""}.`);
-      try { await api?.registrar?.(`${nx.nome} ${T("abaixo de")} ${v}%`, "fa-triangle-exclamation"); } catch (err) { avisoUmaVez(T("histórico do Calendário"), err); }
+      if (subiu) { await Sessao.registrar("nexus", `<b>${esc(nx.nome)}</b> ${T("Comum.VoltouAcimaDe")} ${v}%.`); continue; }
+      await chat(`<i class="fa-solid fa-triangle-exclamation" style="color:${esc(nx.cor)}"></i> <b>${esc(nx.nome)}</b> ${T("Comum.CaiuAbaixoDe")} <b>${v}%</b>.${lim.texto ? `<br>${esc(lim.texto)}` : ""}`, { whisper: idsGM() });
+      await Sessao.registrar("nexus", `<b>${esc(nx.nome)}</b> ${T("Comum.CaiuAbaixoDe")} ${v}%${lim.texto ? `: ${esc(lim.texto)}` : ""}.`);
+      try { await api?.registrar?.(`${nx.nome} ${T("Sessao.AbaixoDe")} ${v}%`, "fa-triangle-exclamation"); } catch (err) { avisoUmaVez(T("Comum.HistoricoDoCalendario"), err); }
     }
     const temAgora = (nx.limiares ?? []).some((x) => x.anomalia && x.disparado);
     if (ligar && NexusClima.pronto(nx)) await NexusClima.ligar(nx, ligar.texto ?? "");
@@ -174,7 +174,7 @@ const NexusClima = {
   porRegiao() { return typeof calApi()?.anomaliaRegiao === "function"; },
   modo() {
     try { const m = calApi()?.modoAnomalias?.(); if (m) return { ligadas: m.ligadas !== false, regiaoInteira: !!m.regiaoInteira }; }
-    catch (err) { avisoUmaVez(T("modo das anomalias do Calendário"), err); }
+    catch (err) { avisoUmaVez(T("Sessao.ModoDasAnomaliasDoCalendario"), err); }
     return { ligadas: true, regiaoInteira: true };   // Calendário antigo: só existe o jeito "zona"
   },
   onde(nx) {
@@ -191,13 +191,13 @@ const NexusClima = {
     try {
       if (this.onde(nx) === "regiao") return !!listaCal("anomalias").find((a) => a.id === nx.anomalia)?.regiao;
       return api.clima?.(nx.zona)?.anomalia?.tipo === nx.anomalia;
-    } catch (err) { avisoUmaVez(T("estado da anomalia"), err); return null; }
+    } catch (err) { avisoUmaVez(T("Sessao.EstadoDaAnomalia"), err); return null; }
   },
   async ligar(nx, texto = "") {
     const api = this.api();
     if (!api || !this.pronto(nx)) return false;
     try { return this.onde(nx) === "regiao" ? !!(await api.anomaliaRegiao(nx.anomalia, true)) : !!(await api.anomalia(nx.zona, nx.anomalia, texto)); }
-    catch (err) { avisoUmaVez(T("ligar a anomalia no Calendário"), err); return false; }
+    catch (err) { avisoUmaVez(T("Sessao.LigarAAnomaliaNoCalendario"), err); return false; }
   },
   /** Desliga, a não ser que outro Nexus com o mesmo alvo ainda esteja com um limiar de anomalia disparado. */
   async desligar(nx, lista = [], { forcar = false } = {}) {
@@ -206,24 +206,24 @@ const NexusClima = {
     const alvo = this.alvo(nx);
     if (!forcar && lista.some((o) => o.id !== nx.id && this.pronto(o) && this.alvo(o) === alvo && (o.limiares ?? []).some((x) => x.anomalia && x.disparado))) return false;
     try { return this.onde(nx) === "regiao" ? !!(await api.anomaliaRegiao(nx.anomalia, false)) : !!(await api.anomalia(nx.zona, null)); }
-    catch (err) { avisoUmaVez(T("desligar a anomalia no Calendário"), err); return false; }
+    catch (err) { avisoUmaVez(T("Sessao.DesligarAAnomaliaNoCalendario"), err); return false; }
   },
   /** Linha "Anomalia no clima" do medidor (só o mestre). */
   html(nx, zonas, anomalias, op) {
     const m = this.modo();
-    if (!m.ligadas) return `<div class="jm-nexus-ctrl jm-nexus-clima"><span class="jm-dica"><i class="fa-solid fa-circle-info"></i> ${T("A barra de Anomalias está desligada no Calendário: os limiares só avisam.")}</span></div>`;
+    if (!m.ligadas) return `<div class="jm-nexus-ctrl jm-nexus-clima"><span class="jm-dica"><i class="fa-solid fa-circle-info"></i> ${T("Sessao.ABarraDeAnomaliasEsta")}</span></div>`;
     const onde = this.onde(nx);
-    const ondeOp = [...(this.porRegiao() ? [["regiao", T("na região da anomalia")]] : []), ["zona", T("numa região inteira")]];
+    const ondeOp = [...(this.porRegiao() ? [["regiao", T("Sessao.NaRegiaoDaAnomalia")]] : []), ["zona", T("Sessao.NumaRegiaoInteira")]];
     const at = this.ativa(nx);
-    const estado = at == null ? "" : `<span class="jm-nexus-estado ${at ? "ligada" : ""}">${at ? T("ativa") : T("inativa")}</span>
-      <a class="jm-mini-btn" data-action="nexusAnomalia" data-id="${nx.id}" data-ligar="${at ? 0 : 1}" data-tooltip="${at ? T("Desligar a anomalia agora") : T("Ligar a anomalia agora")}"><i class="fa-solid ${at ? "fa-power-off" : "fa-bolt"}"></i></a>`;
+    const estado = at == null ? "" : `<span class="jm-nexus-estado ${at ? "ligada" : ""}">${at ? T("Sessao.Ativa") : T("Sessao.Inativa")}</span>
+      <a class="jm-mini-btn" data-action="nexusAnomalia" data-id="${nx.id}" data-ligar="${at ? 0 : 1}" data-tooltip="${at ? T("Sessao.DesligarAAnomaliaAgora") : T("Sessao.LigarAAnomaliaAgora")}"><i class="fa-solid ${at ? "fa-power-off" : "fa-bolt"}"></i></a>`;
     const aviso = onde === "zona" && !m.regiaoInteira
-      ? `<span class="jm-dica jm-nexus-aviso"><i class="fa-solid fa-triangle-exclamation"></i> ${T("Para cobrir uma região inteira, ligue \"Anomalia cobrindo uma região inteira\" no Calendário")}${this.porRegiao() ? `, ${T("ou escolha \"na região da anomalia")}"` : ""}.</span>`
-      : onde === "regiao" && nx.anomalia ? `<span class="jm-dica">${T("Liga o \"Usar como região\" da anomalia: vale nas Regiões do mapa e nas cenas marcadas com a região dela.")}</span>` : "";
-    return `<div class="jm-nexus-ctrl jm-nexus-clima"><span>${T("Anomalia no clima")}:</span>
-      <select data-nexus-campo="anomalia">${op(anomalias.map((a2) => [a2.id, `${a2.nome}${a2.regiao ? T(" · região ligada") : ""}`]), nx.anomalia, "— anomalia —")}</select>
+      ? `<span class="jm-dica jm-nexus-aviso"><i class="fa-solid fa-triangle-exclamation"></i> ${T("Sessao.ParaCobrirUmaRegiaoInteira")}${this.porRegiao() ? `, ${T("Sessao.OuEscolhaNaRegiaoDa")}"` : ""}.</span>`
+      : onde === "regiao" && nx.anomalia ? `<span class="jm-dica">${T("Sessao.LigaOUsarComoRegiao")}</span>` : "";
+    return `<div class="jm-nexus-ctrl jm-nexus-clima"><span>${T("Sessao.AnomaliaNoClima")}:</span>
+      <select data-nexus-campo="anomalia">${op(anomalias.map((a2) => [a2.id, `${a2.nome}${a2.regiao ? T("Sessao.RegiaoLigada") : ""}`]), nx.anomalia, "— anomalia —")}</select>
       ${ondeOp.length > 1 ? `<select data-nexus-campo="onde">${ondeOp.map(([v, r]) => `<option value="${v}" ${v === onde ? "selected" : ""}>${r}</option>`).join("")}</select>` : ""}
-      ${onde === "zona" ? `<select data-nexus-campo="zona">${op(zonas.map((z) => [z.id, z.nome]), nx.zona, T("— região —"))}</select>` : ""}
+      ${onde === "zona" ? `<select data-nexus-campo="zona">${op(zonas.map((z) => [z.id, z.nome]), nx.zona, T("Sessao.Regiao"))}</select>` : ""}
       ${estado}${aviso}</div>`;
   }
 };
@@ -272,7 +272,7 @@ const Rastreador = {
         <ul>${itens}</ul></div>`;
     }
 
-    this.el.innerHTML = `<header><i class="fa-solid fa-scroll"></i><span>${T("Missões")}</span>
+    this.el.innerHTML = `<header><i class="fa-solid fa-scroll"></i><span>${T("Comum.Missoes")}</span>
       <a data-min><i class="fa-solid ${this.min ? "fa-chevron-down" : "fa-chevron-up"}"></i></a></header>${corpo}`;
 
     this.el.querySelector("[data-min]").addEventListener("click", () => { this.min = !this.min; this.render(); });

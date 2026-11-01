@@ -51,14 +51,14 @@ function ordenarAcontecimentos(pages, desc = false) {
   });
 }
 
-async function criarHistoria(pastaId = null, nome = T("História")) {
+async function criarHistoria(pastaId = null, nome = T("Comum.Historia")) {
   return JournalEntry.create({
     name: nome, folder: pastaId ?? null, sort: ordemNova(pastaId), ownership: { default: LV().NONE },
     flags: { [MOD]: { tipo: "historia" } }, pages: []
   });
 }
 
-async function novoAcontecimento(h, { nome = T("Acontecimento"), td = null, icone = "fa-landmark", cor = HIST_COR, origem = "", html = "" } = {}) {
+async function novoAcontecimento(h, { nome = T("Historia.Acontecimento"), td = null, icone = "fa-landmark", cor = HIST_COR, origem = "", html = "" } = {}) {
   const [p] = await h.createEmbeddedDocuments("JournalEntryPage", [{
     name: nome, type: "text", text: { content: html },
     sort: (h.pages.contents.reduce((mx, pg) => Math.max(mx, pg.sort), 0) || 0) + 100000,
@@ -85,24 +85,24 @@ async function registrarNaHistoria({ td = null, nome = "", texto = "", origem = 
   let dataHtml = "";
   if (Tempo.ok()) {
     const p = Tempo.partes(Number.isFinite(td) ? td : Tempo.hoje());
-    dataHtml = `<label>${T("Data")} <span class="jm-data">
-        <input type="number" name="dia" min="1" value="${p.dia}" data-tooltip="${T("Dia")}">
+    dataHtml = `<label>${T("Comum.Data")} <span class="jm-data">
+        <input type="number" name="dia" min="1" value="${p.dia}" data-tooltip="${T("Comum.Dia2")}">
         <select name="mes">${Tempo.meses(p.ano).map((m) => `<option value="${m.i}" ${m.i === p.mes ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select>
-        <input type="number" name="ano" value="${p.ano}" data-tooltip="${T("Ano")}"></span></label>
-      <label class="jm-check"><input type="checkbox" name="semData"> ${T("Sem data (não aparece na linha do tempo)")}</label>`;
+        <input type="number" name="ano" value="${p.ano}" data-tooltip="${T("Comum.Ano")}"></span></label>
+      <label class="jm-check"><input type="checkbox" name="semData"> ${T("Historia.SemDataNaoApareceNa")}</label>`;
   }
   const dados = await Dialogo().prompt({
-    window: { title: T("Registrar na História"), icon: "fa-solid fa-landmark" },
+    window: { title: T("Comum.RegistrarNaHistoria"), icon: "fa-solid fa-landmark" },
     position: { width: 500 },
     content: `<div class="jm-form-dialogo">
-      <label>${T("Diário")} <select name="hist">${lista.map((j) => `<option value="${j.id}" ${j.id === sel ? "selected" : ""}>${esc(j.name)}</option>`).join("")}
-        <option value="" ${sel ? "" : "selected"}>+ ${T("Nova História")}</option></select></label>
-      <label>${T("Acontecimento")} <input type="text" name="nome" value="${esc(nome)}" placeholder="${T("Ex.: A queda da Torre de Prata")}"></label>
+      <label>${T("Historia.Diario")} <select name="hist">${lista.map((j) => `<option value="${j.id}" ${j.id === sel ? "selected" : ""}>${esc(j.name)}</option>`).join("")}
+        <option value="" ${sel ? "" : "selected"}>+ ${T("Comum.NovaHistoria")}</option></select></label>
+      <label>${T("Historia.Acontecimento")} <input type="text" name="nome" value="${esc(nome)}" placeholder="${T("Historia.ExAQuedaDaTorre")}"></label>
       ${dataHtml}
-      <label>${T("Ícone")} <select name="icone">${Object.entries(HIST_ICONES).map(([k, r]) => `<option value="${k}" ${k === icone ? "selected" : ""}>${esc(r)}</option>`).join("")}</select></label>
-      <label>${T("O que aconteceu")} <textarea name="texto" rows="6" placeholder="${T("Como foi, quem estava, o que mudou...")}">${esc(texto)}</textarea></label>
+      <label>${T("Comum.Icone")} <select name="icone">${Object.entries(HIST_ICONES).map(([k, r]) => `<option value="${k}" ${k === icone ? "selected" : ""}>${esc(r)}</option>`).join("")}</select></label>
+      <label>${T("Historia.OQueAconteceu")} <textarea name="texto" rows="6" placeholder="${T("Historia.ComoFoiQuemEstavaO")}">${esc(texto)}</textarea></label>
     </div>`,
-    ok: { label: T("Registrar"), icon: "fa-solid fa-feather-pointed", callback: (ev, b) => {
+    ok: { label: T("Historia.Registrar"), icon: "fa-solid fa-feather-pointed", callback: (ev, b) => {
       const f = b.form.elements;
       return { hist: f.hist.value, nome: f.nome.value, texto: f.texto.value, icone: f.icone.value, semData: !!f.semData?.checked,
         dia: Number(f.dia?.value), mes: Number(f.mes?.value), ano: Number(f.ano?.value) };
@@ -112,23 +112,23 @@ async function registrarNaHistoria({ td = null, nome = "", texto = "", origem = 
   let tdFinal = null;
   if (Tempo.ok() && !dados.semData) {
     tdFinal = Tempo.tdDe(dados.ano, dados.mes, dados.dia);
-    if (tdFinal == null) { ui.notifications.warn(T("Essa data não existe neste calendário.")); return null; }
+    if (tdFinal == null) { ui.notifications.warn(T("Comum.EssaDataNaoExisteNeste")); return null; }
   }
   const h = (dados.hist && game.journal.get(dados.hist)) || await criarHistoria();
-  const page = await novoAcontecimento(h, { nome: String(dados.nome).trim() || T("Acontecimento"), td: tdFinal, icone: dados.icone, origem, html: textoParaHtml(String(dados.texto).trim()) });
-  ui.notifications.info(`${T("Registrado em")} "${h.name}".`);
+  const page = await novoAcontecimento(h, { nome: String(dados.nome).trim() || T("Historia.Acontecimento"), td: tdFinal, icone: dados.icone, origem, html: textoParaHtml(String(dados.texto).trim()) });
+  ui.notifications.info(`${T("Historia.RegistradoEm")} "${h.name}".`);
   return { entry: h, page };
 }
 
 /** Seletor de data (dia, mês, ano). O ouvinte [data-data] cuida de converter. */
 function campoData(alvo, td, extra = "") {
-  if (!Tempo.ok()) return `<span class="jm-dica">${T("Calendário indisponível.")}</span>`;
+  if (!Tempo.ok()) return `<span class="jm-dica">${T("Historia.CalendarioIndisponivel")}</span>`;
   const p = Tempo.partes(Number.isFinite(td) ? td : Tempo.hoje());
   const meses = Tempo.meses(p.ano);
   return `<span class="jm-data" data-data="${esc(alvo)}" ${extra}>
-    <input type="number" min="1" max="${meses[p.mes]?.dias ?? 31}" value="${p.dia}" data-parte="dia" data-tooltip="${T("Dia")}">
-    <select data-parte="mes">${meses.map((m) => `<option value="${m.i}" ${m.i === p.mes ? "selected" : ""} ${m.existe === false ? "disabled" : ""}>${esc(m.nome)}${m.existe === false ? T(" (não existe neste ano)") : ""}</option>`).join("")}</select>
-    <input type="number" value="${p.ano}" data-parte="ano" data-tooltip="${T("Ano")}">
+    <input type="number" min="1" max="${meses[p.mes]?.dias ?? 31}" value="${p.dia}" data-parte="dia" data-tooltip="${T("Comum.Dia2")}">
+    <select data-parte="mes">${meses.map((m) => `<option value="${m.i}" ${m.i === p.mes ? "selected" : ""} ${m.existe === false ? "disabled" : ""}>${esc(m.nome)}${m.existe === false ? T("Historia.NaoExisteNesteAno") : ""}</option>`).join("")}</select>
+    <input type="number" value="${p.ano}" data-parte="ano" data-tooltip="${T("Comum.Ano")}">
   </span>`;
 }
 
@@ -138,11 +138,11 @@ const calHoje = () => Tempo.hoje();
 function calTextoDia(td) {
   if (Tempo.ok()) {
     const rel = Tempo.relativo(td);
-    return `${Tempo.texto(td)}${[TF("hoje"), TF("amanhã"), TF("ontem")].includes(rel) ? ` (${rel})` : ""}`;
+    return `${Tempo.texto(td)}${[TF("Comum.Hoje"), TF("Comum.Amanha"), TF("Comum.Ontem")].includes(rel) ? ` (${rel})` : ""}`;
   }
   const d = td - Tempo.hoje();
-  if (d === 0) return T("Hoje");
-  return d > 0 ? `${T("Daqui a")} ${d} dias` : `${T("Há")} ${-d} dias`;
+  if (d === 0) return T("Comum.Hoje2");
+  return d > 0 ? `${T("Historia.DaquiA")} ${d} dias` : `${T("Historia.Ha")} ${-d} dias`;
 }
 
 /** Nota já no formato novo (mesmas regras do Calendário da Mesa). */
@@ -171,18 +171,18 @@ function calNormalizar(n) {
 /** Nota nova, no calendário em uso. */
 function notaPadrao(td, campos = {}) {
   let calId;
-  try { calId = calApi()?.calendarioAtual?.().id; } catch (err) { avisoUmaVez(T("calendário em uso"), err); }
+  try { calId = calApi()?.calendarioAtual?.().id; } catch (err) { avisoUmaVez(T("Historia.CalendarioEmUso"), err); }
   return calNormalizar({ td, hora: "", repetir: "nao", cada: 1, duracao: 1, cor: "#c9a227", icone: "fa-star", aviso: "nenhum", fim: { tipo: "nunca" }, ...(calId ? { cal: calId } : {}), ...campos });
 }
 
 /** Frase da repetição: a do calendário quando ele está ativo. */
 function calResumoRepeticao(entry) {
-  try { const t = calApi()?.notas?.descrever?.(entry); if (t) return t; } catch (err) { avisoUmaVez(T("descrição da repetição pelo Calendário"), err); }
+  try { const t = calApi()?.notas?.descrever?.(entry); if (t) return t; } catch (err) { avisoUmaVez(T("Historia.DescricaoDaRepeticaoPeloCalendario"), err); }
   const n = calNormalizar(calNota(entry));
-  if (!n || n.repetir === "nao") return n?.duracao > 1 ? TF("{n} dias", { n: n.duracao }) : T("Não repete");
-  const un = { dias: T("dias"), semanas: T("semanas"), meses: T("meses"), anos: T("anos") }[n.repetir];
-  const base = n.cada === 1 ? { dias: T("Todo dia"), semanas: T("Toda semana"), meses: T("Todo mês"), anos: T("Todo ano") }[n.repetir] : `${T("A cada")} ${n.cada} ${un}`;
-  return `${base}${n.duracao > 1 ? `, ${TF("durando {n} dias", { n: n.duracao })}` : ""}`;
+  if (!n || n.repetir === "nao") return n?.duracao > 1 ? TF("Comum.NDias", { n: n.duracao }) : T("Historia.NaoRepete");
+  const un = { dias: T("Historia.Dias"), semanas: T("Historia.Semanas"), meses: T("Historia.Meses"), anos: T("Historia.Anos") }[n.repetir];
+  const base = n.cada === 1 ? { dias: T("Historia.TodoDia"), semanas: T("Historia.TodaSemana"), meses: T("Historia.TodoMes"), anos: T("Historia.TodoAno") }[n.repetir] : `${T("Comum.ACada")} ${n.cada} ${un}`;
+  return `${base}${n.duracao > 1 ? `, ${TF("Historia.DurandoNDias", { n: n.duracao })}` : ""}`;
 }
 
 /** Regra simplificada (só quando o calendário não está ativo). */
@@ -203,7 +203,7 @@ function calProximas(entry, qtd = 1) {
   try {
     const r = calApi()?.notas?.proximas?.(entry, qtd);
     if (Array.isArray(r)) return r.map((x) => Number(x.td)).filter(Number.isFinite);
-  } catch (err) { avisoUmaVez(T("próximas datas pelo Calendário"), err); }
+  } catch (err) { avisoUmaVez(T("Historia.ProximasDatasPeloCalendario"), err); }
   const n = calNormalizar(calNota(entry));
   if (!n) return [];
   const desde = Tempo.hoje(), r = [];
@@ -215,7 +215,7 @@ const calProxima = (entry) => calProximas(entry, 1)[0] ?? null;
 async function calSalvar(entry, mudancas) {
   const atual = calNota(entry) ?? notaPadrao(Tempo.hoje());
   const nova = calNormalizar({ ...atual, ...mudancas });
-  if (!nova) return ui.notifications.warn(T("Não consegui marcar a data: o calendário não está disponível."));
+  if (!nova) return ui.notifications.warn(T("Historia.NaoConseguiMarcarAData"));
   await entry.update({ [`flags.${CAL}.nota`]: nova });
 }
 

@@ -28,10 +28,10 @@ async function verificarPrazos(hoje) {
     const falhar = a.x.aoVencer === "falhar";
     await a.page.update({ [`flags.${MOD}.prazoAvisado`]: true, ...(falhar ? { [`flags.${MOD}.concluidaEm`]: hoje } : {}) });
     if (falhar) await dadosSet(a.page, "status", "failed");
-    const texto = `${T("Prazo da missão")} <b>${esc(j.name)}</b> ${T("venceu")}${falhar ? ` — ${T("marcada como")} <b>${T("falhou")}</b>` : ""}.`;
+    const texto = `${T("Tempo.PrazoDaMissao")} <b>${esc(j.name)}</b> ${T("Tempo.Venceu")}${falhar ? ` — ${T("Tempo.MarcadaComo")} <b>${T("Tempo.Falhou")}</b>` : ""}.`;
     await chat(`<i class="fa-solid fa-hourglass-end"></i> ${texto}`, { whisper: idsGM() });
     Sessao.registrar("missao", texto);
-    try { await calApi()?.registrar?.(`${T("Prazo vencido")}: ${j.name}`, "fa-hourglass-end"); } catch (err) { avisoUmaVez(T("histórico do Calendário"), err); }
+    try { await calApi()?.registrar?.(`${T("Tempo.PrazoVencido")}: ${j.name}`, "fa-hourglass-end"); } catch (err) { avisoUmaVez(T("Comum.HistoricoDoCalendario"), err); }
   }
 }
 
@@ -44,11 +44,11 @@ Hooks.on("updateWorldTime", async () => {
     if (souGMPrincipal()) {
       if (hoje > antes) {
         let eventos = [];
-        try { eventos = calApi()?.notasDoDia?.(hoje) ?? []; } catch (err) { avisoUmaVez(T("eventos do dia pelo Calendário"), err); }
-        Sessao.registrar("dia", `${T("Chegou")} <b>${esc(Tempo.texto(hoje))}</b>${hoje - antes > 1 ? ` (${TF("passaram {n} dias", { n: hoje - antes })})` : ""}.${eventos.length ? ` ${T("Eventos")}: ${eventos.map((j) => esc(j.name)).join(", ")}.` : ""}`);
+        try { eventos = calApi()?.notasDoDia?.(hoje) ?? []; } catch (err) { avisoUmaVez(T("Tempo.EventosDoDiaPeloCalendario"), err); }
+        Sessao.registrar("dia", `${T("Tempo.Chegou")} <b>${esc(Tempo.texto(hoje))}</b>${hoje - antes > 1 ? ` (${TF("Tempo.PassaramNDias", { n: hoje - antes })})` : ""}.${eventos.length ? ` ${T("Comum.Eventos")}: ${eventos.map((j) => esc(j.name)).join(", ")}.` : ""}`);
       }
       await verificarPrazos(hoje);
-      await Jornal.verificarProgramadas().catch((err) => relatarErro(T("edições programadas"), err));
+      await Jornal.verificarProgramadas().catch((err) => relatarErro(T("Comum.EdicoesProgramadas"), err));
     }
     return atualizarTudo();
   }
@@ -88,12 +88,12 @@ Hooks.on("deleteCombat", async (combat, options, userId) => {
   const derrotados = derrotadosDo(combat);
   if (souGMPrincipal()) {
     const caidos = derrotados.map((c) => esc(c.name ?? c.actor?.name)).filter(Boolean);
-    Sessao.registrar("combate", `${T("Combate encerrado")}${combat.round ? ` ${TF("em {n} rodada(s)", { n: combat.round })}` : ""}.${caidos.length ? ` ${T("Derrotados")}: ${caidos.join(", ")}.` : ""}`);
+    Sessao.registrar("combate", `${T("Tempo.CombateEncerrado")}${combat.round ? ` ${TF("Tempo.EmNRodadaS", { n: combat.round })}` : ""}.${caidos.length ? ` ${T("Tempo.Derrotados")}: ${caidos.join(", ")}.` : ""}`);
   }
   if (userId !== game.user.id || !ehGM() || !game.settings.get(MOD, "bauFimCombate") || !derrotados.length) return;
   const ok = await Dialogo().confirm({
-    window: { title: T("Saque do combate"), icon: "fa-solid fa-box-open" },
-    content: `<p>${T("Criar um")} <b>${T("Baú")}</b> ${T("no Journal da Mesa com os itens e moedas dos inimigos derrotados?")}</p>`
+    window: { title: T("Tempo.SaqueDoCombate"), icon: "fa-solid fa-box-open" },
+    content: `<p>${T("Tempo.CriarUm")} <b>${T("Comum.Bau")}</b> ${T("Tempo.NoJournalDaMesaCom")}</p>`
   });
   if (ok) criarBauDoCombate(combat);
 });
@@ -153,7 +153,7 @@ function cliqueEmLink(ev) {
     ev.stopImmediatePropagation();
     const ancora = href.split("#")[1];
     if (ancora) janela._rolar({ ancora: decodeURIComponent(ancora) });
-    else ui.notifications.warn(`${T("Este link aponta para")} "${href}", ${T("que não existe no Foundry. Edite o texto e troque por um link do Foundry (arraste a página para o texto).")}`);
+    else ui.notifications.warn(`${T("Tempo.EsteLinkApontaPara")} "${href}", ${T("Tempo.QueNaoExisteNoFoundry")}`);
   }
 }
 

@@ -1,5 +1,15 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.1.0
+
+- **Testada e aprovada pelo autor no Foundry VTT e no D&D 5e** antes da publicação.
+- **Tradução reorganizada.** Os textos da interface continuam em `lang/pt-BR.json` e `lang/en.json`, mas agora cada um tem um nome legível por área (`Janela.Fechar`, `Pechincha.Empate`, `Tabelas.Armas`...) em vez do código calculado de antes. **Nada muda para quem joga**: os mesmos textos, nos mesmos lugares, nos dois idiomas.
+- **Para quem quiser traduzir**: basta editar `lang/en.json` (ou copiar para outro idioma) — o nome de cada chave diz onde o texto aparece. Veja [Traduzir o módulo](README.md#traduzir-o-módulo) no README.
+- Textos que ainda não tinham versão em inglês (avisos do console sobre o Calendário, "modo simples", "sem ProseMirror") ganharam tradução; 15 textos que não eram mais usados em lugar nenhum foram apagados dos arquivos de idioma.
+- Nomes das tabelas prontas das lojas e da pasta delas continuam saindo no idioma do mestre; a pasta criada antes da 4.9 (em português) segue sendo reconhecida.
+- Ferramentas: `tools/i18n-migrar.mjs` dá chave a texto novo e confere os arquivos; `npm test` (ou `node tests/i18n.test.mjs`) confere que os dois idiomas têm as mesmas chaves, que toda chamada no código tem texto nos dois e que os `{campos}` batem. Nenhuma das duas vai no ZIP da release.
+- Testes: `node tests/formato.test.mjs` continua passando (134 verificações); `node tests/i18n.test.mjs` é novo (1.373 chaves, 1.284 chamadas conferidas).
+
 ## 5.0.1
 
 - **Testada e aprovada pelo autor no Foundry VTT e no D&D 5e** antes da publicação.

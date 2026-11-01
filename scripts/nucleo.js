@@ -22,9 +22,9 @@ import * as Jornal from "./jornal/index.js";
 import { configurarTabelasLojas, registrarTabelasLojas, tabelasDasLojas, tabelaDaLoja, nomeTabela } from "./lojas/tabelas.js";
 
 /* ---------- idioma ----------
- * T(), TF() e traduzirNoLugar() estão em idioma.js (textos em português no código, chave = código do texto).
- * As constantes do topo do arquivo (tipos, status, ícones...) e as configurações são traduzidas quando
- * o Foundry carrega o idioma (i18nInit, no fim do arquivo). */
+ * T("Area.Chave"), TF() e traduzirNoLugar() estão em idioma.js (textos em lang/pt-BR.json e lang/en.json).
+ * As constantes do topo do arquivo (tipos, status, ícones...) ficam em português e são traduzidas quando o
+ * Foundry carrega o idioma (i18nInit, no fim do arquivo), pelo mapa de idioma-mapa.js. */
 import { T, TF, traduzirNoLugar } from "./idioma.js";
 // partes do Journal (scripts/partes/)
 import { CAL, CAL_AVISOS, CAL_FIM, CAL_ICONES, CAL_ICONES_GRUPOS, CAL_MODOS_MES, CAL_REPETIR, Tempo, calApi, lojaBloqueada } from "./partes/calendario.js";
@@ -138,15 +138,6 @@ const OFERTAS = {
   escambo: { rotulo: "Escambo",  desc: "Barato... pelo menos em ouro.", min: 0.05, max: 0.2 }
 };
 
-const CUSTOS_PADRAO = [
-  "Uma maldição que só se revela no pior momento",
-  "Um favor que o vendedor vai cobrar quando quiser",
-  "Uma lembrança querida, que some da memória",
-  "O item foi roubado — e o dono verdadeiro vai procurá-lo",
-  "Um ano de vida",
-  "O nome verdadeiro do comprador, anotado num caderno"
-].join("\n");
-
 /* nomes dos temas: chaves de idioma (lang/). O id "lotd" continua o mesmo, para quem já usa o tema;
  * só o nome mostrado mudou para "Tema Vitoriano". */
 const TEMAS = { claro: "JMESA.Tema.claro", lotd: "JMESA.Tema.vitoriano", noite: "JMESA.Tema.noite" };
@@ -225,13 +216,13 @@ const AVISADOS = new Set();
 function avisoUmaVez(onde, err) {
   if (AVISADOS.has(onde)) return;
   AVISADOS.add(onde);
-  console.warn(`${T("Journal da Mesa")} | ${onde}: ${T("usando a alternativa local")}`, err);
+  console.warn(`${T("Comum.JournalDaMesa")} | ${onde}: ${T("Nucleo.UsandoAAlternativaLocal")}`, err);
 }
 
 /** Erro numa ação: console sempre; notificação para quem clicou. */
 function relatarErro(onde, err) {
-  console.error(`${T("Journal da Mesa")} | ${onde}`, err);
-  ui.notifications?.error(`${T("Journal da Mesa: falha em")} "${onde}" (${err?.message ?? err}${T("). Detalhes no console (F12).")}`);
+  console.error(`${T("Comum.JournalDaMesa")} | ${onde}`, err);
+  ui.notifications?.error(`${T("Nucleo.JournalDaMesaFalhaEm")} "${onde}" (${err?.message ?? err}${T("Nucleo.DetalhesNoConsoleF12")}`);
 }
 
 function extrasPadrao() {
@@ -245,7 +236,7 @@ function extrasPadrao() {
       simboloImg: "", reliquias: []
     },
     semanal: { tabela: "", qtd: 6 },
-    diaria: { tabela: "", chances: { achado: 40, luxo: 35, escambo: 25 }, custos: T(CUSTOS_PADRAO), ofertas: {} }
+    diaria: { tabela: "", chances: { achado: 40, luxo: 35, escambo: 25 }, custos: T("Nucleo.CustosPadrao"), ofertas: {} }
   };
 }
 
@@ -400,7 +391,7 @@ async function importarDoMonks({ entradas = null, silencioso = false } = {}) {
     catch (err) {
       rel.falhas.push({ id: e.id, nome: e.name, erro: err?.message ?? String(err) });
       rel.convertidas = rel.convertidas.filter((c) => c.id !== e.id);
-      console.error(`${T("Journal da Mesa")} | ${T("importar do Monk's")}: ${e.name}`, err);
+      console.error(`${T("Comum.JournalDaMesa")} | ${T("Nucleo.ImportarDoMonkS")}: ${e.name}`, err);
     }
   }
   // vínculos que apontam para páginas que não existem mais (já estavam quebrados antes da conversão)
@@ -417,21 +408,21 @@ function mostrarRelatorioMonks(rel) {
   const n = rel.convertidas.length;
   const tipos = Object.entries(rel.porTipo).map(([t, q]) => `<li>${esc(TIPOS[t]?.rotulo ?? NOMES_MEJ[t] ?? t)}: <b>${q}</b></li>`).join("");
   const lim = rel.limitadas.length
-    ? `<p><b>${T("Tipos só do Monk's")}</b> (${rel.limitadas.length}): ${T("ficam no Journal da Mesa com edição limitada (nome, imagem e descrição).")}</p><ul>${rel.limitadas.slice(0, 30).map((l) => `<li>${esc(l.nome)} <small>(${esc(NOMES_MEJ[l.tipo] ?? l.tipo)})</small></li>`).join("")}${rel.limitadas.length > 30 ? "<li>…</li>" : ""}</ul>`
+    ? `<p><b>${T("Nucleo.TiposSoDoMonkS")}</b> (${rel.limitadas.length}): ${T("Nucleo.FicamNoJournalDaMesa")}</p><ul>${rel.limitadas.slice(0, 30).map((l) => `<li>${esc(l.nome)} <small>(${esc(NOMES_MEJ[l.tipo] ?? l.tipo)})</small></li>`).join("")}${rel.limitadas.length > 30 ? "<li>…</li>" : ""}</ul>`
     : "";
   const vq = rel.vinculosQuebrados.length
-    ? `<p><b>${T("Vínculos quebrados")}</b> (${rel.vinculosQuebrados.length}): ${T("conexões que apontam para páginas que não existem mais. Já estavam assim antes; a conversão não mexe nelas.")}</p><ul>${rel.vinculosQuebrados.slice(0, 30).map((v) => `<li>${esc(v.de)} → <code>${esc(String(v.para))}</code></li>`).join("")}${rel.vinculosQuebrados.length > 30 ? "<li>…</li>" : ""}</ul>`
+    ? `<p><b>${T("Nucleo.VinculosQuebrados")}</b> (${rel.vinculosQuebrados.length}): ${T("Nucleo.ConexoesQueApontamParaPaginas")}</p><ul>${rel.vinculosQuebrados.slice(0, 30).map((v) => `<li>${esc(v.de)} → <code>${esc(String(v.para))}</code></li>`).join("")}${rel.vinculosQuebrados.length > 30 ? "<li>…</li>" : ""}</ul>`
     : "";
   const falhas = rel.falhas.length
-    ? `<p><b>${T("Não convertidas")}</b> (${rel.falhas.length}):</p><ul>${rel.falhas.map((f) => `<li>${esc(f.nome)}: <code>${esc(f.erro)}</code></li>`).join("")}</ul>`
+    ? `<p><b>${T("Nucleo.NaoConvertidas")}</b> (${rel.falhas.length}):</p><ul>${rel.falhas.map((f) => `<li>${esc(f.nome)}: <code>${esc(f.erro)}</code></li>`).join("")}</ul>`
     : "";
   const content = `
-    <p><b>${n}</b> ${T("página(s) convertida(s) do formato do Monk's Enhanced Journal.")} ${rel.puladas ? `${rel.puladas} ${T("já estavam no formato do Journal da Mesa e não foram tocadas.")}` : ""}</p>
+    <p><b>${n}</b> ${T("Nucleo.PaginaSConvertidaSDo")} ${rel.puladas ? `${rel.puladas} ${T("Nucleo.JaEstavamNoFormatoDo")}` : ""}</p>
     ${tipos ? `<ul>${tipos}</ul>` : ""}
-    <p>${T("Os dados do Monk's ficaram como estavam: a conversão só copia. As páginas continuam as mesmas, então os vínculos entre elas seguem valendo.")}</p>
+    <p>${T("Nucleo.OsDadosDoMonkS")}</p>
     ${lim}${vq}${falhas}`;
-  console.info(`${T("Journal da Mesa")} | ${T("importar do Monk's")}`, rel);
-  return Dialogo().prompt({ window: { title: T("Importar do Monk's Enhanced Journal") }, content, ok: { label: T("Fechar") }, rejectClose: false }).catch(() => null);
+  console.info(`${T("Comum.JournalDaMesa")} | ${T("Nucleo.ImportarDoMonkS")}`, rel);
+  return Dialogo().prompt({ window: { title: T("Comum.ImportarDoMonkSEnhanced") }, content, ok: { label: T("Nucleo.Fechar") }, rejectClose: false }).catch(() => null);
 }
 
 /** Conversão automática ao abrir o mundo (uma vez; só o mestre principal). */
@@ -442,12 +433,12 @@ async function migrarFormato() {
   const pendentes = game.journal.contents.filter((e) => e.pages.contents.some(paginaPendenteDoMonks));
   if (!pendentes.length) { await game.settings.set(MOD, "formatoDados", 5); return; }
   const ok = await Dialogo().confirm({
-    window: { title: T("Journal da Mesa 5.0: formato novo") },
-    content: `<p>${T("A partir da 5.0, o Journal da Mesa guarda os dados das páginas no formato próprio. Encontrei")} <b>${pendentes.length}</b> ${T("diário(s) com páginas no formato do Monk's Enhanced Journal.")}</p>
-      <p>${T("Converter copia os dados para o formato novo. Nada é apagado: as flags do Monk's continuam como estão, e cada página continua a mesma, com os mesmos vínculos.")}</p>
-      <p><b>${T("Recomendo fazer um backup do mundo antes.")}</b></p>
-      <p>${T("Se escolher Depois, essas páginas aparecem como diário comum até a conversão (botão Importar do Monk's, no topo da lista do Journal da Mesa).")}</p>`,
-    yes: { label: T("Converter agora") }, no: { label: T("Depois") }, rejectClose: false
+    window: { title: T("Nucleo.JournalDaMesa50") },
+    content: `<p>${T("Nucleo.APartirDa50")} <b>${pendentes.length}</b> ${T("Nucleo.DiarioSComPaginasNo")}</p>
+      <p>${T("Nucleo.ConverterCopiaOsDadosPara")}</p>
+      <p><b>${T("Nucleo.RecomendoFazerUmBackupDo")}</b></p>
+      <p>${T("Nucleo.SeEscolherDepoisEssasPaginas")}</p>`,
+    yes: { label: T("Nucleo.ConverterAgora") }, no: { label: T("Nucleo.Depois") }, rejectClose: false
   }).catch(() => false);
   if (!ok) return;
   const rel = await importarDoMonks({ entradas: pendentes });
@@ -550,12 +541,12 @@ function visibilidade(doc) {
 }
 
 const NIVEIS = () => [
-  [LV().NONE, T("Nada"), "fa-solid fa-ban"],
-  [LV().LIMITED, T("Limitado"), "fa-solid fa-eye-low-vision"],
-  [LV().OBSERVER, T("Observador"), "fa-solid fa-eye"],
-  [LV().OWNER, T("Dono"), "fa-solid fa-crown"]
+  [LV().NONE, T("Nucleo.Nada"), "fa-solid fa-ban"],
+  [LV().LIMITED, T("Nucleo.Limitado"), "fa-solid fa-eye-low-vision"],
+  [LV().OBSERVER, T("Nucleo.Observador"), "fa-solid fa-eye"],
+  [LV().OWNER, T("Nucleo.Dono"), "fa-solid fa-crown"]
 ];
-const nomeNivel = (n) => NIVEIS().find(([v]) => v === n)?.[1] ?? T("Nada");
+const nomeNivel = (n) => NIVEIS().find(([v]) => v === n)?.[1] ?? T("Nucleo.Nada");
 const corUsuario = (u) => u.color?.css ?? (typeof u.color === "string" ? u.color : "#888");
 
 /* ---------- revelação por seção ----------
@@ -577,13 +568,13 @@ function podeVerSecao(entry, chave, user = game.user) {
 }
 function rotuloEstadoSecao(entry, chave) {
   const st = estadoSecao(entry, chave);
-  if (st === "todos") return ["todos", "fa-eye", T("Revelada a todos que veem a página (inclusive Limitado)")];
-  if (st === "ninguem") return ["ninguem", "fa-eye-slash", T("Escondida: só o mestre vê")];
+  if (st === "todos") return ["todos", "fa-eye", T("Nucleo.ReveladaATodosQueVeem")];
+  if (st === "ninguem") return ["ninguem", "fa-eye-slash", T("Nucleo.EscondidaSoOMestreVe")];
   if (Array.isArray(st) && st.length) {
     const nomes = st.map((id) => game.users.get(id)?.name).filter(Boolean).join(", ");
-    return ["alguns", "fa-user-check", `${T("Revelada também para")}: ${nomes}`];
+    return ["alguns", "fa-user-check", `${T("Nucleo.ReveladaTambemPara")}: ${nomes}`];
   }
-  return ["padrao", "fa-eye-low-vision", T("Segue a permissão da página (Observador vê, Limitado não)")];
+  return ["padrao", "fa-eye-low-vision", T("Nucleo.SegueAPermissaoDaPagina")];
 }
 
 /** Pasta oculta (marcada pelo mestre): some do Journal e da aba de Diários, sem apagar nada. */
@@ -597,7 +588,7 @@ function bolinhasDono(doc) {
   if (!own) return "";
   const def = own.default ?? 0;
   const partes = [];
-  if (def >= LV().LIMITED) partes.push(`<span class="jm-dono todos nivel-${def}" data-tooltip="${T("Todos os jogadores")}: ${nomeNivel(def)}"><i class="fa-solid fa-users"></i></span>`);
+  if (def >= LV().LIMITED) partes.push(`<span class="jm-dono todos nivel-${def}" data-tooltip="${T("Nucleo.TodosOsJogadores")}: ${nomeNivel(def)}"><i class="fa-solid fa-users"></i></span>`);
   for (const u of game.users) {
     if (u.isGM) continue;
     const n = own[u.id];
@@ -615,11 +606,11 @@ async function editarNotaMestre(e) {
   if (!e || !ehGM()) return;
   const atual = String(e.getFlag(MOD, "nota") ?? "");
   const texto = await Dialogo().prompt({
-    window: { title: `${T("Nota do mestre")}: ${e.name}`, icon: "fa-solid fa-note-sticky" },
+    window: { title: `${T("Nucleo.NotaDoMestre")}: ${e.name}`, icon: "fa-solid fa-note-sticky" },
     position: { width: 440 },
-    content: `<p class="jm-dica">${T("Lembrete rápido, só para você. Aparece ao passar o mouse na lista.")}</p>
-      <textarea name="nota" rows="5" style="width:100%" placeholder="${T("Ex.: Dono da taverna, deve 300 po à Guilda, sabe onde está o anel.")}">${esc(atual)}</textarea>`,
-    ok: { label: T("Salvar"), icon: "fa-solid fa-check", callback: (ev, botao) => botao.form.elements.nota.value }
+    content: `<p class="jm-dica">${T("Nucleo.LembreteRapidoSoParaVoce")}</p>
+      <textarea name="nota" rows="5" style="width:100%" placeholder="${T("Nucleo.ExDonoDaTavernaDeve")}">${esc(atual)}</textarea>`,
+    ok: { label: T("Comum.Salvar"), icon: "fa-solid fa-check", callback: (ev, botao) => botao.form.elements.nota.value }
   }).catch(() => null);
   if (texto == null) return;
   if (texto.trim()) await e.setFlag(MOD, "nota", texto.trim());
@@ -631,7 +622,7 @@ async function alternarPastaOculta(f) {
   const ocultar = !pastaMarcadaOculta(f);
   if (ocultar) await f.setFlag(MOD, "oculta", true);
   else await f.unsetFlag(MOD, "oculta");
-  ui.notifications.info(ocultar ? `"${f.name}" ${T("foi para Ocultos (rodapé do Journal da Mesa).")}` : `"${f.name}" ${T("voltou para a lista.")}`);
+  ui.notifications.info(ocultar ? `"${f.name}" ${T("Nucleo.FoiParaOcultosRodapeDo")}` : `"${f.name}" ${T("Nucleo.VoltouParaALista")}`);
   ui.journal?.render?.();
 }
 
@@ -640,7 +631,7 @@ async function revelarPara(doc) {
   const own = doc.ownership ?? {};
   const jogadores = game.users.filter((u) => !u.isGM);
   const opcoesNivel = (nome, atual, comPadrao) => `<div class="jm-niveis">${comPadrao
-    ? `<label class="jm-nivel"><input type="radio" name="${nome}" value="-1" ${atual == null || atual < 0 ? "checked" : ""}><span data-tooltip="${T("Segue o padrão de todos")}"><i class="fa-solid fa-arrow-turn-up"></i></span></label>` : ""}
+    ? `<label class="jm-nivel"><input type="radio" name="${nome}" value="-1" ${atual == null || atual < 0 ? "checked" : ""}><span data-tooltip="${T("Nucleo.SegueOPadraoDeTodos")}"><i class="fa-solid fa-arrow-turn-up"></i></span></label>` : ""}
     ${NIVEIS().map(([v, r, i]) => `<label class="jm-nivel"><input type="radio" name="${nome}" value="${v}" ${atual === v ? "checked" : ""}><span data-tooltip="${r}"><i class="${i}"></i> ${r}</span></label>`).join("")}</div>`;
   const linhas = jogadores.map((u) => `<div class="jm-revelar-linha">
     <span class="jm-dono" style="--cor:${corUsuario(u)}">${esc((u.name || "?")[0].toUpperCase())}</span>
@@ -648,15 +639,15 @@ async function revelarPara(doc) {
     ${opcoesNivel(`u-${u.id}`, own[u.id], true)}</div>`).join("");
   const content = `<div class="jm-revelar">
     <div class="jm-revelar-linha todos"><span class="jm-dono todos"><i class="fa-solid fa-users"></i></span>
-      <div class="quem"><b>${T("Todos os jogadores")}</b><small>${T("padrão")}</small></div>${opcoesNivel("default", own.default ?? 0, false)}</div>
-    <hr>${linhas || `<p class="jm-vazio">${T("Nenhum jogador cadastrado.")}</p>`}
-    <p class="jm-dica"><b>${T("Limitado")}</b>: ${T("vê só o nome e a imagem.")} <b>${T("Observador")}</b>: ${T("lê tudo.")} <b>${T("Dono")}</b>: ${T("pode editar.")}</p></div>`;
+      <div class="quem"><b>${T("Nucleo.TodosOsJogadores")}</b><small>${T("Comum.Padrao")}</small></div>${opcoesNivel("default", own.default ?? 0, false)}</div>
+    <hr>${linhas || `<p class="jm-vazio">${T("Nucleo.NenhumJogadorCadastrado")}</p>`}
+    <p class="jm-dica"><b>${T("Nucleo.Limitado")}</b>: ${T("Nucleo.VeSoONomeE")} <b>${T("Nucleo.Observador")}</b>: ${T("Nucleo.LeTudo")} <b>${T("Nucleo.Dono")}</b>: ${T("Nucleo.PodeEditar")}</p></div>`;
   const dados = await Dialogo().prompt({
-    window: { title: `${T("Quem vê")}: ${doc.name}`, icon: "fa-solid fa-eye" },
+    window: { title: `${T("Nucleo.QuemVe")}: ${doc.name}`, icon: "fa-solid fa-eye" },
     position: { width: 560 },
     content,
     ok: {
-      label: T("Salvar"), icon: "fa-solid fa-check",
+      label: T("Comum.Salvar"), icon: "fa-solid fa-check",
       callback: (ev, botao) => Object.fromEntries([...botao.form.querySelectorAll("input[type=radio]:checked")].map((i) => [i.name, Number(i.value)]))
     }
   }).catch(() => null);
@@ -673,7 +664,7 @@ async function revelarPara(doc) {
 /** Abre uma imagem numa janela (o mestre pode mandar para os jogadores). */
 function abrirImagem(src, titulo) {
   const IP = foundry.applications.apps.ImagePopout;
-  new IP({ src, showTitle: !!titulo, window: { title: titulo || T("Imagem") } }).render(true);
+  new IP({ src, showTitle: !!titulo, window: { title: titulo || T("Nucleo.Imagem") } }).render(true);
 }
 function mostrarImagem(src, titulo, userIds = null) {
   game.socket.emit(CANAL, { acao: "imagem", src, titulo, userIds });
@@ -770,11 +761,11 @@ function quebrarEmMoedas(po) {
 function formatarPreco(po) {
   const partes = quebrarEmMoedas(po);
   const texto = moedasAtivas().filter((m) => partes[m.k]).map((m) => `${partes[m.k]} ${m.abrev}`).join(" ");
-  return texto || T("grátis");
+  return texto || T("Nucleo.Gratis");
 }
 
 function formatarMoedas(moedas) {
-  return moedasAtivas().filter((m) => Number(moedas?.[m.k]) > 0).map((m) => `${Number(moedas[m.k])} ${m.abrev}`).join(" · ") || T("nenhuma moeda");
+  return moedasAtivas().filter((m) => Number(moedas?.[m.k]) > 0).map((m) => `${Number(moedas[m.k])} ${m.abrev}`).join(" · ") || T("Comum.NenhumaMoeda");
 }
 
 /** Desconta um valor (em po) das moedas do ator. Moedas acima de 1 po e electrum não são criadas do nada. */
@@ -828,7 +819,7 @@ async function resultadoParaItem(r) {
   }
   let doc = uuid ? await fromUuid(uuid).catch(() => null) : null;
   if (doc && doc.documentName !== "Item") doc = null;
-  const bruto = r.name || r.text || r.description || T("Item misterioso");
+  const bruto = r.name || r.text || r.description || T("Nucleo.ItemMisterioso");
   return {
     doc,
     uuid: doc?.uuid ?? "",
@@ -894,7 +885,7 @@ function avatar(img, tipo, classe = "") {
     : `<div class="jm-av jm-av-icone ${classe} tipo-${tipo}"><i class="${t.icone}"></i></div>`;
 }
 
-function opcoes(lista, atual, vazio = TF("— nenhum —")) {
+function opcoes(lista, atual, vazio = TF("Nucleo.Nenhum")) {
   return `<option value="">${esc(vazio)}</option>` + lista
     .map(([v, r]) => `<option value="${esc(v)}" ${v === atual ? "selected" : ""}>${esc(r)}</option>`).join("");
 }
@@ -967,7 +958,7 @@ function lerArquivoJson() {
       const arq = input.files?.[0];
       if (!arq) return terminar(null);
       try { terminar(JSON.parse(await arq.text())); }
-      catch { ui.notifications.error(T("Esse arquivo não é um JSON válido.")); terminar(null); }
+      catch { ui.notifications.error(T("Nucleo.EsseArquivoNaoEUm")); terminar(null); }
     });
     input.addEventListener("cancel", () => terminar(null));
     window.addEventListener("focus", aoVoltar);
@@ -1021,17 +1012,17 @@ const Menu = {
 async function executarRolagemDiaria({ entryId, userId }) {
   const e = game.journal.get(entryId);
   if (!e) return;
-  if (lojaBloqueada(e, userId)) return aviso(userId, T("A loja está fechada agora."), "warn");
+  if (lojaBloqueada(e, userId)) return aviso(userId, T("Comum.ALojaEstaFechadaAgora"), "warn");
   const { page, x } = analisar(e);
   if (!page) return;
   const dia = diaAtual();
   const atual = x.diaria.ofertas[userId];
-  if (atual && atual.dia === dia) return aviso(userId, T("Você já rolou a oferta de hoje nesta loja. Volte amanhã!"), "warn");
+  if (atual && atual.dia === dia) return aviso(userId, T("Nucleo.VoceJaRolouAOferta"), "warn");
   const uuidDiaria = tabelaDaLoja(x.diaria.tabela, "diaria");
   const tabela = uuidDiaria ? await fromUuid(uuidDiaria) : null;
-  if (!tabela) return aviso(userId, T("Esta loja ainda não tem tabela de ofertas diárias."), "warn");
+  if (!tabela) return aviso(userId, T("Nucleo.EstaLojaAindaNaoTem"), "warn");
   const { results } = await tabela.roll();
-  if (!results?.length) return aviso(userId, T("A tabela não retornou nenhum item."), "warn");
+  if (!results?.length) return aviso(userId, T("Nucleo.ATabelaNaoRetornouNenhum"), "warn");
 
   const { doc, ...info } = await resultadoParaItem(results[0]);
   const tipo = sortearTipo(x.diaria.chances);
@@ -1040,35 +1031,35 @@ async function executarRolagemDiaria({ entryId, userId }) {
   const preco = Math.max(0.01, Math.round(base * (cfg.min + Math.random() * (cfg.max - cfg.min)) * 100) / 100);
   const custos = String(x.diaria.custos || "").split("\n").map((s) => s.trim()).filter(Boolean);
   const custoOculto = tipo === "escambo"
-    ? (custos[Math.floor(Math.random() * custos.length)] ?? T("Algo que ainda não foi revelado")) : "";
+    ? (custos[Math.floor(Math.random() * custos.length)] ?? T("Nucleo.AlgoQueAindaNaoFoi")) : "";
 
   await page.setFlag(MOD, `diaria.ofertas.${userId}`, { dia, ...info, precoBase: base, preco, tipo, custoOculto, comprado: false });
 
   const user = game.users.get(userId);
   await chat(
-    `<i class="fa-solid fa-dice-d20"></i> <b>${esc(user?.name)}</b> ${T("rolou a oferta do dia em")} <b>${esc(e.name)}</b>: ` +
-    `${esc(info.nome)} <span class="jm-tag ${tipo}">${cfg.rotulo}</span> ${T("por")} ${formatarPreco(preco)}.`,
+    `<i class="fa-solid fa-dice-d20"></i> <b>${esc(user?.name)}</b> ${T("Nucleo.RolouAOfertaDoDia")} <b>${esc(e.name)}</b>: ` +
+    `${esc(info.nome)} <span class="jm-tag ${tipo}">${cfg.rotulo}</span> ${T("Comum.Por")} ${formatarPreco(preco)}.`,
     { whisper: [...new Set([userId, ...idsGM()])] }
   );
-  if (tipo === "escambo") await chat(`<i class="fa-solid fa-lock"></i> ${T("Custo oculto do escambo de")} <b>${esc(user?.name)}</b>: <i>${esc(custoOculto)}</i>`, { whisper: idsGM() });
+  if (tipo === "escambo") await chat(`<i class="fa-solid fa-lock"></i> ${T("Nucleo.CustoOcultoDoEscamboDe")} <b>${esc(user?.name)}</b>: <i>${esc(custoOculto)}</i>`, { whisper: idsGM() });
 }
 
 async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quantidade = 1 }) {
   const e = game.journal.get(entryId);
   if (!e) return;
-  if (lojaBloqueada(e, userId)) return aviso(userId, T("A loja está fechada agora."), "warn");
+  if (lojaBloqueada(e, userId)) return aviso(userId, T("Comum.ALojaEstaFechadaAgora"), "warn");
   const { page, m, x } = analisar(e);
   if (!page) return;
   const ator = await fromUuid(actorUuid);
-  if (!ator) return aviso(userId, T("Personagem não encontrado."), "warn");
+  if (!ator) return aviso(userId, T("Comum.PersonagemNaoEncontrado"), "warn");
   let n = Math.max(1, Math.floor(Number(quantidade) || 1));
 
   let nome, preco, itemData = null, escambo = false, custoOculto = "";
   if (origem === "semanal") {
     const item = Object.fromEntries(comoLista(m.items))[itemId];
     const estoque = qtdDoItem(item);
-    if (!item || estoque === 0 || item.hidden || item.lock) return aviso(userId, T("Esse item não está disponível."), "warn");
-    if (typeof estoque === "number" && n > estoque) return aviso(userId, `${T("Só restam")} ${estoque} ${T("na loja.")}`, "warn");
+    if (!item || estoque === 0 || item.hidden || item.lock) return aviso(userId, T("Nucleo.EsseItemNaoEstaDisponivel"), "warn");
+    if (typeof estoque === "number" && n > estoque) return aviso(userId, `${T("Nucleo.SoRestam")} ${estoque} ${T("Nucleo.NaLoja")}`, "warn");
     nome = item.name;
     preco = precoDoItem(item);
     const neg = negociacaoDeHoje(x, userId, `c_${itemId}`);
@@ -1080,7 +1071,7 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
   } else {
     n = 1;
     const o = x.diaria.ofertas[userId];
-    if (!o || o.dia !== diaAtual() || o.comprado) return aviso(userId, T("Essa oferta não está mais disponível."), "warn");
+    if (!o || o.dia !== diaAtual() || o.comprado) return aviso(userId, T("Nucleo.EssaOfertaNaoEstaMais"), "warn");
     nome = o.nome; preco = o.preco;
     escambo = o.tipo === "escambo"; custoOculto = o.custoOculto;
     if (o.uuid) { const src = await fromUuid(o.uuid).catch(() => null); if (src?.documentName === "Item") itemData = src.toObject(); }
@@ -1090,14 +1081,14 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
   }
 
   const moedas = pagar(ator, preco);
-  if (!moedas) return aviso(userId, `${ator.name} ${T("não tem dinheiro suficiente")} (${formatarPreco(preco)}).`, "warn");
+  if (!moedas) return aviso(userId, `${ator.name} ${T("Nucleo.NaoTemDinheiroSuficiente")} (${formatarPreco(preco)}).`, "warn");
 
   // entrega primeiro e cobra depois: se a cobrança falhar, o item entregue é apagado (mesma reversão do estoque)
   const criados = await ator.createEmbeddedDocuments("Item", [itemData]);
   try { await ator.update({ "system.currency": moedas }); }
   catch (err) {
     try { await ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id)); }
-    catch (err2) { console.error(`${T("Journal da Mesa")} | ${T("não consegui desfazer a entrega do item")}`, err2); }
+    catch (err2) { console.error(`${T("Comum.JournalDaMesa")} | ${T("Nucleo.NaoConseguiDesfazerAEntrega")}`, err2); }
     throw err;
   }
 
@@ -1109,10 +1100,10 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
     await page.setFlag(MOD, `diaria.ofertas.${userId}.comprado`, true);
   }
 
-  const linha = TF("{quem} comprou {n}{item} por {preco} em {loja}.", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(nome)}</b>`, preco: formatarPreco(preco), loja: `<b>${esc(e.name)}</b>` });
+  const linha = TF("Nucleo.QuemComprouNItemPor", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(nome)}</b>`, preco: formatarPreco(preco), loja: `<b>${esc(e.name)}</b>` });
   await chat(`<i class="fa-solid fa-coins"></i> ${linha}`, { ator });
   Sessao.registrar("loja", linha);
-  if (escambo) await chat(`<i class="fa-solid fa-skull"></i> <b>${esc(ator.name)}</b> ${T("aceitou o escambo por")} <b>${esc(nome)}</b>. ${T("Preço verdadeiro")}: <i>${esc(custoOculto)}</i>`, { whisper: idsGM() });
+  if (escambo) await chat(`<i class="fa-solid fa-skull"></i> <b>${esc(ator.name)}</b> ${T("Nucleo.AceitouOEscamboPor")} <b>${esc(nome)}</b>. ${T("Nucleo.PrecoVerdadeiro")}: <i>${esc(custoOculto)}</i>`, { whisper: idsGM() });
 }
 
 /** Pegar item de um baú: a pilha inteira vai para a ficha. */
@@ -1121,13 +1112,13 @@ async function executarPegar({ entryId, itemId, actorUuid, userId }) {
   if (!e) return;
   const { page, m } = analisar(e);
   const ator = await fromUuid(actorUuid);
-  if (!page || !ator) return aviso(userId, T("Personagem não encontrado."), "warn");
+  if (!page || !ator) return aviso(userId, T("Comum.PersonagemNaoEncontrado"), "warn");
   const item = Object.fromEntries(comoLista(m.items))[itemId];
-  if (!item || item.hidden || item.lock) return aviso(userId, T("Alguém já pegou esse item."), "warn");
+  if (!item || item.hidden || item.lock) return aviso(userId, T("Nucleo.AlguemJaPegouEsseItem"), "warn");
   await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
   await garantirObjeto(page, "items");
   await dadosUnset(page, `items.${itemId}`);
-  const linha = TF("{quem} pegou {item} de {bau}.", { quem: `<b>${esc(ator.name)}</b>`, item: `<b>${esc(item.name)}</b>`, bau: `<b>${esc(e.name)}</b>` });
+  const linha = TF("Nucleo.QuemPegouItemDeBau", { quem: `<b>${esc(ator.name)}</b>`, item: `<b>${esc(item.name)}</b>`, bau: `<b>${esc(e.name)}</b>` });
   await chat(`<i class="fa-solid fa-hand"></i> ${linha}`, { ator });
   Sessao.registrar("saque", linha);
 }
@@ -1145,15 +1136,15 @@ async function executarPegarRecompensa({ entryId, grupo, itemId, actorUuid, user
   if (!e) return;
   const { page, m } = analisar(e);
   const ator = await fromUuid(actorUuid);
-  if (!page || !ator) return aviso(userId, T("Personagem não encontrado."), "warn");
+  if (!page || !ator) return aviso(userId, T("Comum.PersonagemNaoEncontrado"), "warn");
   const r = Object.fromEntries(comoLista(m.rewards))[grupo];
   const item = Object.fromEntries(comoLista(m.items))[itemId];
-  if (!r?.awarded) return aviso(userId, T("Essa recompensa ainda não foi entregue."), "warn");
-  if (!item || !(r.itemIds ?? []).includes(itemId)) return aviso(userId, T("Alguém já pegou esse item."), "warn");
+  if (!r?.awarded) return aviso(userId, T("Nucleo.EssaRecompensaAindaNaoFoi"), "warn");
+  if (!item || !(r.itemIds ?? []).includes(itemId)) return aviso(userId, T("Nucleo.AlguemJaPegouEsseItem"), "warn");
   await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
   await dadosSet(page, `rewards.${grupo}.itemIds`, (r.itemIds ?? []).filter((i) => i !== itemId));
   await dadosUnset(page, `items.${itemId}`);
-  const linha = `<b>${esc(ator.name)}</b> ${T("pegou")} <b>${esc(item.name)}</b> ${T("da recompensa de")} <b>${esc(e.name)}</b>.`;
+  const linha = `<b>${esc(ator.name)}</b> ${T("Nucleo.Pegou")} <b>${esc(item.name)}</b> ${T("Nucleo.DaRecompensaDe")} <b>${esc(e.name)}</b>.`;
   await chat(`<i class="fa-solid fa-gift"></i> ${linha}`, { ator });
   Sessao.registrar("missao", linha);
 }
@@ -1166,27 +1157,27 @@ async function executarPegarRecompensa({ entryId, grupo, itemId, actorUuid, user
  * E use uma ficha desse outro ainda passaria. Isso exige acesso ao console e fica registrado no chat. */
 const ID_VALIDO = /^[a-zA-Z0-9]{16}$/;
 function motivoRecusa(acao, msg) {
-  if (!msg || typeof msg !== "object" || !ACOES_GM[acao]) return T("pedido desconhecido");
+  if (!msg || typeof msg !== "object" || !ACOES_GM[acao]) return T("Nucleo.PedidoDesconhecido");
   const u = typeof msg.userId === "string" && ID_VALIDO.test(msg.userId) ? game.users.get(msg.userId) : null;
-  if (!u) return T("usuário inválido");
+  if (!u) return T("Nucleo.UsuarioInvalido");
   if (msg.actorUuid != null) {
     const ator = typeof msg.actorUuid === "string" ? fromUuidSync(msg.actorUuid) : null;
-    if (!ator || ator.documentName !== "Actor") return T("ficha inválida");
-    if (!u.isGM && !ator.testUserPermission(u, "OWNER")) return T("a ficha não pertence a quem pediu");
+    if (!ator || ator.documentName !== "Actor") return T("Nucleo.FichaInvalida");
+    if (!u.isGM && !ator.testUserPermission(u, "OWNER")) return T("Nucleo.AFichaNaoPertenceA");
   }
   if (msg.entryId != null) {
     const e = game.journal.get(msg.entryId);
-    if (!e) return T("página inexistente");
-    if (!u.isGM && !e.testUserPermission(u, "LIMITED")) return T("sem acesso à página");
+    if (!e) return T("Nucleo.PaginaInexistente");
+    if (!u.isGM && !e.testUserPermission(u, "LIMITED")) return T("Nucleo.SemAcessoAPagina");
   }
   if (acao === "nota") {
     const page = typeof msg.pageUuid === "string" ? fromUuidSync(msg.pageUuid) : null;
-    if (page?.documentName !== "JournalEntryPage") return T("página inexistente");
-    if (!u.isGM && !page.parent?.testUserPermission(u, "LIMITED")) return T("sem acesso à página");
-    if (typeof msg.texto !== "string" || msg.texto.length > 20000) return T("texto inválido");
+    if (page?.documentName !== "JournalEntryPage") return T("Nucleo.PaginaInexistente");
+    if (!u.isGM && !page.parent?.testUserPermission(u, "LIMITED")) return T("Nucleo.SemAcessoAPagina");
+    if (typeof msg.texto !== "string" || msg.texto.length > 20000) return T("Nucleo.TextoInvalido");
   }
-  if (["comprar", "vender"].includes(acao) && msg.quantidade != null && !(Number(msg.quantidade) >= 1 && Number(msg.quantidade) <= 10000)) return T("quantidade inválida");
-  if (acao === "regras" && typeof msg.op !== "string") return T("operação inválida");
+  if (["comprar", "vender"].includes(acao) && msg.quantidade != null && !(Number(msg.quantidade) >= 1 && Number(msg.quantidade) <= 10000)) return T("Nucleo.QuantidadeInvalida");
+  if (acao === "regras" && typeof msg.op !== "string") return T("Nucleo.OperacaoInvalida");
   return null;
 }
 
@@ -1194,20 +1185,20 @@ function motivoRecusa(acao, msg) {
 function executarPedido(acao, msg) {
   const motivo = motivoRecusa(acao, msg);
   if (motivo) {
-    console.warn(`${T("Journal da Mesa | pedido")} "${acao}" recusado: ${motivo}`, msg);
-    if (typeof msg?.userId === "string" && game.users.get(msg.userId)) aviso(msg.userId, `${T("O mestre não pôde fazer isso")} (${motivo}).`, "warn");
+    console.warn(`${T("Nucleo.JournalDaMesaPedido")} "${acao}" recusado: ${motivo}`, msg);
+    if (typeof msg?.userId === "string" && game.users.get(msg.userId)) aviso(msg.userId, `${T("Nucleo.OMestreNaoPodeFazer")} (${motivo}).`, "warn");
     return Promise.resolve();
   }
   return naFila("gm", () => ACOES_GM[acao](msg)).catch((err) => {
-    console.error(`${T("Journal da Mesa | pedido")} "${acao}" falhou`, err, msg);
-    aviso(msg.userId, T("Algo deu errado do lado do mestre; nada foi cobrado. Tente de novo."), "error");
-    if (msg.userId !== game.user.id) ui.notifications.error(`${T("Journal da Mesa: falha ao executar")} "${acao}" (${err?.message ?? err}).`);
+    console.error(`${T("Nucleo.JournalDaMesaPedido")} "${acao}" falhou`, err, msg);
+    aviso(msg.userId, T("Nucleo.AlgoDeuErradoDoLado"), "error");
+    if (msg.userId !== game.user.id) ui.notifications.error(`${T("Nucleo.JournalDaMesaFalhaAo")} "${acao}" (${err?.message ?? err}).`);
   });
 }
 
 function pedir(acao, dadosMsg) {
   if (ehGM()) return executarPedido(acao, dadosMsg);
-  if (!game.users.activeGM) return ui.notifications.warn(T("O mestre precisa estar online para isso."));
+  if (!game.users.activeGM) return ui.notifications.warn(T("Nucleo.OMestrePrecisaEstarOnline"));
   game.socket.emit(CANAL, { acao, ...dadosMsg });
 }
 
@@ -1223,7 +1214,7 @@ function derrotadosDo(combat) {
 
 async function criarBauDoCombate(combat) {
   const derrotados = derrotadosDo(combat);
-  if (!derrotados.length) return ui.notifications.warn(T("Nenhum inimigo derrotado neste combate."));
+  if (!derrotados.length) return ui.notifications.warn(T("Nucleo.NenhumInimigoDerrotadoNesteCombate"));
 
   const items = {};
   const moedas = Object.fromEntries(chavesMoedas().map((k) => [k, 0]));
@@ -1242,21 +1233,21 @@ async function criarBauDoCombate(combat) {
     }
   }
 
-  const pasta = await obterPasta("JournalEntry", T("Saques"), "saques");
-  const nome = `${T("Baú")} — ${combat.scene?.name ?? T("Combate")} (${new Date().toLocaleDateString(game.i18n.lang)})`;
+  const pasta = await obterPasta("JournalEntry", T("Nucleo.Saques"), "saques");
+  const nome = `${T("Comum.Bau")} — ${combat.scene?.name ?? T("Nucleo.Combate")} (${new Date().toLocaleDateString(game.i18n.lang)})`;
   const e = await JournalEntry.create({
     name: nome,
     folder: pasta?.id ?? null,
     ownership: { default: LV().NONE },
     pages: [{
       name: nome, type: "text",
-      text: { content: `<p>${T("Saque de")}: ${nomes.map(esc).join(", ")}.</p>` },
+      text: { content: `<p>${T("Nucleo.SaqueDe")}: ${nomes.map(esc).join(", ")}.</p>` },
       src: "icons/svg/chest.svg",
       flags: { [MOD]: { [CHAVE_DADOS]: { ...dadosPadrao("loot"), items, currency: moedas } } }
     }]
   });
   abrirJournal(e.id);
-  ui.notifications.info(`${T("Baú criado com")} ${Object.keys(items).length} ${T("item(ns). Ele começa oculto; mostre aos jogadores quando quiser.")}`);
+  ui.notifications.info(`${T("Nucleo.BauCriadoCom")} ${Object.keys(items).length} ${T("Nucleo.ItemNsEleComecaOculto")}`);
   return e;
 }
 
@@ -1266,20 +1257,20 @@ async function criarTipo(tipo, pastaId = null) {
   const nova = async (nome, pagina) => JournalEntry.create({
     name: nome, folder: pastaId ?? null, sort: ordemNova(pastaId), ownership: { default: LV().NONE }, pages: [{ name: nome, ...pagina }]
   });
-  if (EDITAVEIS.includes(tipo)) return { entry: await nova(`${TIPOS[tipo].rotulo} ${T("sem nome")}`, { type: "text", text: { content: "" }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao(tipo) } } }), editar: true };
-  if (tipo === "deus") return { entry: await nova(T("Divindade sem nome"), { type: "text", text: { content: "" }, flags: { [MOD]: { tipo: "deus", [CHAVE_DADOS]: dadosPadrao("journalentry") } } }), editar: true };
-  if (tipo === "diario") return { entry: await nova(T("Novo diário"), { type: "text", text: { content: "" } }), editar: false };
-  if (tipo === "historia") return { entry: await criarHistoria(pastaId, historias().length ? T("Nova história") : T("História")), editar: false };
+  if (EDITAVEIS.includes(tipo)) return { entry: await nova(`${TIPOS[tipo].rotulo} ${T("Nucleo.SemNome")}`, { type: "text", text: { content: "" }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao(tipo) } } }), editar: true };
+  if (tipo === "deus") return { entry: await nova(T("Nucleo.DivindadeSemNome"), { type: "text", text: { content: "" }, flags: { [MOD]: { tipo: "deus", [CHAVE_DADOS]: dadosPadrao("journalentry") } } }), editar: true };
+  if (tipo === "diario") return { entry: await nova(T("Nucleo.NovoDiario"), { type: "text", text: { content: "" } }), editar: false };
+  if (tipo === "historia") return { entry: await criarHistoria(pastaId, historias().length ? T("Nucleo.NovaHistoria") : T("Comum.Historia")), editar: false };
   if (tipo === "jornal") return { entry: await Jornal.criarJornal(pastaId), editar: false, jornal: true };
   if (tipo === "evento") {
     const hoje = calHoje();
-    if (!Number.isFinite(hoje)) { ui.notifications.warn(T("Ative o Calendário da Mesa para criar eventos.")); return null; }
+    if (!Number.isFinite(hoje)) { ui.notifications.warn(T("Nucleo.AtiveOCalendarioDaMesa")); return null; }
     if (pastaId == null) pastaId = game.folders.find((f) => f.type === "JournalEntry" && f.getFlag?.(CAL, "pasta"))?.id ?? null;
-    const e = await nova(T("Novo evento"), { type: "text", text: { content: "" }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } });
+    const e = await nova(T("Nucleo.NovoEvento"), { type: "text", text: { content: "" }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } });
     await e.update({ [`flags.${CAL}.nota`]: notaPadrao(hoje) });
     return { entry: e, editar: true };
   }
-  if (tipo === "regra") return { entry: await nova(T("Nova regra"), { type: "rule", text: { content: "" } }), editar: false, abrirFicha: true };
+  if (tipo === "regra") return { entry: await nova(T("Nucleo.NovaRegra"), { type: "rule", text: { content: "" } }), editar: false, abrirFicha: true };
   if (tipo === "imagem" || tipo === "pdf") {
     const caminho = await escolherArquivo(tipo === "imagem" ? "image" : "any");
     if (!caminho) return null;
@@ -1304,9 +1295,9 @@ async function escolherTipoECriar(pastaId = null) {
   const lista = NOVOS.filter(([k]) => (k !== "regra" || temRegra) && (k !== "evento" || calApi())).map(([k, r, i]) => [k, r ?? TIPOS[k].rotulo, i ?? TIPOS[k].icone]);
   const pasta = pastaId ? game.folders.get(pastaId) : null;
   const tipo = await Dialogo().wait({
-    window: { title: T("Nova página do Journal da Mesa"), icon: "fa-solid fa-book-open" },
+    window: { title: T("Comum.NovaPaginaDoJournalDa"), icon: "fa-solid fa-book-open" },
     position: { width: 460 },
-    content: `<p class="jm-dica">${T("Criar")} ${pasta ? `${T("em")} <b>${esc(pasta.name)}</b>` : T("na raiz")}:</p>`,
+    content: `<p class="jm-dica">${T("Comum.Criar")} ${pasta ? `${T("Comum.Em")} <b>${esc(pasta.name)}</b>` : T("Comum.NaRaiz")}:</p>`,
     buttons: lista.map(([k, r, i]) => ({ action: k, label: r, icon: i })),
     classes: ["jm-dialogo-tipos"],
     rejectClose: false
@@ -1332,14 +1323,14 @@ async function mostrarAosJogadores(e) {
   if (!quem.length) {
     const algum = game.users.some((u) => !u.isGM && e.testUserPermission(u, "LIMITED"));
     const ok = await Dialogo().confirm({
-      window: { title: T("Ninguém pode ver"), icon: "fa-solid fa-bullhorn" },
-      content: `<p>${TF(algum ? "Nenhum jogador online pode ver {nome}." : "Nenhum jogador tem permissão para ver {nome}.", { nome: `<b>${esc(e.name)}</b>` })}</p><p>${T("Escolher agora quem vê?")}</p>`
+      window: { title: T("Nucleo.NinguemPodeVer"), icon: "fa-solid fa-bullhorn" },
+      content: `<p>${algum ? TF("Nucleo.NenhumJogadorOnlinePodeVer", { nome: `<b>${esc(e.name)}</b>` }) : TF("Nucleo.NenhumJogadorTemPermissaoPara", { nome: `<b>${esc(e.name)}</b>` })}</p><p>${T("Nucleo.EscolherAgoraQuemVe")}</p>`
     });
     if (ok) await revelarPara(e);
     return;
   }
   game.socket.emit(CANAL, { acao: "abrir", entryId: e.id, userIds: quem.map((u) => u.id) });
-  ui.notifications.info(`"${e.name}" ${T("aberta para")}: ${quem.map((u) => u.name).join(", ")}.`);
+  ui.notifications.info(`"${e.name}" ${T("Nucleo.AbertaPara")}: ${quem.map((u) => u.name).join(", ")}.`);
 }
 
 /** Abre a ficha padrão do Foundry, mesmo que a ficha "Journal" esteja como padrão. */
@@ -1351,8 +1342,8 @@ function abrirFichaPadrao(e) {
 
 async function apagarEntrada(e) {
   const ok = await Dialogo().confirm({
-    window: { title: T("Apagar página") },
-    content: `<p>${T("Apagar")} <b>${esc(e.name)}</b>? ${T("Isso apaga o Diário do Foundry e não pode ser desfeito.")}</p>`
+    window: { title: T("Comum.ApagarPagina") },
+    content: `<p>${T("Comum.Apagar")} <b>${esc(e.name)}</b>? ${T("Nucleo.IssoApagaODiarioDo")}</p>`
   });
   if (ok) await e.delete();
 }
@@ -1418,7 +1409,7 @@ async function importarJson(pastaId) {
         await JournalEntry.create({ ...dd, folder: pastaId ?? null });
         criados++;
       } else if (d.type && d.system && d.name) {
-        const raiz = await obterPasta("Item", T("Journal"), "itens");
+        const raiz = await obterPasta("Item", T("Comum.Journal"), "itens");
         /* mantém o _id do arquivo (quando livre) para que relíquias e links @UUID[Item.id] continuem funcionando */
         const manterId = typeof d._id === "string" && /^[a-zA-Z0-9]{16}$/.test(d._id) && !game.items.has(d._id);
         const dadosItem = { ...limpar(d), folder: raiz?.id ?? null };
@@ -1428,8 +1419,8 @@ async function importarJson(pastaId) {
       }
     }
   }
-  if (!criados && !itens) return ui.notifications.warn(T("Não encontrei diários nem itens nesse JSON."));
-  ui.notifications.info(`${T("Importado")}: ${criados} ${T("página(s)")}${itens ? ` ${T("e")} ${itens} ${T("item(ns) na aba Itens")}` : ""}${convertidas ? ` (${convertidas} ${T("convertida(s) do formato do Monk's")})` : ""}.`);
+  if (!criados && !itens) return ui.notifications.warn(T("Nucleo.NaoEncontreiDiariosNemItens"));
+  ui.notifications.info(`${T("Nucleo.Importado")}: ${criados} ${T("Nucleo.PaginaS")}${itens ? ` ${T("Nucleo.E")} ${itens} ${T("Nucleo.ItemNsNaAbaItens")}` : ""}${convertidas ? ` (${convertidas} ${T("Nucleo.ConvertidaSDoFormatoDo")})` : ""}.`);
 }
 
 /* ---------------- inicialização ---------------- */
@@ -1455,65 +1446,65 @@ Hooks.once("init", () => {
   Jornal.registrarConfiguracoes();
   registrarTabelasLojas();
   game.settings.register(MOD, "tema", {
-    name: T("Tema do Journal da Mesa"), hint: T("Visual da janela e do rastreador de missões."),
+    name: "JMESA.Nucleo.TemaDoJournalDaMesa", hint: "JMESA.Nucleo.VisualDaJanelaEDo",
     scope: "client", config: true, type: String, choices: TEMAS, default: "claro", onChange: atualizarTudo
   });
   game.settings.register(MOD, "rastreador", {
-    name: T("Mostrar rastreador de missões"), hint: T("Painel flutuante com as missões em andamento."),
+    name: "JMESA.Nucleo.MostrarRastreadorDeMissoes", hint: "JMESA.Nucleo.PainelFlutuanteComAsMissoes",
     scope: "client", config: true, type: Boolean, default: true, onChange: atualizarTudo
   });
   game.settings.register(MOD, "abrirAqui", {
-    name: T("Abrir diários sempre no Journal da Mesa"),
-    hint: T("Diários abertos em qualquer lugar (barra lateral, notas no mapa, links, macros, outros módulos) abrem nesta janela, na página certa — se o diário usar a ficha padrão ou a ficha \"Journal da Mesa\". Diários com a ficha de outro módulo (Heavy Lore, Monk's...) abrem na janela desse módulo. Desligado: só abre no Journal da Mesa quem tiver a ficha \"Journal da Mesa\" escolhida em Configurar Ficha."),
+    name: "JMESA.Nucleo.AbrirDiariosSempreNoJournal",
+    hint: "JMESA.Nucleo.DiariosAbertosEmQualquerLugar",
     scope: "client", config: true, type: Boolean, default: true
   });
   game.settings.register(MOD, "editor", {
-    name: T("Editor de descrição"),
-    hint: T("\"Foundry\" usa o editor com formatação. \"Simples\" usa uma caixa de texto (aceita HTML) — use se o editor do Foundry não deixar digitar."),
+    name: "JMESA.Nucleo.EditorDeDescricao",
+    hint: "JMESA.Nucleo.FoundryUsaOEditorCom",
     scope: "client", config: true, type: String, default: "foundry",
-    choices: { foundry: T("Foundry (com formatação)"), simples: T("Simples (caixa de texto)") }
+    choices: { foundry: "JMESA.Nucleo.FoundryComFormatacao", simples: "JMESA.Nucleo.SimplesCaixaDeTexto" }
   });
   game.settings.register(MOD, "posicaoNova", {
-    name: T("Onde colocar páginas novas"),
-    hint: T("Ao criar uma página dentro de uma pasta (a pasta clicada ou a da página aberta), ela vai para o fim ou para o início da pasta. Pastas em ordem alfabética ignoram isso."),
+    name: "JMESA.Nucleo.OndeColocarPaginasNovas",
+    hint: "JMESA.Nucleo.AoCriarUmaPaginaDentro",
     scope: "world", config: true, type: String, default: "fim",
-    choices: { fim: T("No fim da pasta (depois da última)"), inicio: T("No início da pasta (antes da primeira)") },
+    choices: { fim: "JMESA.Nucleo.NoFimDaPastaDepois", inicio: "JMESA.Nucleo.NoInicioDaPastaAntes" },
     onChange: () => atualizarTudo()
   });
   game.settings.register(MOD, "pechinchaChat", {
-    name: T("Pechincha interativa no chat"),
-    hint: T("Ligado: a pechincha cria um cartão no chat; o jogador clica no dado dele e o mestre no dado do vendedor (com vantagem/desvantagem). Desligado: os dois dados são rolados na hora."),
+    name: "JMESA.Nucleo.PechinchaInterativaNoChat",
+    hint: "JMESA.Nucleo.LigadoAPechinchaCriaUm",
     scope: "world", config: true, type: Boolean, default: true
   });
   game.settings.register(MOD, "donos", {
-    name: T("Mostrar quem vê cada documento"),
-    hint: T("Bolinhas com a inicial de cada jogador que tem acesso (como o Ownership Viewer), no Journal da Mesa e nas abas de Atores, Itens, Diários, Cenas, Tabelas e Macros. Clique nelas para mudar."),
+    name: "JMESA.Nucleo.MostrarQuemVeCadaDocumento",
+    hint: "JMESA.Nucleo.BolinhasComAInicialDe",
     scope: "client", config: true, type: Boolean, default: true,
     onChange: () => { atualizarTudo(); for (const a of Object.values(ui.sidebar?.tabs ?? {})) a?.render?.(); }
   });
   game.settings.register(MOD, "bauFimCombate", {
-    name: T("Perguntar sobre o baú de saque ao fim do combate"),
-    hint: T("Ao encerrar um combate, oferece criar um Baú com os itens e moedas dos inimigos derrotados."),
+    name: "JMESA.Nucleo.PerguntarSobreOBauDe",
+    hint: "JMESA.Nucleo.AoEncerrarUmCombateOferece",
     scope: "world", config: true, type: Boolean, default: true
   });
   game.settings.register(MOD, "nexusAtivo", {
-    name: T("Medidor dos Nexus"),
-    hint: T("Liga a aba Nexus no Journal da Mesa: um medidor (0 a 100%) para cada Nexus, com limiares que avisam o mestre e podem ligar uma anomalia no clima do Calendário da Mesa."),
+    name: "JMESA.Nucleo.MedidorDosNexus",
+    hint: "JMESA.Nucleo.LigaAAbaNexusNo",
     scope: "world", config: true, type: Boolean, default: false, onChange: () => atualizarTudo()
   });
   game.settings.register(MOD, "nexusJogadores", {
-    name: T("Jogadores veem os Nexus"),
-    hint: T("Mostra aos jogadores os medidores marcados como visíveis (só leitura)."),
+    name: "JMESA.Nucleo.JogadoresVeemOsNexus",
+    hint: "JMESA.Nucleo.MostraAosJogadoresOsMedidores",
     scope: "world", config: true, type: Boolean, default: false, onChange: () => atualizarTudo()
   });
   game.settings.register(MOD, "renovarAuto", {
-    name: T("Renovar o estoque das lojas a cada nova semana"),
-    hint: T("Com o Calendário da Mesa: quando começa uma semana, as lojas que têm tabela de estoque rolam o estoque novo sozinhas. Desligado: o calendário só lembra o mestre no chat."),
+    name: "JMESA.Nucleo.RenovarOEstoqueDasLojas",
+    hint: "JMESA.Nucleo.ComOCalendarioDaMesa",
     scope: "world", config: true, type: Boolean, default: false
   });
   game.settings.register(MOD, "sessaoAuto", {
-    name: T("Diário de sessão automático"),
-    hint: T("Ao entrar no mundo, o mestre começa a anotar a sessão sozinho (compras, vendas, saques, missões, prazos, dias que passaram, Nexus). Desligado: use o botão do diário no rodapé do Journal da Mesa."),
+    name: "JMESA.Nucleo.DiarioDeSessaoAutomatico",
+    hint: "JMESA.Nucleo.AoEntrarNoMundoO",
     scope: "world", config: true, type: Boolean, default: false
   });
   game.settings.register(MOD, "nexusLista", { scope: "world", config: false, type: Array, default: [], onChange: () => { if (["__nexus", "__linha"].includes(janela?.ativa)) atualizarTudo(); } });
@@ -1552,7 +1543,7 @@ Hooks.once("init", () => {
       }
     }
     FichaJournalClasse = FichaJournal;
-    Config.registerSheet(JournalEntry, MOD, FichaJournal, { label: T("Journal da Mesa (janela única)"), makeDefault: false });
+    Config.registerSheet(JournalEntry, MOD, FichaJournal, { label: "JMESA.Nucleo.JournalDaMesaJanelaUnica", makeDefault: false });
 
     /* A opção "Abrir diários sempre no Journal da Mesa" vale também para diários que usam a ficha padrão do
      * Foundry ou do sistema (a ficha do módulo registrada acima só vale para quem a escolheu em Configurar
@@ -1568,10 +1559,10 @@ Hooks.once("init", () => {
         const doc = this.document;
         interceptar = forcar && !this.rendered && !this._jmNativo && game.ready && game.settings.get(MOD, "abrirAqui")
           && doc?.documentName === "JournalEntry" && !doc.pack && !!game.journal.get(doc.id) && podeVer(doc) && abreNoJournal(doc);
-      } catch (err) { avisoUmaVez(T("abrir no Journal da Mesa"), err); interceptar = false; }
+      } catch (err) { avisoUmaVez(T("Nucleo.AbrirNoJournalDaMesa"), err); interceptar = false; }
       if (interceptar) {
         try { abrirPelaFicha(this, opcoes, resto); return Promise.resolve(this); }   // mesma forma do original (Promise da ficha); a nativa fica fechada
-        catch (err) { avisoUmaVez(T("abrir no Journal da Mesa"), err); }
+        catch (err) { avisoUmaVez(T("Nucleo.AbrirNoJournalDaMesa"), err); }
       }
       return renderOriginal.call(this, opcoes, ...resto);
     };
@@ -1620,14 +1611,14 @@ Hooks.once("ready", () => {
   document.addEventListener("click", cliqueEmLink, true);
 
   if (temModulo(MEJ) && ehGM()) {
-    ui.notifications.info(T("Journal da Mesa: o Monk's Enhanced Journal também está ativo. Desde a 5.0 cada um guarda os próprios dados, e o que você muda num não aparece no outro. Recomendo deixar só um ativo."));
+    ui.notifications.info(T("Nucleo.JournalDaMesaOMonk"));
   }
   if (souGMPrincipal()) {
-    migrarFormato().catch((err) => relatarErro(T("conversão do formato"), err));
+    migrarFormato().catch((err) => relatarErro(T("Nucleo.ConversaoDoFormato"), err));
     /* páginas que chegam no formato do Monk's (criadas por ele, importadas de compêndios...) ganham o registro próprio */
     const converterSeVier = (entry) => {
       if (!souGMPrincipal() || !entry?.pages?.contents?.some(paginaPendenteDoMonks)) return;
-      importarDoMonks({ entradas: [entry], silencioso: true }).catch((err) => relatarErro(T("importar do Monk's"), err));
+      importarDoMonks({ entradas: [entry], silencioso: true }).catch((err) => relatarErro(T("Nucleo.ImportarDoMonkS"), err));
     };
     Hooks.on("createJournalEntry", (entry) => converterSeVier(entry));
     Hooks.on("updateJournalEntryPage", (page, changes) => {
@@ -1639,7 +1630,7 @@ Hooks.once("ready", () => {
   lembrarEstadoInicial();
   if (souGMPrincipal() && game.settings.get(MOD, "sessaoAuto") && !Sessao.ativa()) Sessao.iniciar();
   // edições programadas que venceram enquanto o mundo estava fechado
-  if (souGMPrincipal()) Jornal.verificarProgramadas().catch((err) => relatarErro(T("edições programadas"), err));
+  if (souGMPrincipal()) Jornal.verificarProgramadas().catch((err) => relatarErro(T("Comum.EdicoesProgramadas"), err));
 });
 
 /* ---------------- Jornal de Notícias: funções do Journal que ele usa ---------------- */
@@ -1658,28 +1649,19 @@ document.addEventListener?.("click", async (ev) => {
   ev.preventDefault();
   const s = Sessao.atual();
   const linhas = (s?.registros ?? []).map((r) => `- ${String(r.html ?? "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim()}`).filter((l) => l.length > 2);
-  const texto = `${T("Registro automático do Journal da Mesa")} — ${T("Sessão")} ${s?.n ?? ""}\n${linhas.join("\n") || T("(nada anotado)")}`;
+  const texto = `${T("Nucleo.RegistroAutomaticoDoJournalDa")} — ${T("Comum.Sessao")} ${s?.n ?? ""}\n${linhas.join("\n") || T("Nucleo.NadaAnotado")}`;
   try {
     if (game.clipboard?.copyPlainText) await game.clipboard.copyPlainText(texto); else await navigator.clipboard.writeText(texto);
-    ui.notifications.info(T("Registro copiado."));
-  } catch { ui.notifications.warn(T("Não consegui copiar automaticamente.")); }
+    ui.notifications.info(T("Nucleo.RegistroCopiado"));
+  } catch { ui.notifications.warn(T("Nucleo.NaoConseguiCopiarAutomaticamente")); }
 });
 /* ---------------- idioma: constantes e configurações ---------------- */
 Hooks.once("i18nInit", () => {
   for (const o of [TIPOS, TIPO_FICHA, NOVOS, NOMES_MEJ, NOMES_PAGINA, DETALHES, CAMPOS_DEUS, STATUS_DEUS, SIMBOLOS_DEUS, SECOES_DEUS,
     ABAS_DEUS, STATUS, OFERTAS, REGRAS_CATS, REGRAS_STATUS, REGRAS_MODELOS, CAL_REPETIR, CAL_MODOS_MES, CAL_FIM, CAL_ICONES_GRUPOS,
     CAL_ICONES, CAL_AVISOS, HIST_ICONES, MOEDAS_PADRAO, RESULTADOS, PERICIAS_VENDEDOR, NEXUS_ICONES]) traduzirNoLugar(o);
-  // nome, dica e opções das configurações e menus do módulo (registrados em português no "init")
-  for (const [chave, def] of game.settings.settings ?? []) {
-    if (!String(chave).startsWith(`${MOD}.`)) continue;
-    if (typeof def.name === "string") def.name = T(def.name);
-    if (typeof def.hint === "string") def.hint = T(def.hint);
-    if (def.choices && typeof def.choices === "object") for (const k of Object.keys(def.choices)) if (typeof def.choices[k] === "string") def.choices[k] = T(def.choices[k]);
-  }
-  for (const [chave, def] of game.settings.menus ?? []) {
-    if (!String(chave).startsWith(`${MOD}.`)) continue;
-    for (const c of ["name", "label", "hint"]) if (typeof def[c] === "string") def[c] = T(def[c]);
-  }
+  // as configurações, menus e a ficha são registrados no "init" (antes do idioma carregar) com a chave
+  // completa ("JMESA.Nucleo...") em nome, dica e opções: o próprio Foundry traduz ao mostrar
 });
 
 export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };

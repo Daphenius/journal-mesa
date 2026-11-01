@@ -52,7 +52,7 @@ function historicoCal() {
   try {
     if (typeof api.historico === "function") return api.historico() ?? [];
     return game.settings.get(CAL, "historico")?.itens ?? [];
-  } catch (err) { avisoUmaVez(T("histórico do Calendário"), err); return []; }
+  } catch (err) { avisoUmaVez(T("Comum.HistoricoDoCalendario"), err); return []; }
 }
 function historicoCalVisivel() {
   const api = calApi();
@@ -60,20 +60,20 @@ function historicoCalVisivel() {
   try {
     if (typeof api.historicoVisivel === "function") return !!api.historicoVisivel();
     return !!game.settings.get(CAL, "historicoJogadores");
-  } catch (err) { avisoUmaVez(T("histórico do Calendário"), err); return false; }
+  } catch (err) { avisoUmaVez(T("Comum.HistoricoDoCalendario"), err); return false; }
 }
 /** A nota é do calendário em uso agora? (com vários calendários, cada civilização vê só as dela, como na grade do Calendário) */
 function doCalendarioAtual(entry) {
   const api = calApi();
   if (typeof api?.notas?.calendario !== "function" || typeof api?.calendarioAtual !== "function") return true;
   try { const id = api.notas.calendario(entry); return !id || id === api.calendarioAtual()?.id; }
-  catch (err) { avisoUmaVez(T("calendário da nota"), err); return true; }
+  catch (err) { avisoUmaVez(T("Calendario.CalendarioDaNota"), err); return true; }
 }
 /** Chama uma função da API do Calendário que devolve lista; erro ou ausência = []. */
 function listaCal(nome, ...args) {
   const api = calApi();
   if (typeof api?.[nome] !== "function") return [];
-  try { const r = api[nome](...args); return Array.isArray(r) ? r : []; } catch (err) { avisoUmaVez(`${nome} ${T("do Calendário")}`, err); return []; }
+  try { const r = api[nome](...args); return Array.isArray(r) ? r : []; } catch (err) { avisoUmaVez(`${nome} ${T("Calendario.DoCalendario")}`, err); return []; }
 }
 const calNota = (entry) => {
   const n = entry?.flags?.[CAL]?.nota;
@@ -94,7 +94,7 @@ const Tempo = {
     return (Number(d.hoursPerDay) || 24) * (Number(d.minutesPerHour) || 60) * (Number(d.secondsPerMinute) || 60);
   },
   hoje() {
-    try { const td = Number(this.d()?.hoje?.() ?? calApi()?.agora?.().td); if (Number.isFinite(td)) return Math.trunc(td); } catch (err) { avisoUmaVez(T("dia de hoje pelo Calendário"), err); }
+    try { const td = Number(this.d()?.hoje?.() ?? calApi()?.agora?.().td); if (Number.isFinite(td)) return Math.trunc(td); } catch (err) { avisoUmaVez(T("Calendario.DiaDeHojePeloCalendario"), err); }
     return Math.floor((game.time?.worldTime ?? 0) / this.segDia());
   },
   comp(td) { return this.cal().timeToComponents(Math.trunc(td) * this.segDia()); },
@@ -113,19 +113,19 @@ const Tempo = {
     const c = this.cal();
     const interno = ano - this.deslocAno();
     const bis = !!c?.isLeapYear?.(interno);
-    return (c?.months?.values ?? []).map((m, i) => ({ i, nome: game.i18n.localize(m.name ?? `${T("Mês")} ${i + 1}`), dias: Number(bis && m.leapDays != null ? m.leapDays : m.days) || 0, existe: true }));
+    return (c?.months?.values ?? []).map((m, i) => ({ i, nome: game.i18n.localize(m.name ?? `${T("Calendario.Mes")} ${i + 1}`), dias: Number(bis && m.leapDays != null ? m.leapDays : m.days) || 0, existe: true }));
   },
   semana() {
     const d = this.d();
     if (d) return d.semana();
-    return (this.cal()?.days?.values ?? []).map((x, i) => game.i18n.localize(x.name ?? `${T("Dia")} ${i + 1}`));
+    return (this.cal()?.days?.values ?? []).map((x, i) => game.i18n.localize(x.name ?? `${T("Comum.Dia2")} ${i + 1}`));
   },
   texto(td) {
-    if (!this.ok()) return `${T("dia")} ${td}`;
+    if (!this.ok()) return `${T("Comum.Dia")} ${td}`;
     const d = this.d();
     if (d) return d.partes(td).textoCurto;
     const p = this.partes(td);
-    return TF("{dia} de {mes} de {ano}", { dia: p.dia, mes: this.meses(p.ano)[p.mes]?.nome ?? "?", ano: p.ano });
+    return TF("Calendario.DiaDeMesDeAno", { dia: p.dia, mes: this.meses(p.ano)[p.mes]?.nome ?? "?", ano: p.ano });
   },
   /** dia (1..), mês (0..), ano mostrado → td; null se a data não existe */
   tdDe(ano, mes, dia) {
@@ -144,19 +144,19 @@ const Tempo = {
   },
   relativo(td) {
     const d = td - this.hoje();
-    if (d === 0) return TF("hoje");
-    if (d === 1) return TF("amanhã");
-    if (d === -1) return TF("ontem");
+    if (d === 0) return TF("Comum.Hoje");
+    if (d === 1) return TF("Comum.Amanha");
+    if (d === -1) return TF("Comum.Ontem");
     const n = Math.abs(d);
     if (n >= 60 && this.ok()) {
       const a = this.partes(this.hoje()), b = this.partes(td);
       const porAno = Math.max(1, this.meses(a.ano).length);
       const meses = Math.abs((a.ano - b.ano) * porAno + (a.mes - b.mes));
       const anos = Math.abs(a.ano - b.ano);
-      const txt = anos >= 2 ? TF("{n} anos", { n: anos }) : meses >= 2 ? TF("{n} meses", { n: meses }) : TF("{n} dias", { n });
-      return d > 0 ? TF("daqui a {t}", { t: txt }) : TF("há {t}", { t: txt });
+      const txt = anos >= 2 ? TF("Calendario.NAnos", { n: anos }) : meses >= 2 ? TF("Calendario.NMeses", { n: meses }) : TF("Comum.NDias", { n });
+      return d > 0 ? TF("Calendario.DaquiAT", { t: txt }) : TF("Calendario.HaT", { t: txt });
     }
-    return d > 0 ? TF("daqui a {n} dias", { n: d }) : TF("há {n} dias", { n: -d });
+    return d > 0 ? TF("Calendario.DaquiANDias", { n: d }) : TF("Calendario.HaNDias", { n: -d });
   }
 };
 
@@ -173,7 +173,7 @@ function horarioLoja(entry) {
   try {
     const api = calApi();
     if (typeof api?.horarioLoja === "function") { const h = api.horarioLoja(entry); if (h) return { ...h, folga: (h.folga ?? []).map(Number) }; }
-  } catch (err) { avisoUmaVez(T("horário da loja pelo Calendário"), err); }
+  } catch (err) { avisoUmaVez(T("Calendario.HorarioDaLojaPeloCalendario"), err); }
   const hj = page.flags?.[MOD]?.horario;
   const doJournal = !!page.flags?.[MOD];
   const folga = Array.isArray(hj?.folga) ? hj.folga.map(Number).filter(Number.isFinite) : [];
@@ -182,7 +182,7 @@ function horarioLoja(entry) {
 
 /** "folga", "horario" ou null (aberta). */
 function lojaFechadaPor(entry) {
-  try { const api = calApi(); if (typeof api?.lojaFechadaPor === "function") return api.lojaFechadaPor(entry); } catch (err) { avisoUmaVez(T("loja fechada pelo Calendário"), err); }
+  try { const api = calApi(); if (typeof api?.lojaFechadaPor === "function") return api.lojaFechadaPor(entry); } catch (err) { avisoUmaVez(T("Calendario.LojaFechadaPeloCalendario"), err); }
   const h = horarioLoja(entry);
   if (!h?.ativo) return null;
   const c = game.time?.components;
@@ -199,9 +199,9 @@ function textoHorarioLoja(entry) {
   const h = horarioLoja(entry);
   if (!h?.ativo) return null;
   const motivo = lojaFechadaPor(entry);
-  if (motivo === "folga") return { aberta: false, texto: T("Folga hoje") };
-  if (motivo === "horario") return { aberta: false, texto: `${T("Fechada · abre às")} ${minParaHora(h.abre)}` };
-  return { aberta: true, texto: h.abre === h.fecha ? T("Aberta") : `${T("Aberta · fecha às")} ${minParaHora(h.fecha)}` };
+  if (motivo === "folga") return { aberta: false, texto: T("Comum.FolgaHoje") };
+  if (motivo === "horario") return { aberta: false, texto: `${T("Calendario.FechadaAbreAs")} ${minParaHora(h.abre)}` };
+  return { aberta: true, texto: h.abre === h.fecha ? T("Calendario.Aberta") : `${T("Calendario.AbertaFechaAs")} ${minParaHora(h.fecha)}` };
 }
 
 /** Jogador tentando usar loja fechada? (o mestre sempre pode) */
@@ -210,7 +210,7 @@ const lojaBloqueada = (e, userId) => !game.users.get(userId)?.isGM && analisar(e
 /** Texto do prazo de uma missão. */
 function textoPrazo(td) {
   const d = td - Tempo.hoje();
-  const quando = d === 0 ? T("vence hoje") : d === 1 ? T("vence amanhã") : d > 0 ? TF("faltam {n} dias", { n: d }) : d === -1 ? TF("venceu há 1 dia") : TF("venceu há {n} dias", { n: -d });
+  const quando = d === 0 ? T("Calendario.VenceHoje") : d === 1 ? T("Calendario.VenceAmanha") : d > 0 ? TF("Calendario.FaltamNDias", { n: d }) : d === -1 ? TF("Calendario.VenceuHa1Dia") : TF("Calendario.VenceuHaNDias", { n: -d });
   return { quando, classe: d < 0 ? "vencido" : d <= 2 ? "urgente" : "" };
 }
 

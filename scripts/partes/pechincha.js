@@ -32,9 +32,9 @@ const multVendaPadrao = (x) => multNegocio(x, "venda", "empate");
 function textoNegocio(x, modo, res) {
   const v = Number(tabelaNegocio(x, modo)[res]) || 0;
   const quem = res.endsWith("J") ? "jogador" : (res === "empate" ? "" : "vendedor");
-  const abre = res.startsWith("crit") ? `${T("Crítico do")} ${quem}! ` : (res === "empate" ? T("Empate: ") : (quem === "jogador" ? T("Boa conversa! ") : T("O vendedor leva a melhor: ")));
-  if (modo === "compra") return abre + (v === 0 ? T("preço normal.") : `${T("o preço")} ${v < 0 ? T("cai") : T("sobe")} ${Math.abs(v)}%.`);
-  return abre + `${T("a loja paga")} ${v}${T("% do valor.")}`;
+  const abre = res.startsWith("crit") ? `${T("Pechincha.CriticoDo")} ${quem}! ` : (res === "empate" ? T("Pechincha.Empate2") : (quem === "jogador" ? T("Pechincha.BoaConversa") : T("Pechincha.OVendedorLevaAMelhor")));
+  if (modo === "compra") return abre + (v === 0 ? T("Pechincha.PrecoNormal") : `${T("Pechincha.OPreco")} ${v < 0 ? T("Pechincha.Cai") : T("Pechincha.Sobe")} ${Math.abs(v)}%.`);
+  return abre + `${T("Pechincha.ALojaPaga")} ${v}${T("Pechincha.DoValor")}`;
 }
 
 const bonusPericia = (ator, k) => Number(ator?.system?.skills?.[k]?.total ?? ator?.system?.skills?.[k]?.mod ?? 0) || 0;
@@ -80,7 +80,7 @@ async function rolarPericiaSegura({ actorUuid = null, pericia = "per", modo = "n
       if (modo === "v") cfg.advantage = true;
       if (modo === "d") cfg.disadvantage = true;
       r = (await ator.rollSkill(cfg, { configure: false }, { create: false }))?.[0] ?? null;
-    } catch (err) { avisoUmaVez(T("rolagem pela ficha"), err); }
+    } catch (err) { avisoUmaVez(T("Pechincha.RolagemPelaFicha"), err); }
   }
   if (!r) r = await new Roll(`${FORMULA_MODO[modo] ?? "1d20"} + ${Number(bonus) || 0}`).evaluate();
   if (game.dice3d) await game.dice3d.showForRoll(r, usuario, true).catch(() => null);
@@ -104,11 +104,11 @@ async function conduzirPechinchaEmCena(msgId) {
   const jogador = est?.j?.actorUuid ? fromUuidSync(est.j.actorUuid) : null;
   if (!api || !est || !jogador) return;
   const npc = est.n.actorUuid ? fromUuidSync(est.n.actorUuid) : null;
-  const participantes = [{ actorId: jogador.id, config: { kind: "skill", key: "per", label: T("Persuasão") }, rotulo: "JOGADOR" }];
+  const participantes = [{ actorId: jogador.id, config: { kind: "skill", key: "per", label: T("Pechincha.Persuasao") }, rotulo: "JOGADOR" }];
   if (npc && npc.id !== jogador.id) participantes.push({ actorId: npc.id, config: { kind: "skill", key: est.n.chave ?? "per", label: est.n.pericia }, rotulo: "VENDEDOR" });
   let res = new Map();
-  try { res = await api.pedirTestes({ participantes, para: [est.userId], titulo: `${T("Pechincha")}: ${est.nome}` }) ?? new Map(); }
-  catch (err) { relatarErro(T("pechincha no Dados em Cena"), err); }
+  try { res = await api.pedirTestes({ participantes, para: [est.userId], titulo: `${T("Pechincha.Pechincha")}: ${est.nome}` }) ?? new Map(); }
+  catch (err) { relatarErro(T("Pechincha.PechinchaNoDadosEmCena"), err); }
   await naFila("gm", async () => {
     const m2 = game.messages.get(msgId);
     const e = dup(m2?.getFlag(MOD, "negocio") ?? null);
@@ -126,19 +126,19 @@ async function conduzirPechinchaEmCena(msgId) {
 async function executarNegociar({ entryId, userId, actorUuid, modo, alvoId, nome }) {
   const e = game.journal.get(entryId);
   if (!e) return;
-  if (lojaBloqueada(e, userId)) return aviso(userId, T("A loja está fechada agora."), "warn");
+  if (lojaBloqueada(e, userId)) return aviso(userId, T("Comum.ALojaEstaFechadaAgora"), "warn");
   const { page, x } = analisar(e);
   const ator = await fromUuid(actorUuid);
-  if (!page || !ator) return aviso(userId, T("Personagem não encontrado."), "warn");
+  if (!page || !ator) return aviso(userId, T("Comum.PersonagemNaoEncontrado"), "warn");
   const chave = `${modo === "compra" ? "c" : "v"}_${alvoId}`;
-  if (negociacaoDeHoje(x, userId, chave)) return aviso(userId, T("Você já negociou esse item hoje."), "warn");
+  if (negociacaoDeHoje(x, userId, chave)) return aviso(userId, T("Pechincha.VoceJaNegociouEsseItem"), "warn");
 
   const pericia = PERICIAS_VENDEDOR[x.vendedorPericia] ? x.vendedorPericia : "per";
   const npc = await atorDoDono(x.dono);
   const dono = game.journal.get(x.dono);
   const estado = {
     entryId, userId, modo, chave, nome, loja: e.name, res: null,
-    j: { nome: ator.name, img: ator.img, pericia: T("Persuasão"), chave: "per", actorUuid: ator.uuid, bonus: bonusPericia(ator, "per"), roll: null },
+    j: { nome: ator.name, img: ator.img, pericia: T("Pechincha.Persuasao"), chave: "per", actorUuid: ator.uuid, bonus: bonusPericia(ator, "per"), roll: null },
     n: {
       nome: dono?.name ?? npc?.name ?? e.name,
       img: (dono ? analisar(dono).page?.src : null) ?? npc?.img ?? "icons/svg/mystery-man.svg",
@@ -167,7 +167,7 @@ async function executarNegociar({ entryId, userId, actorUuid, modo, alvoId, nome
     content: htmlNegocio(estado),
     flags: { [MOD]: { negocio: estado } }
   });
-  if (emCena && msg) conduzirPechinchaEmCena(msg.id).catch((err) => relatarErro(T("pechincha no Dados em Cena"), err));
+  if (emCena && msg) conduzirPechinchaEmCena(msg.id).catch((err) => relatarErro(T("Pechincha.PechinchaNoDadosEmCena"), err));
 }
 
 /** Pedido de rolagem no cartão da pechincha. Quem rola é sempre o mestre (com o bônus e o modo pedidos):
@@ -208,31 +208,31 @@ function htmlNegocio(est) {
     const ganhou = est.res && (k === "j" ? est.res.endsWith("J") : est.res.endsWith("N"));
     const perdeu = est.res && est.res !== "empate" && !ganhou;
     const marca = !est.res ? "" : (ganhou ? `<i class="fa-solid fa-check jm-ganhou"></i>` : (perdeu ? `<i class="fa-solid fa-xmark jm-perdeu"></i>` : `<i class="fa-solid fa-equals"></i>`));
-    const modoTxt = { normal: "1d20", v: T("Vantagem (2d20, fica o maior)"), d: T("Desvantagem (2d20, fica o menor)") }[r?.modo] ?? "1d20";
+    const modoTxt = { normal: "1d20", v: T("Pechincha.Vantagem2d20FicaOMaior"), d: T("Pechincha.Desvantagem2d20FicaOMenor") }[r?.modo] ?? "1d20";
     const detalhe = r ? `<div class="jm-neg-dados ${k}">
         <span class="jm-neg-modo">${modoTxt}</span>
-        <span class="jm-neg-conta">${r.dados.map((d) => `<span class="d20 ${d.ativo ? "" : "descartado"} ${d.v === 20 ? "max" : ""} ${d.v === 1 ? "min" : ""}" data-tooltip="${d.ativo ? T("Dado usado") : T("Dado descartado")}">${d.v}</span>`).join("")}
+        <span class="jm-neg-conta">${r.dados.map((d) => `<span class="d20 ${d.ativo ? "" : "descartado"} ${d.v === 20 ? "max" : ""} ${d.v === 1 ? "min" : ""}" data-tooltip="${d.ativo ? T("Pechincha.DadoUsado") : T("Pechincha.DadoDescartado")}">${d.v}</span>`).join("")}
           <small>${sinal(r.bonus)} (${esc(l.pericia)}) = <b>${r.total}</b></small></span></div>` : "";
     const acoes = (!r && est.emCena)
-      ? `<span class="jm-neg-aguarda" data-tooltip="${T("A rolagem está aberta na tela do Dados em Cena")}"><i class="fa-solid fa-dice-d20 fa-spin"></i> ${T("rolando na tela")}</span>`
+      ? `<span class="jm-neg-aguarda" data-tooltip="${T("Pechincha.ARolagemEstaAbertaNa")}"><i class="fa-solid fa-dice-d20 fa-spin"></i> ${T("Pechincha.RolandoNaTela")}</span>`
       : r
       ? `<a class="jm-neg-total ${r.nat === 20 ? "crit" : ""}">${r.total}</a>${r.modo !== "normal" ? `<span class="jm-neg-modo-tag">${r.modo === "v" ? "V" : "D"}</span>` : ""}${marca}`
       : `<span class="jm-neg-botoes" data-lado="${k}">
-          <button type="button" data-jm-rolar="${k}" data-modo="d" data-tooltip="${T("Desvantagem")}">D</button>
-          <button type="button" data-jm-rolar="${k}" data-modo="v" data-tooltip="${T("Vantagem")}">V</button>
-          <button type="button" data-jm-rolar="${k}" data-modo="normal" data-tooltip="${T("Rolar")} ${esc(l.pericia)} (${sinal(l.bonus)})"><i class="fa-solid fa-dice-d20"></i></button>
+          <button type="button" data-jm-rolar="${k}" data-modo="d" data-tooltip="${T("Pechincha.Desvantagem")}">D</button>
+          <button type="button" data-jm-rolar="${k}" data-modo="v" data-tooltip="${T("Pechincha.Vantagem")}">V</button>
+          <button type="button" data-jm-rolar="${k}" data-modo="normal" data-tooltip="${T("Pechincha.Rolar")} ${esc(l.pericia)} (${sinal(l.bonus)})"><i class="fa-solid fa-dice-d20"></i></button>
         </span>`;
     return `<div class="jm-neg-rotulo ${k}">${rotulo} · ${esc(l.pericia.toUpperCase())}</div>
-      <div class="jm-neg-linha ${k} ${r ? "rolado" : ""}" ${r ? `data-jm-ver="${k}" data-tooltip="${T("Clique para ver os dados")}"` : ""}>
+      <div class="jm-neg-linha ${k} ${r ? "rolado" : ""}" ${r ? `data-jm-ver="${k}" data-tooltip="${T("Pechincha.CliqueParaVerOsDados")}"` : ""}>
         <img src="${esc(l.img)}" alt=""><b>${esc(l.nome)}</b>${acoes}
       </div>${detalhe}`;
   };
   const rodape = est.res
     ? `<div class="jm-neg-res ${est.res}"><i class="fa-solid fa-trophy"></i> ${esc(est.texto)}</div>`
-    : `<div class="jm-neg-espera">${T("Aguardando as rolagens…")}</div>`;
+    : `<div class="jm-neg-espera">${T("Pechincha.AguardandoAsRolagens")}</div>`;
   return `<div class="jm-chat jm-neg" data-jm-negocio>
-    <div class="jm-neg-titulo"><i class="fa-solid fa-handshake"></i> ${T("Pechincha")}: ${est.modo === "compra" ? T("comprar") : T("vender")} <b>${esc(est.nome)}</b></div>
-    ${lado("j", T("Jogador"))}${lado("n", T("Vendedor"))}${rodape}
+    <div class="jm-neg-titulo"><i class="fa-solid fa-handshake"></i> ${T("Pechincha.Pechincha")}: ${est.modo === "compra" ? T("Pechincha.Comprar") : T("Pechincha.Vender")} <b>${esc(est.nome)}</b></div>
+    ${lado("j", T("Pechincha.Jogador"))}${lado("n", T("Pechincha.Vendedor"))}${rodape}
     <div class="jm-neg-loja">${esc(est.loja)}</div>
   </div>`;
 }
@@ -246,7 +246,7 @@ function ligarCartaoNegocio(msg, html) {
   card.querySelectorAll(".jm-neg-botoes").forEach((grupo) => {
     const lado = grupo.dataset.lado;
     const pode = lado === "j" ? (game.user.id === estado?.userId || ehGM()) : ehGM();
-    if (!pode) { grupo.innerHTML = `<span class="jm-neg-aguarda" data-tooltip="${T("Aguardando")} ${lado === "j" ? T("o jogador") : T("o mestre")}"><i class="fa-solid fa-hourglass-half"></i></span>`; return; }
+    if (!pode) { grupo.innerHTML = `<span class="jm-neg-aguarda" data-tooltip="${T("Pechincha.Aguardando")} ${lado === "j" ? T("Pechincha.OJogador") : T("Pechincha.OMestre")}"><i class="fa-solid fa-hourglass-half"></i></span>`; return; }
     grupo.querySelectorAll("[data-jm-rolar]").forEach((b) => b.addEventListener("click", async (ev) => {
       ev.preventDefault();
       grupo.querySelectorAll("button").forEach((x2) => { x2.disabled = true; });
@@ -262,18 +262,18 @@ function ligarCartaoNegocio(msg, html) {
 async function executarVender({ entryId, userId, actorUuid, itemId, quantidade = 1 }) {
   const e = game.journal.get(entryId);
   if (!e) return;
-  if (lojaBloqueada(e, userId)) return aviso(userId, T("A loja está fechada agora."), "warn");
+  if (lojaBloqueada(e, userId)) return aviso(userId, T("Comum.ALojaEstaFechadaAgora"), "warn");
   const { page, m, x } = analisar(e);
   const ator = await fromUuid(actorUuid);
   const item = ator?.items.get(itemId);
-  if (!page || !item) return aviso(userId, T("Item não encontrado."), "warn");
+  if (!page || !item) return aviso(userId, T("Pechincha.ItemNaoEncontrado"), "warn");
   const tem = Number(item.system?.quantity) || 1;
   const n = Math.min(tem, Math.max(1, Math.floor(Number(quantidade) || 1)));
   const base = precoEmPo(item);
   const neg = negociacaoDeHoje(x, userId, `v_${itemId}`);
   const mult = neg?.mult ?? multVendaPadrao(x);
   const valor = Math.round(base * mult * n * 100) / 100;
-  if (valor <= 0) return aviso(userId, T("Esse item não tem valor de venda."), "warn");
+  if (valor <= 0) return aviso(userId, T("Pechincha.EsseItemNaoTemValor"), "warn");
 
   /* ordem segura: o item sai da ficha, o jogador recebe o ouro e só então o item entra no estoque da loja.
    * Se algum passo falhar, os anteriores são desfeitos (o jogador não fica sem o item e sem o ouro,
@@ -301,12 +301,12 @@ async function executarVender({ entryId, userId, actorUuid, itemId, quantidade =
     }
   } catch (err) {
     for (const passo of desfazer.reverse()) {
-      try { await passo(); } catch (err2) { console.error(`${T("Journal da Mesa")} | ${T("não consegui desfazer a venda")}`, err2); }
+      try { await passo(); } catch (err2) { console.error(`${T("Comum.JournalDaMesa")} | ${T("Pechincha.NaoConseguiDesfazerAVenda")}`, err2); }
     }
     throw err;
   }
   if (neg) await page.unsetFlag(MOD, `negociacoes.${userId}.v_${itemId}`);
-  const linha = TF("{quem} vendeu {n}{item} para {loja} por {preco}.", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(item.name)}</b>`, loja: `<b>${esc(e.name)}</b>`, preco: formatarPreco(valor) });
+  const linha = TF("Pechincha.QuemVendeuNItemPara", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(item.name)}</b>`, loja: `<b>${esc(e.name)}</b>`, preco: formatarPreco(valor) });
   await chat(`<i class="fa-solid fa-hand-holding-dollar"></i> ${linha}`, { ator });
   Sessao.registrar("loja", linha);
 }
@@ -323,15 +323,15 @@ async function executarRegras({ userId, op, id, cid, cat, titulo, texto, status,
   const negar = (msg) => aviso(userId, msg, "warn");
   switch (op) {
     case "propor": {
-      if (r.itens.length >= LIMITES_REGRAS.itens) return negar(T("Limite de tópicos atingido."));
+      if (r.itens.length >= LIMITES_REGRAS.itens) return negar(T("Pechincha.LimiteDeTopicosAtingido"));
       const t = corta(titulo, LIMITES_REGRAS.titulo);
-      if (!t) return negar(T("Escreva um título para a proposta."));
+      if (!t) return negar(T("Comum.EscrevaUmTituloParaA"));
       r.itens.push({ id: novoId(), cat: REGRAS_CATS[cat] ? cat : "casa", titulo: t, texto: corta(texto, LIMITES_REGRAS.texto),
         status: gm ? "discussao" : "proposta", autor: anonimo ? null : userId, criado: Date.now(), votos: {}, comentarios: [] });
       break;
     }
     case "editar": {
-      if (!item || !(gm || (autorDe(item) && item.status === "proposta"))) return negar(T("Você não pode editar este tópico."));
+      if (!item || !(gm || (autorDe(item) && item.status === "proposta"))) return negar(T("Pechincha.VoceNaoPodeEditarEste"));
       const t = corta(titulo, LIMITES_REGRAS.titulo);
       if (t) item.titulo = t;
       item.texto = corta(texto, LIMITES_REGRAS.texto);
@@ -339,7 +339,7 @@ async function executarRegras({ userId, op, id, cid, cat, titulo, texto, status,
       break;
     }
     case "apagar":
-      if (!item || !(gm || (autorDe(item) && item.status === "proposta"))) return negar(T("Você não pode apagar este tópico."));
+      if (!item || !(gm || (autorDe(item) && item.status === "proposta"))) return negar(T("Pechincha.VoceNaoPodeApagarEste2"));
       r.itens = r.itens.filter((i) => i.id !== id);
       break;
     case "status":
@@ -356,14 +356,14 @@ async function executarRegras({ userId, op, id, cid, cat, titulo, texto, status,
       const t = corta(texto, LIMITES_REGRAS.comentario);
       if (!t) return;
       item.comentarios ??= [];
-      if (item.comentarios.length >= LIMITES_REGRAS.comentarios) return negar(T("Limite de comentários neste tópico."));
+      if (item.comentarios.length >= LIMITES_REGRAS.comentarios) return negar(T("Pechincha.LimiteDeComentariosNesteTopico"));
       item.comentarios.push({ id: novoId(), autor: anonimo ? null : userId, texto: t, t: Date.now() });
       break;
     }
     case "apagarComentario": {
       if (!item) return;
       const c = (item.comentarios ?? []).find((x) => x.id === cid);
-      if (!c || !(gm || c.autor === userId)) return negar(T("Você não pode apagar este comentário."));
+      if (!c || !(gm || c.autor === userId)) return negar(T("Pechincha.VoceNaoPodeApagarEste"));
       item.comentarios = item.comentarios.filter((x) => x.id !== cid);
       break;
     }
@@ -387,8 +387,8 @@ async function gerarDiarioRegras() {
   if (!ehGM()) return;
   const { itens, sessao0 } = regrasMesa();
   const acordadas = itens.filter((i) => i.status === "acordada");
-  if (!acordadas.length) return ui.notifications.warn(T("Nenhum tópico está como Combinado ainda."));
-  let html = `<p>${sessao0?.concluida ? `${T("Combinados da sessão 0")} (${esc(new Date(sessao0.quando).toLocaleDateString(game.i18n.lang))}).` : T("Combinados da mesa até agora.")}</p>`;
+  if (!acordadas.length) return ui.notifications.warn(T("Pechincha.NenhumTopicoEstaComoCombinado"));
+  let html = `<p>${sessao0?.concluida ? `${T("Pechincha.CombinadosDaSessao0")} (${esc(new Date(sessao0.quando).toLocaleDateString(game.i18n.lang))}).` : T("Pechincha.CombinadosDaMesaAteAgora")}</p>`;
   for (const [k, [rot]] of Object.entries(REGRAS_CATS)) {
     const l = acordadas.filter((i) => i.cat === k);
     if (!l.length) continue;
@@ -398,14 +398,14 @@ async function gerarDiarioRegras() {
   if (e) {
     const p = e.pages.contents[0];
     if (p) await p.update({ "text.content": html });
-    else await e.createEmbeddedDocuments("JournalEntryPage", [{ name: T("Regras da Mesa"), type: "text", text: { content: html } }]);
+    else await e.createEmbeddedDocuments("JournalEntryPage", [{ name: T("Comum.RegrasDaMesa"), type: "text", text: { content: html } }]);
   } else {
     e = await JournalEntry.create({
-      name: T("Regras da Mesa"), ownership: { default: LV().OBSERVER }, flags: { [MOD]: { regrasMesa: true } },
-      pages: [{ name: T("Regras da Mesa"), type: "text", text: { content: html }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } }]
+      name: T("Comum.RegrasDaMesa"), ownership: { default: LV().OBSERVER }, flags: { [MOD]: { regrasMesa: true } },
+      pages: [{ name: T("Comum.RegrasDaMesa"), type: "text", text: { content: html }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } }]
     });
   }
-  ui.notifications.info(`${T("Diário \"Regras da Mesa\" atualizado com")} ${acordadas.length} ${T("combinado(s).")}`);
+  ui.notifications.info(`${T("Pechincha.DiarioRegrasDaMesaAtualizado")} ${acordadas.length} ${T("Pechincha.CombinadoS")}`);
   return e;
 }
 

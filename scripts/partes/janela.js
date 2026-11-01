@@ -223,9 +223,9 @@ class JournalApp extends ApplicationV2 {
             <i class="fa-solid ${aberta ? "fa-folder-open" : "fa-folder"}"></i>
             <span class="nome">${esc(f.name)}</span>
             ${gm ? `<span class="jm-pasta-ctrl">
-              <a data-action="novaPasta" data-id="${f.id}" data-tooltip="${T("Nova subpasta")}"><i class="fa-solid fa-folder-plus"></i></a>
-              <a data-action="ocultarPasta" data-id="${f.id}" data-tooltip="${pastaMarcadaOculta(f) ? T("Mostrar pasta") : T("Ocultar pasta (vai para Ocultos)")}"><i class="fa-solid ${pastaMarcadaOculta(f) ? "fa-eye" : "fa-eye-slash"}"></i></a>
-              <a data-action="editarPasta" data-id="${f.id}" data-tooltip="${T("Configurar pasta")}"><i class="fa-solid fa-gear"></i></a>
+              <a data-action="novaPasta" data-id="${f.id}" data-tooltip="${T("Janela.NovaSubpasta")}"><i class="fa-solid fa-folder-plus"></i></a>
+              <a data-action="ocultarPasta" data-id="${f.id}" data-tooltip="${pastaMarcadaOculta(f) ? T("Janela.MostrarPasta") : T("Janela.OcultarPastaVaiParaOcultos")}"><i class="fa-solid ${pastaMarcadaOculta(f) ? "fa-eye" : "fa-eye-slash"}"></i></a>
+              <a data-action="editarPasta" data-id="${f.id}" data-tooltip="${T("Janela.ConfigurarPasta")}"><i class="fa-solid fa-gear"></i></a>
             </span>` : ""}
           </div>
           <div class="jm-pasta-filhos">${aberta || mostrarTudo ? nivel(f.id, f.sorting) : ""}</div>
@@ -245,19 +245,19 @@ class JournalApp extends ApplicationV2 {
     if (a.tipo === "quest") sub = STATUS[a.m.status]?.rotulo ?? sub;
     if (a.tipo === "shop" && a.x.dono && game.journal.get(a.x.dono)) sub = game.journal.get(a.x.dono).name;
     if (a.tipo === "deus" && a.x.deus.dominios) sub = a.x.deus.dominios;
-    if (a.tipo === "diario") sub = j.pages.size === 1 ? nomeDoTipoDePagina(a.pages[0].type) : `${j.pages.size} ${T("páginas")}`;
-    if (a.tipo === "historia") { const n = paginasHistoria(j).length; sub = n === 1 ? T("1 acontecimento") : `${n} ${T("acontecimentos")}`; }
-    if (a.tipo === "jornal") { const n = Jornal.edicoes(j).filter(({ ed }) => Jornal.publicaEstado(ed.estado)).length; sub = n === 1 ? T("1 edição") : `${n} ${T("edições")}`; }
+    if (a.tipo === "diario") sub = j.pages.size === 1 ? nomeDoTipoDePagina(a.pages[0].type) : `${j.pages.size} ${T("Janela.Paginas")}`;
+    if (a.tipo === "historia") { const n = paginasHistoria(j).length; sub = n === 1 ? T("Janela.N1Acontecimento") : `${n} ${T("Janela.Acontecimentos")}`; }
+    if (a.tipo === "jornal") { const n = Jornal.edicoes(j).filter(({ ed }) => Jornal.publicaEstado(ed.estado)).length; sub = n === 1 ? T("Janela.N1Edicao") : `${n} ${T("Janela.Edicoes")}`; }
     const nCal = calNota(j);
     if (nCal && calApi() && ["diario", "journalentry"].includes(a.tipo)) {
       const rep = (calNormalizar(nCal)?.repetir ?? "nao") !== "nao";
       const prox = rep ? calProxima(j) : null;
-      sub = `📅 ${prox != null ? `${T("próxima")}: ${Tempo.texto(prox)}` : calTextoDia(nCal.td)}`;
+      sub = `📅 ${prox != null ? `${T("Janela.Proxima")}: ${Tempo.texto(prox)}` : calTextoDia(nCal.td)}`;
     }
     const img = a.tipo === "jornal" ? (Jornal.identidade(j).logo || null) : a.page?.src ?? (["diario", "historia"].includes(a.tipo) ? a.pages.find((p) => p.type === "image")?.src : null);
     const vis = ehGM() ? visibilidade(j) : "todos";
     const oculto = !ehGM() ? "" : (vis === "ninguem"
-      ? `<i class="fa-solid fa-eye-slash jm-oculto" data-tooltip="${T("Oculto dos jogadores")}"></i>`
+      ? `<i class="fa-solid fa-eye-slash jm-oculto" data-tooltip="${T("Janela.OcultoDosJogadores")}"></i>`
       : (game.settings.get(MOD, "donos") ? bolinhasDono(j) : ""));
     const nota = notaMestre(j);
     return `<div class="jm-item ${j.id === this.ativa ? "ativo" : ""} ${nota ? "tem-nota" : ""}" data-action="abrir" data-id="${j.id}" draggable="true"
@@ -288,7 +288,7 @@ class JournalApp extends ApplicationV2 {
 
     const contagem = {};
     for (const j of naLista) { const t = analisar(j).tipo; contagem[t] = (contagem[t] ?? 0) + 1; }
-    const chips = [["todos", T("Tudo"), "fa-solid fa-layer-group", naLista.length],
+    const chips = [["todos", T("Janela.Tudo"), "fa-solid fa-layer-group", naLista.length],
       ...Object.entries(TIPOS).filter(([k]) => contagem[k]).map(([k, t]) => [k, t.plural, t.icone, contagem[k]])]
       .map(([k, r, i, n]) => `<button type="button" class="jm-chip ${this.grupo === k ? "ativo" : ""}" data-action="grupo" data-grupo="${k}" data-tooltip="${r}"><i class="${i}"></i><span>${n}</span></button>`).join("");
 
@@ -296,34 +296,34 @@ class JournalApp extends ApplicationV2 {
     const temRegra = tiposDePagina().includes("rule");
     const botoesNovos = NOVOS.filter(([k]) => (k !== "regra" || temRegra) && (k !== "evento" || calApi())).map(([k, r, i]) => {
       const rot = r ?? TIPOS[k].rotulo; const ic = i ?? TIPOS[k].icone;
-      return `<button type="button" data-action="criar" data-tipo="${k}" data-tooltip="${T("Novo(a)")} ${rot}"><i class="${ic}"></i></button>`;
+      return `<button type="button" data-action="criar" data-tipo="${k}" data-tooltip="${T("Janela.NovoA")} ${rot}"><i class="${ic}"></i></button>`;
     }).join("");
     const criar = gm ? `<div class="jm-criar">
-      <div class="jm-criar-topo"><span>${T("Nova página")} ${alvo ? `${T("em")} <b>${esc(alvo.name)}</b>${this.pastaAlvo ? "" : ` <small class="jm-da-aberta">(${T("pasta da página aberta")})</small>`} <a data-action="limparAlvo" data-tooltip="${T("Criar na raiz")}"><i class="fa-solid fa-xmark"></i></a>` : `<em>${T("na raiz")}</em>`}
-        <small class="jm-posicao-nova" data-tooltip="${T("Mude nas configurações do módulo")}">${game.settings.get(MOD, "posicaoNova") === "inicio" ? T("↑ no início") : T("↓ no fim")}</small></span>
-        <a data-action="novaPasta" data-tooltip="${T("Nova pasta")}"><i class="fa-solid fa-folder-plus"></i></a>
-        <a data-action="importar" data-tooltip="${T("Importar JSON")}"><i class="fa-solid fa-file-import"></i></a>
-        ${temModulo("monks-enhanced-journal") || game.journal.some((j) => j.pages.some((pg) => pg.flags?.["monks-enhanced-journal"]?.type)) ? `<a data-action="importarMonks" data-tooltip="${T("Importar do Monk's Enhanced Journal: converte as páginas no formato do Monk's para o formato do Journal da Mesa (só copia; nada é apagado)")}"><i class="fa-solid fa-puzzle-piece"></i></a>` : ""}</div>
+      <div class="jm-criar-topo"><span>${T("Janela.NovaPagina")} ${alvo ? `${T("Comum.Em")} <b>${esc(alvo.name)}</b>${this.pastaAlvo ? "" : ` <small class="jm-da-aberta">(${T("Janela.PastaDaPaginaAberta")})</small>`} <a data-action="limparAlvo" data-tooltip="${T("Janela.CriarNaRaiz")}"><i class="fa-solid fa-xmark"></i></a>` : `<em>${T("Comum.NaRaiz")}</em>`}
+        <small class="jm-posicao-nova" data-tooltip="${T("Janela.MudeNasConfiguracoesDoModulo")}">${game.settings.get(MOD, "posicaoNova") === "inicio" ? T("Janela.NoInicio") : T("Janela.NoFim")}</small></span>
+        <a data-action="novaPasta" data-tooltip="${T("Janela.NovaPasta")}"><i class="fa-solid fa-folder-plus"></i></a>
+        <a data-action="importar" data-tooltip="${T("Janela.ImportarJSON")}"><i class="fa-solid fa-file-import"></i></a>
+        ${temModulo("monks-enhanced-journal") || game.journal.some((j) => j.pages.some((pg) => pg.flags?.["monks-enhanced-journal"]?.type)) ? `<a data-action="importarMonks" data-tooltip="${T("Janela.ImportarDoMonkSEnhanced")}"><i class="fa-solid fa-puzzle-piece"></i></a>` : ""}</div>
       <div class="jm-criar-btns">${botoesNovos}</div>
     </div>` : "";
 
     const rodape = `<div class="jm-rodape">
-      ${gm && pastasOcultas.length ? `<button type="button" class="jm-ocultos ${this.verOcultas ? "ativo" : ""}" data-action="verOcultas" data-tooltip="${this.verOcultas ? T("Voltar para a lista normal") : T("Ver as pastas ocultas")}">
-        <i class="fa-solid ${this.verOcultas ? "fa-arrow-left" : "fa-eye-slash"}"></i> ${this.verOcultas ? T("Voltar") : `${T("Ocultos")} <small>${pastasOcultas.length}</small>`}</button>` : `<span class="jm-rodape-espaco"></span>`}
-      ${gm && game.combat ? `<button type="button" data-action="bauCombate" data-tooltip="${T("Gerar baú com o saque do combate atual")}"><i class="fa-solid fa-box-open"></i></button>` : ""}
-      <button type="button" data-action="abrirEspecial" data-id="__linha" class="${this.ativa === "__linha" ? "ativo" : ""}" data-tooltip="${T("Linha do tempo")}"><i class="fa-solid fa-timeline"></i></button>
+      ${gm && pastasOcultas.length ? `<button type="button" class="jm-ocultos ${this.verOcultas ? "ativo" : ""}" data-action="verOcultas" data-tooltip="${this.verOcultas ? T("Janela.VoltarParaAListaNormal") : T("Janela.VerAsPastasOcultas")}">
+        <i class="fa-solid ${this.verOcultas ? "fa-arrow-left" : "fa-eye-slash"}"></i> ${this.verOcultas ? T("Janela.Voltar") : `${T("Janela.Ocultos")} <small>${pastasOcultas.length}</small>`}</button>` : `<span class="jm-rodape-espaco"></span>`}
+      ${gm && game.combat ? `<button type="button" data-action="bauCombate" data-tooltip="${T("Janela.GerarBauComOSaque")}"><i class="fa-solid fa-box-open"></i></button>` : ""}
+      <button type="button" data-action="abrirEspecial" data-id="__linha" class="${this.ativa === "__linha" ? "ativo" : ""}" data-tooltip="${T("Janela.LinhaDoTempo")}"><i class="fa-solid fa-timeline"></i></button>
       <button type="button" data-action="abrirEspecial" data-id="__jornais" class="${this.ativa === "__jornais" ? "ativo" : ""}" data-tooltip="${esc(Jornal.t("Jornal.Titulo"))}"><i class="fa-solid fa-newspaper"></i></button>
-      <button type="button" data-action="abrirEspecial" data-id="__regras" class="${this.ativa === "__regras" ? "ativo" : ""}" data-tooltip="${T("Regras da Mesa (sessão 0)")}"><i class="fa-solid fa-handshake"></i></button>
-      ${Nexus.ligado() && (gm || Nexus.jogadoresVeem()) ? `<button type="button" data-action="abrirEspecial" data-id="__nexus" class="${this.ativa === "__nexus" ? "ativo" : ""}" data-tooltip="${T("Nexus")}"><i class="fa-solid fa-gauge-high"></i></button>` : ""}
+      <button type="button" data-action="abrirEspecial" data-id="__regras" class="${this.ativa === "__regras" ? "ativo" : ""}" data-tooltip="${T("Janela.RegrasDaMesaSessao0")}"><i class="fa-solid fa-handshake"></i></button>
+      ${Nexus.ligado() && (gm || Nexus.jogadoresVeem()) ? `<button type="button" data-action="abrirEspecial" data-id="__nexus" class="${this.ativa === "__nexus" ? "ativo" : ""}" data-tooltip="${T("Comum.Nexus")}"><i class="fa-solid fa-gauge-high"></i></button>` : ""}
       ${gm ? (Sessao.ativa()
-        ? `<button type="button" class="jm-sessao gravando" data-action="sessaoEncerrar" data-tooltip="${T("Sessão")} ${Sessao.atual().n} ${T("em andamento — clique para encerrar e gerar o diário")}"><i class="fa-solid fa-circle-stop"></i></button>`
-        : `<button type="button" class="jm-sessao" data-action="sessaoIniciar" data-tooltip="${T("Iniciar o diário da sessão")}"><i class="fa-solid fa-book-bookmark"></i></button>`) : ""}
-      <button type="button" data-action="expandir" data-tooltip="${T("Recolher todas as pastas")}"><i class="fa-solid fa-angles-up"></i></button>
-      <button type="button" data-action="rastreador" class="${game.settings.get(MOD, "rastreador") ? "ativo" : ""}" data-tooltip="${T("Rastreador de missões na tela")}"><i class="fa-solid fa-list-check"></i></button>
+        ? `<button type="button" class="jm-sessao gravando" data-action="sessaoEncerrar" data-tooltip="${T("Comum.Sessao")} ${Sessao.atual().n} ${T("Janela.EmAndamentoCliqueParaEncerrar")}"><i class="fa-solid fa-circle-stop"></i></button>`
+        : `<button type="button" class="jm-sessao" data-action="sessaoIniciar" data-tooltip="${T("Janela.IniciarODiarioDaSessao")}"><i class="fa-solid fa-book-bookmark"></i></button>`) : ""}
+      <button type="button" data-action="expandir" data-tooltip="${T("Janela.RecolherTodasAsPastas")}"><i class="fa-solid fa-angles-up"></i></button>
+      <button type="button" data-action="rastreador" class="${game.settings.get(MOD, "rastreador") ? "ativo" : ""}" data-tooltip="${T("Janela.RastreadorDeMissoesNaTela")}"><i class="fa-solid fa-list-check"></i></button>
       <button type="button" data-action="tema" data-tooltip="${esc(Jornal.t("Tema.Trocar", { tema: nomeTema(game.settings.get(MOD, "tema")) }))}"><i class="fa-solid fa-palette"></i></button>
     </div>`;
 
-    const ESPECIAIS = { __linha: [T("Linha do tempo"), "fa-solid fa-timeline"], __jornais: [esc(Jornal.t("Jornal.Titulo")), "fa-solid fa-newspaper"], __nexus: [T("Nexus"), "fa-solid fa-gauge-high"], __regras: [T("Regras da Mesa"), "fa-solid fa-handshake"] };
+    const ESPECIAIS = { __linha: [T("Janela.LinhaDoTempo"), "fa-solid fa-timeline"], __jornais: [esc(Jornal.t("Jornal.Titulo")), "fa-solid fa-newspaper"], __nexus: [T("Comum.Nexus"), "fa-solid fa-gauge-high"], __regras: [T("Comum.RegrasDaMesa"), "fa-solid fa-handshake"] };
     const abas = this.abas.map((id) => {
       if (ESPECIAIS[id]) return `<div class="jm-aba especial ${id === this.ativa ? "ativa" : ""}" data-action="abrirEspecial" data-id="${id}">
         <i class="${ESPECIAIS[id][1]}"></i><span>${ESPECIAIS[id][0]}</span>
@@ -335,7 +335,7 @@ class JournalApp extends ApplicationV2 {
         ${fixa ? "" : `<a class="jm-aba-x" data-action="fecharAba" data-id="${id}"><i class="fa-solid fa-xmark"></i></a>`}</div>`;
     }).join("");
     const fecharTodas = this.abas.length - fix.length > 1
-      ? `<a class="jm-fechar-todas" data-action="fecharTodas" data-tooltip="${T("Fecha as abas (não apaga nada)")}"><i class="fa-solid fa-xmark"></i> ${T("Fechar todas")}</a>` : "";
+      ? `<a class="jm-fechar-todas" data-action="fecharTodas" data-tooltip="${T("Janela.FechaAsAbasNaoApaga")}"><i class="fa-solid fa-xmark"></i> ${T("Janela.FecharTodas")}</a>` : "";
 
     const corpo = this.ativa === "__linha" ? await this._linhaDoTempo(visiveis)
       : this.ativa === "__nexus" ? this._painelNexus()
@@ -345,20 +345,20 @@ class JournalApp extends ApplicationV2 {
 
     return `<div class="jm-raiz">
       <aside class="jm-lateral">
-        <div class="jm-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="${T("Buscar...")}" value="${esc(this.filtro)}"></div>
+        <div class="jm-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="${T("Janela.Buscar")}" value="${esc(this.filtro)}"></div>
         <div class="jm-chips">${chips}</div>
-        ${this.verOcultas ? `<div class="jm-ocultos-titulo"><i class="fa-solid fa-eye-slash"></i> ${T("Pastas ocultas")} <small>${T("não aparecem no Journal da Mesa nem na aba de Diários")}</small></div>` : ""}
-        ${!this.verOcultas && fix.length ? `<div class="jm-fixados"><div class="jm-fixados-titulo"><i class="fa-solid fa-thumbtack"></i> ${T("Fixados")}</div>${fix.map((id) => this._itemLista(game.journal.get(id))).join("")}</div>` : ""}
-        <div class="jm-lista ${this.verOcultas ? "ocultas" : ""}" data-drop="pasta" data-pasta="">${this._arvore(naLista, !!this.verOcultas) || `<p class="jm-vazio">${T("Nada por aqui ainda.")}</p>`}</div>
+        ${this.verOcultas ? `<div class="jm-ocultos-titulo"><i class="fa-solid fa-eye-slash"></i> ${T("Janela.PastasOcultas")} <small>${T("Janela.NaoAparecemNoJournalDa")}</small></div>` : ""}
+        ${!this.verOcultas && fix.length ? `<div class="jm-fixados"><div class="jm-fixados-titulo"><i class="fa-solid fa-thumbtack"></i> ${T("Janela.Fixados")}</div>${fix.map((id) => this._itemLista(game.journal.get(id))).join("")}</div>` : ""}
+        <div class="jm-lista ${this.verOcultas ? "ocultas" : ""}" data-drop="pasta" data-pasta="">${this._arvore(naLista, !!this.verOcultas) || `<p class="jm-vazio">${T("Janela.NadaPorAquiAinda")}</p>`}</div>
         ${criar}
         ${rodape}
       </aside>
       <section class="jm-principal">
-        <nav class="jm-abas"><div class="jm-abas-lista">${abas || `<span class="jm-abas-vazio">${T("Abra uma página na lista ao lado")}</span>`}</div>${fecharTodas}</nav>
+        <nav class="jm-abas"><div class="jm-abas-lista">${abas || `<span class="jm-abas-vazio">${T("Janela.AbraUmaPaginaNaLista")}</span>`}</div>${fecharTodas}</nav>
         <div class="jm-conteudo">${corpo}</div>
         <div class="jm-dia-canto">
-          <span data-tooltip="${T("Dia do mundo (as ofertas diárias das lojas mudam a cada dia)")}"><i class="fa-solid fa-sun"></i> ${T("Dia")} ${diaAtual()}</span>
-          ${gm ? `<a data-action="voltarDia" data-tooltip="${T("Voltar um dia")}"><i class="fa-solid fa-backward"></i></a><a data-action="novoDia" data-tooltip="${T("Avançar o dia")}"><i class="fa-solid fa-forward"></i></a>` : ""}
+          <span data-tooltip="${T("Janela.DiaDoMundoAsOfertas")}"><i class="fa-solid fa-sun"></i> ${T("Comum.Dia2")} ${diaAtual()}</span>
+          ${gm ? `<a data-action="voltarDia" data-tooltip="${T("Janela.VoltarUmDia")}"><i class="fa-solid fa-backward"></i></a><a data-action="novoDia" data-tooltip="${T("Janela.AvancarODia")}"><i class="fa-solid fa-forward"></i></a>` : ""}
         </div>
       </section>
     </div>`;
@@ -367,7 +367,7 @@ class JournalApp extends ApplicationV2 {
   /** Linha do tempo: o que já aconteceu (eventos, missões, sessões, histórico do calendário) e os próximos dias. */
   async _linhaDoTempo(visiveis) {
     const gm = ehGM();
-    if (!Tempo.ok()) return `<div class="jm-boas-vindas"><i class="fa-solid fa-timeline"></i><h2>${T("Linha do tempo")}</h2><p>${T("O calendário do mundo não está disponível.")}</p></div>`;
+    if (!Tempo.ok()) return `<div class="jm-boas-vindas"><i class="fa-solid fa-timeline"></i><h2>${T("Janela.LinhaDoTempo")}</h2><p>${T("Janela.OCalendarioDoMundoNao")}</p></div>`;
     const hoje = Tempo.hoje();
     const itens = [];
     for (const j of visiveis) {
@@ -376,7 +376,7 @@ class JournalApp extends ApplicationV2 {
       const a = analisar(j);
       if (a.tipo === "quest" && a.x.concluidaEm != null && podeLer(j)) itens.push({ td: Number(a.x.concluidaEm), tipo: "missao", j, icone: STATUS[a.m.status]?.icone ?? "fa-solid fa-scroll", texto: STATUS[a.m.status]?.rotulo ?? "" });
       const ses = j.flags?.[MOD]?.sessao;
-      if (ses && Number.isFinite(Number(ses.tdFim))) itens.push({ td: Number(ses.tdFim), tipo: "sessao", j, icone: "fa-solid fa-book-bookmark", texto: `${T("Sessão")} ${ses.n}` });
+      if (ses && Number.isFinite(Number(ses.tdFim))) itens.push({ td: Number(ses.tdFim), tipo: "sessao", j, icone: "fa-solid fa-book-bookmark", texto: `${T("Comum.Sessao")} ${ses.n}` });
     }
     const podeHist = gm || historicoCalVisivel();
     if (podeHist && calApi()) {
@@ -400,7 +400,7 @@ class JournalApp extends ApplicationV2 {
       for (const h of nx.historico ?? []) {
         const td = Number(h.td);
         if (!Number.isFinite(td) || td > hoje) continue;
-        const texto = h.subiu ? `${nx.nome} ${T("voltou acima de")} ${h.v}%` : `${nx.nome} ${T("caiu abaixo de")} ${h.v}%`;
+        const texto = h.subiu ? `${nx.nome} ${T("Comum.VoltouAcimaDe")} ${h.v}%` : `${nx.nome} ${T("Comum.CaiuAbaixoDe")} ${h.v}%`;
         itens.push({ td, tipo: "nexus", texto, extra: h.texto ?? "", origem: `nexus:${nx.id}:${h.id}`, icone: `fa-solid ${iconeSeguro(h.subiu ? "fa-arrow-trend-up" : nx.icone, "fa-gauge-high")}`, cor: nx.cor });
       }
     }
@@ -409,7 +409,7 @@ class JournalApp extends ApplicationV2 {
     itens.push(...doJornal.passado);
     const registrados = registradosNaHistoria();
     const temHistoria = historias().some((h) => podeVer(h));
-    const filtros = [["tudo", T("Tudo")], ["historia", T("História")], ["evento", T("Eventos")], ["missao", T("Missões")], ["sessao", T("Sessões")], ...(doJornal.passado.length ? [["jornal", Jornal.t("Jornal.Jornais")]] : []), ...(nexusVisiveis.length ? [["nexus", T("Nexus")]] : []), ...(podeHist && calApi() ? [["historico", T("Histórico do calendário")]] : [])];
+    const filtros = [["tudo", T("Janela.Tudo")], ["historia", T("Comum.Historia")], ["evento", T("Comum.Eventos")], ["missao", T("Comum.Missoes")], ["sessao", T("Comum.Sessoes")], ...(doJornal.passado.length ? [["jornal", Jornal.t("Jornal.Jornais")]] : []), ...(nexusVisiveis.length ? [["nexus", T("Comum.Nexus")]] : []), ...(podeHist && calApi() ? [["historico", T("Comum.HistoricoDoCalendario2")]] : [])];
     const f = filtros.some(([k]) => k === this.filtroLinha) ? this.filtroLinha : "tudo";
     const lista = itens.filter((i) => f === "tudo" ? i.tipo !== "historico" || this.filtroLinha === "historico" : i.tipo === f);
 
@@ -442,10 +442,10 @@ class JournalApp extends ApplicationV2 {
       if (i.tipo === "historia") return "";
       const origem = i.origem ?? (i.j ? i.j.uuid : `cal:${i.td}:${i.texto}`);
       const reg = registrados.get(origem);
-      if (reg) return `<a class="jm-lt-hist feito" data-action="abrir" data-id="${reg.j}" data-pagina="${reg.p}" data-tooltip="${T("Já está na História — abrir")}"><i class="fa-solid fa-landmark"></i></a>`;
+      if (reg) return `<a class="jm-lt-hist feito" data-action="abrir" data-id="${reg.j}" data-pagina="${reg.p}" data-tooltip="${T("Janela.JaEstaNaHistoriaAbrir")}"><i class="fa-solid fa-landmark"></i></a>`;
       if (!gm) return "";
       return `<a class="jm-lt-hist" data-action="histRegistrar" data-td="${i.td}" data-origem="${esc(origem)}" data-tipo-item="${i.tipo}"
-        data-nome="${esc(i.tipo === "jornal" ? i.nome : i.j ? i.j.name : i.texto)}" data-texto="${esc(i.tipo === "nexus" ? [i.texto, i.extra].filter(Boolean).join(": ") : i.texto ?? "")}" data-tooltip="${T("Registrar na História")}"><i class="fa-solid fa-feather-pointed"></i></a>`;
+        data-nome="${esc(i.tipo === "jornal" ? i.nome : i.j ? i.j.name : i.texto)}" data-texto="${esc(i.tipo === "nexus" ? [i.texto, i.extra].filter(Boolean).join(": ") : i.texto ?? "")}" data-tooltip="${T("Comum.RegistrarNaHistoria")}"><i class="fa-solid fa-feather-pointed"></i></a>`;
     };
     const linhaItem = (i) => {
       if (i.tipo === "jornal") return `<li class="jm-lt-item jornal"><i class="${i.icone}" style="color:${esc(i.cor)}"></i><a data-action="jornal" data-op="ler" data-id="${i.j.id}" data-page="${i.pagina}"><b>${esc(i.nome)}</b></a> <small>${esc(i.texto)}</small>${botaoHist(i)}</li>`;
@@ -459,30 +459,30 @@ class JournalApp extends ApplicationV2 {
     const passado = [...porDia.entries()].map(([td, l]) => {
       const pt = Tempo.partes(td);
       const ano = pt.ano;
-      const cab = ano !== anoLinha && (anoLinha !== undefined || ano !== Tempo.partes(hoje).ano) ? `<div class="jm-lt-ano">${T("Ano")} ${esc(pt.textoAno ?? ano)}${pt.era ? ` <small>${esc(pt.era)}</small>` : ""}</div>` : "";
+      const cab = ano !== anoLinha && (anoLinha !== undefined || ano !== Tempo.partes(hoje).ano) ? `<div class="jm-lt-ano">${T("Comum.Ano")} ${esc(pt.textoAno ?? ano)}${pt.era ? ` <small>${esc(pt.era)}</small>` : ""}</div>` : "";
       anoLinha = ano;
       return `${cab}<div class="jm-lt-dia" data-lt-td="${td}"><h4>${esc(Tempo.texto(td))} <small>${esc(Tempo.relativo(td))}</small>
-        ${gm ? `<a class="jm-lt-hist" data-action="histRegistrar" data-td="${td}" data-tooltip="${T("Registrar um acontecimento neste dia na História")}"><i class="fa-solid fa-plus"></i></a>` : ""}</h4>
+        ${gm ? `<a class="jm-lt-hist" data-action="histRegistrar" data-td="${td}" data-tooltip="${T("Janela.RegistrarUmAcontecimentoNesteDia")}"><i class="fa-solid fa-plus"></i></a>` : ""}</h4>
         <ul>${l.map(linhaItem).join("")}</ul></div>`;
     }).join("");
     const proximos = futuros.map((x2) => `<li class="jm-lt-item" data-lt-td="${x2.td}"><span class="jm-lt-quando">${esc(Tempo.relativo(x2.td))}</span>
       ${x2.hist ? `<i class="${x2.hist.icone}" style="color:${esc(x2.hist.cor)}"></i> <a data-action="abrir" data-id="${x2.j.id}" data-pagina="${x2.hist.pagina}"><b>${esc(x2.hist.nome)}</b></a> <small><i class="fa-solid fa-landmark"></i> ${esc(x2.j.name)}</small>`
-        : x2.prazo ? `<i class="fa-solid fa-hourglass-half"></i> <a data-action="abrir" data-id="${x2.j.id}"><b>${esc(x2.j.name)}</b></a> <small>${T("prazo")}</small>`
+        : x2.prazo ? `<i class="fa-solid fa-hourglass-half"></i> <a data-action="abrir" data-id="${x2.j.id}"><b>${esc(x2.j.name)}</b></a> <small>${T("Janela.Prazo")}</small>`
         : x2.jornal ? `<i class="fa-solid fa-clock"></i> <a data-action="jornal" data-op="ver" data-id="${x2.jornal.j.id}" data-page="${x2.jornal.pagina}"><b>${esc(x2.jornal.nome)}</b></a> <small>${esc(x2.jornal.rotulo)}: ${esc(x2.jornal.texto)}</small>`
-        : x2.ceu ? `<i class="fa-solid ${x2.ceu.icone}" ${x2.ceu.cor ? `style="color:${esc(x2.ceu.cor)}"` : ""}></i> <b>${esc(x2.ceu.texto)}</b> <small>${T("no céu")}</small>`
-        : x2.contador != null ? `<i class="fa-solid fa-hourglass-end"></i> <b>${esc(x2.contador)}</b> <small>${T("contador do calendário termina")}</small>`
+        : x2.ceu ? `<i class="fa-solid ${x2.ceu.icone}" ${x2.ceu.cor ? `style="color:${esc(x2.ceu.cor)}"` : ""}></i> <b>${esc(x2.ceu.texto)}</b> <small>${T("Janela.NoCeu")}</small>`
+        : x2.contador != null ? `<i class="fa-solid fa-hourglass-end"></i> <b>${esc(x2.contador)}</b> <small>${T("Janela.ContadorDoCalendarioTermina")}</small>`
         : `<i class="fa-solid ${x2.n.icone}" style="color:${x2.n.cor}"></i> <a data-action="abrir" data-id="${x2.j.id}"><b>${esc(x2.j.name)}</b></a>`}
       <small>${esc(Tempo.texto(x2.td))}</small></li>`).join("");
     return `<article class="jm-pagina jm-linha-tempo">
-      <header class="jm-cabecalho"><div class="jm-cab-texto"><span class="jm-selo"><i class="fa-solid fa-timeline"></i> ${T("Linha do tempo")}</span>
+      <header class="jm-cabecalho"><div class="jm-cab-texto"><span class="jm-selo"><i class="fa-solid fa-timeline"></i> ${T("Janela.LinhaDoTempo")}</span>
         <h1 class="jm-titulo">${esc(Tempo.texto(hoje))}</h1></div>
         <div class="jm-cab-botoes">
-          ${temHistoria || gm ? `<button type="button" data-action="histAbrir" data-tooltip="${temHistoria ? T("Abrir a História") : T("Criar o diário História")}"><i class="fa-solid fa-landmark"></i></button>` : ""}
-          ${gm ? `<button type="button" data-action="histRegistrar" data-tooltip="${T("Registrar um acontecimento na História")}"><i class="fa-solid fa-feather-pointed"></i></button>` : ""}
+          ${temHistoria || gm ? `<button type="button" data-action="histAbrir" data-tooltip="${temHistoria ? T("Janela.AbrirAHistoria") : T("Janela.CriarODiarioHistoria")}"><i class="fa-solid fa-landmark"></i></button>` : ""}
+          ${gm ? `<button type="button" data-action="histRegistrar" data-tooltip="${T("Janela.RegistrarUmAcontecimentoNaHistoria")}"><i class="fa-solid fa-feather-pointed"></i></button>` : ""}
         </div></header>
-      <section class="jm-secao"><h3><i class="fa-solid fa-forward"></i> ${T("Próximos 30 dias")}</h3>${proximos ? `<ul class="jm-lt-lista">${proximos}</ul>` : `<p class="jm-vazio">${T("Nada marcado.")}</p>`}</section>
+      <section class="jm-secao"><h3><i class="fa-solid fa-forward"></i> ${T("Janela.Proximos30Dias")}</h3>${proximos ? `<ul class="jm-lt-lista">${proximos}</ul>` : `<p class="jm-vazio">${T("Janela.NadaMarcado")}</p>`}</section>
       <nav class="jm-subabas">${filtros.map(([k, r]) => `<button type="button" class="${f === k ? "ativo" : ""}" data-action="linhaFiltro" data-filtro="${k}">${r}</button>`).join("")}</nav>
-      <section class="jm-secao"><h3><i class="fa-solid fa-clock-rotate-left"></i> ${T("O que já aconteceu")}</h3>${passado || `<p class="jm-vazio">${T("Nada por aqui ainda.")}</p>`}</section>
+      <section class="jm-secao"><h3><i class="fa-solid fa-clock-rotate-left"></i> ${T("Janela.OQueJaAconteceu")}</h3>${passado || `<p class="jm-vazio">${T("Janela.NadaPorAquiAinda")}</p>`}</section>
     </article>`;
   }
 
@@ -490,8 +490,8 @@ class JournalApp extends ApplicationV2 {
   _painelNexus() {
     const gm = ehGM();
     const api = calApi();
-    const zonas = (() => { try { return api?.zonas?.() ?? []; } catch (err) { avisoUmaVez(T("zonas do clima"), err); return []; } })();
-    const anomalias = (() => { try { return api?.anomalias?.() ?? []; } catch (err) { avisoUmaVez(T("anomalias do clima"), err); return []; } })();
+    const zonas = (() => { try { return api?.zonas?.() ?? []; } catch (err) { avisoUmaVez(T("Janela.ZonasDoClima"), err); return []; } })();
+    const anomalias = (() => { try { return api?.anomalias?.() ?? []; } catch (err) { avisoUmaVez(T("Janela.AnomaliasDoClima"), err); return []; } })();
     const lista = Nexus.lista().filter((n) => gm || n.visivel);
     const op = (pares, sel, vazio) => `<option value="">${esc(vazio)}</option>` + pares.map(([v, r]) => `<option value="${esc(v)}" ${v === sel ? "selected" : ""}>${esc(r)}</option>`).join("");
     const cards = lista.map((nx) => {
@@ -503,8 +503,8 @@ class JournalApp extends ApplicationV2 {
         <div class="jm-nexus-topo">
           <i class="fa-solid ${esc(nx.icone)}" style="color:${esc(nx.cor)}"></i>
           <input class="jm-nexus-nome" data-nexus-campo="nome" value="${esc(nx.nome)}">
-          <a class="jm-mini-btn jm-olho ${nx.visivel ? "aberto" : "fechado"}" data-nexus-alternar="visivel" data-tooltip="${nx.visivel ? T("Jogadores veem (se a opção estiver ligada)") : T("Só o mestre vê")}"><i class="fa-solid ${nx.visivel ? "fa-eye" : "fa-eye-slash"}"></i></a>
-          <a class="jm-mini-btn" data-action="nexusApagar" data-id="${nx.id}" data-tooltip="${T("Apagar")}"><i class="fa-solid fa-trash"></i></a>
+          <a class="jm-mini-btn jm-olho ${nx.visivel ? "aberto" : "fechado"}" data-nexus-alternar="visivel" data-tooltip="${nx.visivel ? T("Janela.JogadoresVeemSeAOpcao") : T("Janela.SoOMestreVe")}"><i class="fa-solid ${nx.visivel ? "fa-eye" : "fa-eye-slash"}"></i></a>
+          <a class="jm-mini-btn" data-action="nexusApagar" data-id="${nx.id}" data-tooltip="${T("Comum.Apagar")}"><i class="fa-solid fa-trash"></i></a>
         </div>
         ${barra}
         <div class="jm-nexus-ctrl">
@@ -517,20 +517,20 @@ class JournalApp extends ApplicationV2 {
         ${NexusClima.api() ? NexusClima.html(nx, zonas, anomalias, op) : ""}
         <div class="jm-nexus-limiares">
           ${(nx.limiares ?? []).map((l) => `<div class="jm-nexus-limiar ${l.disparado ? "disparado" : ""}" data-limiar="${l.id}">
-            <span>${T("Abaixo de")}</span><input type="number" min="0" max="100" data-limiar-campo="v" value="${Number(l.v) || 0}"><b>%</b>
-            <input type="text" data-limiar-campo="texto" value="${esc(l.texto ?? "")}" placeholder="${T("O que acontece (aviso para você)")}">
-            ${NexusClima.api() ? `<label class="jm-check" data-tooltip="${T("Liga a anomalia do clima escolhida acima")}"><input type="checkbox" data-limiar-campo="anomalia" ${l.anomalia ? "checked" : ""}> anomalia</label>` : ""}
+            <span>${T("Janela.AbaixoDe")}</span><input type="number" min="0" max="100" data-limiar-campo="v" value="${Number(l.v) || 0}"><b>%</b>
+            <input type="text" data-limiar-campo="texto" value="${esc(l.texto ?? "")}" placeholder="${T("Janela.OQueAconteceAvisoPara")}">
+            ${NexusClima.api() ? `<label class="jm-check" data-tooltip="${T("Janela.LigaAAnomaliaDoClima")}"><input type="checkbox" data-limiar-campo="anomalia" ${l.anomalia ? "checked" : ""}> anomalia</label>` : ""}
             <a class="jm-mini-btn" data-action="nexusLimiarApagar" data-id="${nx.id}" data-limiar="${l.id}"><i class="fa-solid fa-xmark"></i></a>
           </div>`).join("")}
-          <button type="button" class="jm-add" data-action="nexusLimiarNovo" data-id="${nx.id}"><i class="fa-solid fa-plus"></i> ${T("Limiar")}</button>
+          <button type="button" class="jm-add" data-action="nexusLimiarNovo" data-id="${nx.id}"><i class="fa-solid fa-plus"></i> ${T("Janela.Limiar")}</button>
         </div>
       </div>`;
     }).join("");
     return `<article class="jm-pagina jm-painel-nexus">
-      <header class="jm-cabecalho"><div class="jm-cab-texto"><span class="jm-selo"><i class="fa-solid fa-gauge-high"></i> ${T("Nexus")}</span><h1 class="jm-titulo">${T("Medidores")}</h1></div></header>
-      ${cards || `<p class="jm-vazio jm-centro">${gm ? T("Nenhum medidor ainda.") : T("Nada para mostrar.")}</p>`}
-      ${gm ? `<button type="button" class="jm-add" data-action="nexusNovo"><i class="fa-solid fa-plus"></i> ${T("Novo medidor")}</button>
-        <p class="jm-dica">${T("Quando o valor cai abaixo de um limiar, você recebe um aviso no chat (e a anomalia do clima liga, se marcada). Ao subir acima de todos os limiares com anomalia, ela desliga e os limiares rearmam. Cada limiar cruzado aparece na Linha do tempo (filtro Nexus).")}</p>` : ""}
+      <header class="jm-cabecalho"><div class="jm-cab-texto"><span class="jm-selo"><i class="fa-solid fa-gauge-high"></i> ${T("Comum.Nexus")}</span><h1 class="jm-titulo">${T("Janela.Medidores")}</h1></div></header>
+      ${cards || `<p class="jm-vazio jm-centro">${gm ? T("Janela.NenhumMedidorAinda") : T("Janela.NadaParaMostrar")}</p>`}
+      ${gm ? `<button type="button" class="jm-add" data-action="nexusNovo"><i class="fa-solid fa-plus"></i> ${T("Janela.NovoMedidor")}</button>
+        <p class="jm-dica">${T("Janela.QuandoOValorCaiAbaixo")}</p>` : ""}
     </article>`;
   }
 
@@ -539,7 +539,7 @@ class JournalApp extends ApplicationV2 {
     const gm = ehGM();
     const { itens, sessao0 } = regrasMesa();
     const eu = game.user.id;
-    const nome = (uid) => (uid ? esc(game.users.get(uid)?.name ?? "?") : `<i>${T("Anônimo")}</i>`);
+    const nome = (uid) => (uid ? esc(game.users.get(uid)?.name ?? "?") : `<i>${T("Janela.Anonimo2")}</i>`);
     const quando = (t) => esc(new Date(t).toLocaleDateString(game.i18n.lang));
     const opCat = (sel) => Object.entries(REGRAS_CATS).map(([k, [r]]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${esc(r)}</option>`).join("");
     const contagem = Object.fromEntries(Object.keys(REGRAS_STATUS).map((k) => [k, itens.filter((i) => i.status === k).length]));
@@ -555,27 +555,27 @@ class JournalApp extends ApplicationV2 {
         <div class="jm-regra-topo">
           <span class="jm-regra-status st-${esc(i.status)}"><i class="${stIc}"></i> ${stRot}</span>
           <b class="jm-regra-titulo">${esc(i.titulo)}</b>
-          <small>${T("por")} ${nome(i.autor)} · ${quando(i.criado)}</small>
+          <small>${T("Comum.Por")} ${nome(i.autor)} · ${quando(i.criado)}</small>
           <span class="jm-sec-ctrl">
             ${gm ? `<select data-regra-status>${Object.entries(REGRAS_STATUS).map(([k, [r]]) => `<option value="${k}" ${k === i.status ? "selected" : ""}>${r}</option>`).join("")}</select>` : ""}
-            ${pode ? `<a class="jm-mini-btn" data-regra="editar" data-tooltip="${T("Editar")}"><i class="fa-solid fa-pen"></i></a>
-              <a class="jm-mini-btn" data-regra="apagar" data-tooltip="${T("Apagar")}"><i class="fa-solid fa-trash"></i></a>` : ""}
+            ${pode ? `<a class="jm-mini-btn" data-regra="editar" data-tooltip="${T("Janela.Editar")}"><i class="fa-solid fa-pen"></i></a>
+              <a class="jm-mini-btn" data-regra="apagar" data-tooltip="${T("Comum.Apagar")}"><i class="fa-solid fa-trash"></i></a>` : ""}
           </span>
         </div>
         ${i.texto ? `<div class="jm-regra-texto">${esc(i.texto).replace(/\n/g, "<br>")}</div>` : ""}
         <div class="jm-regra-votos">
-          <button type="button" class="${meu === "sim" ? "ativo" : ""}" data-regra="votar" data-voto="${meu === "sim" ? "" : "sim"}" data-tooltip="${sim.length ? nomes(sim) : T("Ninguém ainda")}"><i class="fa-solid fa-thumbs-up"></i> ${T("Concordo")} <b>${sim.length}</b></button>
-          <button type="button" class="${meu === "nao" ? "ativo" : ""}" data-regra="votar" data-voto="${meu === "nao" ? "" : "nao"}" data-tooltip="${nao.length ? nomes(nao) : T("Ninguém ainda")}"><i class="fa-solid fa-thumbs-down"></i> ${T("Não concordo")} <b>${nao.length}</b></button>
+          <button type="button" class="${meu === "sim" ? "ativo" : ""}" data-regra="votar" data-voto="${meu === "sim" ? "" : "sim"}" data-tooltip="${sim.length ? nomes(sim) : T("Janela.NinguemAinda")}"><i class="fa-solid fa-thumbs-up"></i> ${T("Janela.Concordo")} <b>${sim.length}</b></button>
+          <button type="button" class="${meu === "nao" ? "ativo" : ""}" data-regra="votar" data-voto="${meu === "nao" ? "" : "nao"}" data-tooltip="${nao.length ? nomes(nao) : T("Janela.NinguemAinda")}"><i class="fa-solid fa-thumbs-down"></i> ${T("Janela.NaoConcordo")} <b>${nao.length}</b></button>
         </div>
         <details class="jm-regra-coments" ${this.regrasAbertas?.has(i.id) ? "open" : ""} data-regra-det="${i.id}">
-          <summary><i class="fa-solid fa-comments"></i> ${(i.comentarios ?? []).length} ${T("comentário(s)")}</summary>
+          <summary><i class="fa-solid fa-comments"></i> ${(i.comentarios ?? []).length} ${T("Janela.ComentarioS")}</summary>
           ${(i.comentarios ?? []).map((c) => `<div class="jm-regra-coment"><b>${nome(c.autor)}</b> <small>${quando(c.t)}</small>
-            ${gm || c.autor === eu ? `<a class="jm-mini-btn" data-regra="apagarComentario" data-cid="${c.id}" data-tooltip="${T("Apagar")}"><i class="fa-solid fa-xmark"></i></a>` : ""}
+            ${gm || c.autor === eu ? `<a class="jm-mini-btn" data-regra="apagarComentario" data-cid="${c.id}" data-tooltip="${T("Comum.Apagar")}"><i class="fa-solid fa-xmark"></i></a>` : ""}
             <div>${esc(c.texto).replace(/\n/g, "<br>")}</div></div>`).join("")}
           <div class="jm-regra-novo-coment">
-            <textarea rows="2" data-regra-coment placeholder="${T("O que você acha?")}"></textarea>
-            <label class="jm-check"><input type="checkbox" data-regra-coment-anon> ${T("anônimo")}</label>
-            <button type="button" data-regra="comentar"><i class="fa-solid fa-paper-plane"></i> ${T("Comentar")}</button>
+            <textarea rows="2" data-regra-coment placeholder="${T("Janela.OQueVoceAcha")}"></textarea>
+            <label class="jm-check"><input type="checkbox" data-regra-coment-anon> ${T("Janela.Anonimo")}</label>
+            <button type="button" data-regra="comentar"><i class="fa-solid fa-paper-plane"></i> ${T("Janela.Comentar")}</button>
           </div>
         </details>
       </div>`;
@@ -586,28 +586,28 @@ class JournalApp extends ApplicationV2 {
       return `<section class="jm-secao jm-regras-cat"><h3><i class="${ic}"></i> ${esc(rot)} <small>(${l.length})</small></h3>${l.map(card).join("")}</section>`;
     }).join("");
     return `<article class="jm-pagina jm-painel-regras">
-      <header class="jm-cabecalho"><div class="jm-cab-texto"><span class="jm-selo"><i class="fa-solid fa-handshake"></i> ${T("Regras da Mesa")}</span>
-        <h1 class="jm-titulo">${T("Sessão 0")}</h1>
-        <div class="jm-sub-linha"><span class="jm-detalhe">${sessao0?.concluida ? `<i class="fa-solid fa-circle-check"></i> ${T("Concluída em")} ${quando(sessao0.quando)}` : `<i class="fa-solid fa-comments"></i> ${T("Em conversa")}`}</span></div></div>
+      <header class="jm-cabecalho"><div class="jm-cab-texto"><span class="jm-selo"><i class="fa-solid fa-handshake"></i> ${T("Comum.RegrasDaMesa")}</span>
+        <h1 class="jm-titulo">${T("Janela.Sessao0")}</h1>
+        <div class="jm-sub-linha"><span class="jm-detalhe">${sessao0?.concluida ? `<i class="fa-solid fa-circle-check"></i> ${T("Janela.ConcluidaEm")} ${quando(sessao0.quando)}` : `<i class="fa-solid fa-comments"></i> ${T("Janela.EmConversa")}`}</span></div></div>
         ${gm ? `<div class="jm-cab-botoes">
-          <button type="button" data-regra="modelos" data-tooltip="${T("Adicionar tópicos comuns de sessão 0 (os que ainda não existem)")}"><i class="fa-solid fa-list-check"></i></button>
-          <button type="button" data-regra="diario" data-tooltip="${T("Criar/atualizar o Diário 'Regras da Mesa' com os combinados")}"><i class="fa-solid fa-book"></i></button>
-          <button type="button" data-regra="concluir" class="${sessao0?.concluida ? "ativo" : ""}" data-tooltip="${sessao0?.concluida ? T("Reabrir a sessão 0") : T("Marcar a sessão 0 como concluída")}"><i class="fa-solid fa-flag-checkered"></i></button>
+          <button type="button" data-regra="modelos" data-tooltip="${T("Janela.AdicionarTopicosComunsDeSessao")}"><i class="fa-solid fa-list-check"></i></button>
+          <button type="button" data-regra="diario" data-tooltip="${T("Janela.CriarAtualizarODiarioRegras")}"><i class="fa-solid fa-book"></i></button>
+          <button type="button" data-regra="concluir" class="${sessao0?.concluida ? "ativo" : ""}" data-tooltip="${sessao0?.concluida ? T("Janela.ReabrirASessao0") : T("Janela.MarcarASessao0Como")}"><i class="fa-solid fa-flag-checkered"></i></button>
         </div>` : ""}
       </header>
-      <p class="jm-dica">${T("Todos podem propor tópicos, comentar e dizer se concordam. O mestre decide o que vira")} <b>${T("Combinado")}</b>. ${T("Propostas e comentários anônimos não guardam quem enviou — nem o mestre vê.")}</p>
+      <p class="jm-dica">${T("Janela.TodosPodemProporTopicosComentar")} <b>${T("Janela.Combinado")}</b>. ${T("Janela.PropostasEComentariosAnonimosNao")}</p>
       <nav class="jm-subabas">
-        <button type="button" class="${!filtro ? "ativo" : ""}" data-regra="filtro" data-filtro="">${T("Todos")} <small>${itens.length}</small></button>
+        <button type="button" class="${!filtro ? "ativo" : ""}" data-regra="filtro" data-filtro="">${T("Janela.Todos")} <small>${itens.length}</small></button>
         ${Object.entries(REGRAS_STATUS).map(([k, [r, ic]]) => `<button type="button" class="${filtro === k ? "ativo" : ""}" data-regra="filtro" data-filtro="${k}"><i class="${ic}"></i> ${r} <small>${contagem[k]}</small></button>`).join("")}
       </nav>
-      ${secoes || `<p class="jm-vazio jm-centro">${itens.length ? T("Nada com esse filtro.") : (gm ? T("Nenhum tópico ainda. Use o botão de lista no topo para começar com os tópicos comuns de sessão 0.") : T("Nenhum tópico ainda. Proponha o primeiro abaixo."))}</p>`}
-      <section class="jm-secao jm-regras-nova"><h3><i class="fa-solid fa-plus"></i> ${T("Nova proposta")}</h3>
+      ${secoes || `<p class="jm-vazio jm-centro">${itens.length ? T("Janela.NadaComEsseFiltro2") : (gm ? T("Janela.NenhumTopicoAindaUseO") : T("Janela.NenhumTopicoAindaProponhaO"))}</p>`}
+      <section class="jm-secao jm-regras-nova"><h3><i class="fa-solid fa-plus"></i> ${T("Janela.NovaProposta")}</h3>
         <div class="jm-form-dialogo">
-          <label>${T("Assunto")} <select data-regra-nova="cat">${opCat("casa")}</select></label>
-          <label>${T("Título")} <input type="text" data-regra-nova="titulo" maxlength="${LIMITES_REGRAS.titulo}" placeholder="${T("Ex.: Sem PvP sem combinar antes")}"></label>
-          <label>${T("Detalhes")} <textarea rows="3" data-regra-nova="texto" placeholder="${T("Explique a ideia, exemplos, exceções...")}"></textarea></label>
-          <label class="jm-check"><input type="checkbox" data-regra-nova="anonimo"> ${T("Enviar anônimo (bom para limites e véus)")}</label>
-          <button type="button" class="primario" data-regra="propor"><i class="fa-solid fa-paper-plane"></i> ${T("Propor")}</button>
+          <label>${T("Janela.Assunto")} <select data-regra-nova="cat">${opCat("casa")}</select></label>
+          <label>${T("Comum.Titulo")} <input type="text" data-regra-nova="titulo" maxlength="${LIMITES_REGRAS.titulo}" placeholder="${T("Janela.ExSemPvPSemCombinar")}"></label>
+          <label>${T("Janela.Detalhes")} <textarea rows="3" data-regra-nova="texto" placeholder="${T("Janela.ExpliqueAIdeiaExemplosExcecoes")}"></textarea></label>
+          <label class="jm-check"><input type="checkbox" data-regra-nova="anonimo"> ${T("Janela.EnviarAnonimoBomParaLimites")}</label>
+          <button type="button" class="primario" data-regra="propor"><i class="fa-solid fa-paper-plane"></i> ${T("Janela.Propor")}</button>
         </div>
       </section>
     </article>`;
@@ -634,7 +634,7 @@ class JournalApp extends ApplicationV2 {
       if (op === "propor") {
         const v = (k) => painel.querySelector(`[data-regra-nova="${k}"]`);
         const titulo = v("titulo").value.trim();
-        if (!titulo) return ui.notifications.warn(T("Escreva um título para a proposta."));
+        if (!titulo) return ui.notifications.warn(T("Comum.EscrevaUmTituloParaA"));
         pedir("regras", { userId: game.user.id, op: "propor", cat: v("cat").value, titulo, texto: v("texto").value, anonimo: v("anonimo").checked });
         v("titulo").value = ""; v("texto").value = ""; v("anonimo").checked = false;
         return;
@@ -650,7 +650,7 @@ class JournalApp extends ApplicationV2 {
       }
       if (op === "apagarComentario") return pedir("regras", { userId: game.user.id, op, id, cid: b.dataset.cid });
       if (op === "apagar") {
-        const ok = await Dialogo().confirm({ window: { title: T("Apagar tópico") }, content: `<p>${T("Apagar este tópico e os comentários dele?")}</p>` });
+        const ok = await Dialogo().confirm({ window: { title: T("Janela.ApagarTopico") }, content: `<p>${T("Janela.ApagarEsteTopicoEOs")}</p>` });
         if (ok) pedir("regras", { userId: game.user.id, op, id });
         return;
       }
@@ -658,13 +658,13 @@ class JournalApp extends ApplicationV2 {
         const item = regrasMesa().itens.find((i) => i.id === id);
         if (!item) return;
         const dados = await Dialogo().prompt({
-          window: { title: T("Editar tópico"), icon: "fa-solid fa-pen" },
+          window: { title: T("Janela.EditarTopico"), icon: "fa-solid fa-pen" },
           position: { width: 480 },
           content: `<div class="jm-form-dialogo">
-            <label>${T("Assunto")} <select name="cat">${Object.entries(REGRAS_CATS).map(([k, [r]]) => `<option value="${k}" ${k === item.cat ? "selected" : ""}>${esc(r)}</option>`).join("")}</select></label>
-            <label>${T("Título")} <input type="text" name="titulo" value="${esc(item.titulo)}" maxlength="${LIMITES_REGRAS.titulo}"></label>
-            <label>${T("Detalhes")} <textarea name="texto" rows="5">${esc(item.texto)}</textarea></label></div>`,
-          ok: { label: T("Salvar"), icon: "fa-solid fa-check", callback: (e2, bt) => ({ cat: bt.form.elements.cat.value, titulo: bt.form.elements.titulo.value, texto: bt.form.elements.texto.value }) }
+            <label>${T("Janela.Assunto")} <select name="cat">${Object.entries(REGRAS_CATS).map(([k, [r]]) => `<option value="${k}" ${k === item.cat ? "selected" : ""}>${esc(r)}</option>`).join("")}</select></label>
+            <label>${T("Comum.Titulo")} <input type="text" name="titulo" value="${esc(item.titulo)}" maxlength="${LIMITES_REGRAS.titulo}"></label>
+            <label>${T("Janela.Detalhes")} <textarea name="texto" rows="5">${esc(item.texto)}</textarea></label></div>`,
+          ok: { label: T("Comum.Salvar"), icon: "fa-solid fa-check", callback: (e2, bt) => ({ cat: bt.form.elements.cat.value, titulo: bt.form.elements.titulo.value, texto: bt.form.elements.texto.value }) }
         }).catch(() => null);
         if (dados) pedir("regras", { userId: game.user.id, op, id, ...dados });
         return;
@@ -676,10 +676,10 @@ class JournalApp extends ApplicationV2 {
   _boasVindas() {
     return `<div class="jm-boas-vindas">
       <i class="fa-solid fa-book-open"></i>
-      <h2>${T("Journal da Mesa")}</h2>
+      <h2>${T("Comum.JournalDaMesa")}</h2>
       <p>${ehGM()
-        ? `${T("Tudo aqui é Diário nativo do Foundry, nas suas pastas. Clique numa pasta para escolher onde criar, arraste para organizar e use o")} <b>${T("botão direito")}</b> ${T("para configurar páginas e pastas.")}`
-        : T("Escolha uma página na lista ao lado. Você pode deixar suas próprias anotações no fim de cada página.")}</p>
+        ? `${T("Janela.TudoAquiEDiarioNativo")} <b>${T("Janela.BotaoDireito")}</b> ${T("Janela.ParaConfigurarPaginasEPastas")}`
+        : T("Janela.EscolhaUmaPaginaNaLista")}</p>
     </div>`;
   }
 
@@ -700,7 +700,7 @@ class JournalApp extends ApplicationV2 {
       if (!visivelIds.has(id)) {
         if (!trancado) return "";
         /* conexão revelada para uma página que o jogador ainda não pode abrir: mostra, mas sem link */
-        return `<span class="jm-ref trancada" data-con-tipo="${aj.tipo}" data-con-busca="${esc(`${j.name} ${extra}`.toLowerCase())}" data-tooltip="${T("Você ainda não tem acesso a esta página")}">${avatar(aj.page?.src, aj.tipo, "mini")}
+        return `<span class="jm-ref trancada" data-con-tipo="${aj.tipo}" data-con-busca="${esc(`${j.name} ${extra}`.toLowerCase())}" data-tooltip="${T("Janela.VoceAindaNaoTemAcesso")}">${avatar(aj.page?.src, aj.tipo, "mini")}
           <span><b>${esc(j.name)}</b>${extra ? `<small>${esc(extra)}</small>` : ""}</span><i class="fa-solid fa-lock"></i></span>`;
       }
       return `<a class="jm-ref ${oculto ? "oculta" : ""}" data-action="abrir" data-id="${id}" data-con-tipo="${aj.tipo}" data-con-busca="${esc(`${j.name} ${extra}`.toLowerCase())}">${avatar(aj.page?.src, aj.tipo, "mini")}
@@ -712,12 +712,12 @@ class JournalApp extends ApplicationV2 {
       if (chave && !podeVerSecao(entry, chave)) { escondidas++; return ""; }
       if (chave && gm) {
         const [cls, ic, dica] = rotuloEstadoSecao(entry, chave);
-        controles = `<a class="jm-mini-btn jm-revela ${cls}" data-action="revelarSecao" data-chave="${esc(chave)}" data-tooltip="${esc(dica)} — ${T("clique para mudar")}"><i class="fa-solid ${ic}"></i></a>` + controles;
+        controles = `<a class="jm-mini-btn jm-revela ${cls}" data-action="revelarSecao" data-chave="${esc(chave)}" data-tooltip="${esc(dica)} — ${T("Janela.CliqueParaMudar")}"><i class="fa-solid ${ic}"></i></a>` + controles;
       }
       return `<section class="jm-secao ${extra}" ${attrs}><h3><i class="${icone}"></i> <span class="jm-sec-titulo">${titulo}</span>${controles ? `<span class="jm-sec-ctrl">${controles}</span>` : ""}</h3>${corpo}</section>`;
     };
     const avisoEscondidas = () => (!gm && escondidas
-      ? `<p class="jm-vazio jm-centro jm-escondidas"><i class="fa-solid fa-lock"></i> ${escondidas === 1 ? T("Uma informação ainda não foi revelada.") : `${escondidas} ${T("informações ainda não foram reveladas.")}`}</p>` : "");
+      ? `<p class="jm-vazio jm-centro jm-escondidas"><i class="fa-solid fa-lock"></i> ${escondidas === 1 ? T("Janela.UmaInformacaoAindaNaoFoi") : `${escondidas} ${T("Janela.InformacoesAindaNaoForamReveladas")}`}</p>` : "");
     const traduzir = temModulo("translate-all");
 
     /* cabeçalho */
@@ -737,63 +737,63 @@ class JournalApp extends ApplicationV2 {
       if (hl) detalhes += `<div class="jm-sub-linha"><span class="jm-horario ${hl.aberta ? "aberta" : "fechada"}"><i class="fa-solid ${hl.aberta ? "fa-door-open" : "fa-door-closed"}"></i> ${esc(hl.texto)}</span></div>`;
     }
     if (tipo === "shop") detalhes += ed
-      ? `<div class="jm-sub-linha"><label class="jm-sub-campo">${T("Dono / vendedor")} <select data-campo="x:dono">${opcoes(npcs, x.dono)}</select></label></div>`
-      : (chipPagina(x.dono) ? `<div class="jm-sub-linha">${chipPagina(x.dono, T("Dono / vendedor"))}</div>` : "");
+      ? `<div class="jm-sub-linha"><label class="jm-sub-campo">${T("Janela.DonoVendedor")} <select data-campo="x:dono">${opcoes(npcs, x.dono)}</select></label></div>`
+      : (chipPagina(x.dono) ? `<div class="jm-sub-linha">${chipPagina(x.dono, T("Janela.DonoVendedor"))}</div>` : "");
 
     if (tipo === "quest") {
       const s = STATUS[m.status] ?? STATUS.inprogress;
       detalhes += ed
         ? `<div class="jm-sub-linha">
-            <label class="jm-sub-campo">${T("Status")} <select data-campo="m:status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${k === m.status ? "selected" : ""}>${v.rotulo}</option>`).join("")}</select></label>
-            <label class="jm-sub-campo">${T("Quem deu")} <select data-campo="x:doador">${opcoes(npcs, x.doador)}</select></label>
-            <label class="jm-check"><input type="checkbox" data-campo="x:rastrear" ${x.rastrear ? "checked" : ""}> ${T("No rastreador")}</label></div>
+            <label class="jm-sub-campo">${T("Janela.Status")} <select data-campo="m:status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${k === m.status ? "selected" : ""}>${v.rotulo}</option>`).join("")}</select></label>
+            <label class="jm-sub-campo">${T("Janela.QuemDeu")} <select data-campo="x:doador">${opcoes(npcs, x.doador)}</select></label>
+            <label class="jm-check"><input type="checkbox" data-campo="x:rastrear" ${x.rastrear ? "checked" : ""}> ${T("Janela.NoRastreador")}</label></div>
           ${Tempo.ok() ? `<div class="jm-sub-linha jm-prazo-ed">
             ${x.prazo != null
-              ? `<label class="jm-sub-campo">${T("Prazo")} ${campoData("prazo", Number(x.prazo))}</label>
-                 <label class="jm-sub-campo">${T("Quando vencer")} <select data-campo="x:aoVencer">
-                   <option value="avisar" ${x.aoVencer !== "falhar" ? "selected" : ""}>${T("Só me avisar")}</option>
-                   <option value="falhar" ${x.aoVencer === "falhar" ? "selected" : ""}>${T("Marcar como Falhou")}</option></select></label>
-                 <button type="button" class="sec" data-action="prazoLimpar" data-tooltip="${T("Tirar o prazo")}"><i class="fa-solid fa-xmark"></i></button>`
-              : `<button type="button" class="sec" data-action="prazoDefinir"><i class="fa-solid fa-hourglass-half"></i> ${T("Definir prazo")}</button>`}
+              ? `<label class="jm-sub-campo">${T("Janela.Prazo2")} ${campoData("prazo", Number(x.prazo))}</label>
+                 <label class="jm-sub-campo">${T("Janela.QuandoVencer")} <select data-campo="x:aoVencer">
+                   <option value="avisar" ${x.aoVencer !== "falhar" ? "selected" : ""}>${T("Janela.SoMeAvisar")}</option>
+                   <option value="falhar" ${x.aoVencer === "falhar" ? "selected" : ""}>${T("Janela.MarcarComoFalhou")}</option></select></label>
+                 <button type="button" class="sec" data-action="prazoLimpar" data-tooltip="${T("Janela.TirarOPrazo")}"><i class="fa-solid fa-xmark"></i></button>`
+              : `<button type="button" class="sec" data-action="prazoDefinir"><i class="fa-solid fa-hourglass-half"></i> ${T("Janela.DefinirPrazo")}</button>`}
           </div>` : ""}`
         : `<div class="jm-sub-linha"><span class="jm-status ${m.status}"><i class="${s.icone}"></i> ${s.rotulo}</span>
-            ${chipPagina(x.doador, T("Quem deu a missão")) || (m.source ? `<span class="jm-detalhe"><small>${T("Origem")}</small>${esc(m.source)}</span>` : "")}
+            ${chipPagina(x.doador, T("Janela.QuemDeuAMissao")) || (m.source ? `<span class="jm-detalhe"><small>${T("Janela.Origem")}</small>${esc(m.source)}</span>` : "")}
             ${x.prazo != null && Tempo.ok() ? (() => {
               const tp = textoPrazo(Number(x.prazo));
-              return `<span class="jm-detalhe jm-prazo ${["completed", "failed"].includes(m.status) ? "" : tp.classe}"><small>${T("Prazo")}</small><i class="fa-solid fa-hourglass-half"></i> ${esc(Tempo.texto(Number(x.prazo)))}${["completed", "failed"].includes(m.status) ? "" : ` · ${esc(tp.quando)}`}</span>`;
+              return `<span class="jm-detalhe jm-prazo ${["completed", "failed"].includes(m.status) ? "" : tp.classe}"><small>${T("Janela.Prazo2")}</small><i class="fa-solid fa-hourglass-half"></i> ${esc(Tempo.texto(Number(x.prazo)))}${["completed", "failed"].includes(m.status) ? "" : ` · ${esc(tp.quando)}`}</span>`;
             })() : ""}</div>`;
     }
 
     /* dia sagrado: mostra de qual divindade */
     const deusFesta = deusDaFesta(entry);
-    if (deusFesta) detalhes += `<div class="jm-sub-linha">${chipPagina(deusFesta.id, T("Dia sagrado de"), false, true)}</div>`;
+    if (deusFesta) detalhes += `<div class="jm-sub-linha">${chipPagina(deusFesta.id, T("Janela.DiaSagradoDe"), false, true)}</div>`;
 
     const visivel = visibilidade(entry);
     const estaFixa = fixados().has(entry.id);
-    let botoes = `<button type="button" data-action="fixar" data-id="${entry.id}" class="${estaFixa ? "ativo" : ""}" data-tooltip="${estaFixa ? T("Desafixar") : T("Fixar (fica no topo da lista e sempre aberta)")}"><i class="fa-solid fa-thumbtack"></i></button>`;
-    if (traduzir && page && (gm || page.isOwner)) botoes += `<button type="button" data-action="traduzir" data-tooltip="${T("Traduzir com o Translate All (abre a página)")}"><i class="fa-solid fa-language"></i></button>`;
+    let botoes = `<button type="button" data-action="fixar" data-id="${entry.id}" class="${estaFixa ? "ativo" : ""}" data-tooltip="${estaFixa ? T("Janela.Desafixar") : T("Janela.FixarFicaNoTopoDa")}"><i class="fa-solid fa-thumbtack"></i></button>`;
+    if (traduzir && page && (gm || page.isOwner)) botoes += `<button type="button" data-action="traduzir" data-tooltip="${T("Janela.TraduzirComOTranslateAll")}"><i class="fa-solid fa-language"></i></button>`;
     if (gm) {
-      if (!["diario", "historia", "jornal"].includes(tipo)) botoes += `<button type="button" data-action="editar" class="${ed ? "ativo" : ""}" data-tooltip="${ed ? T("Concluir edição") : T("Editar")}"><i class="fa-solid ${ed ? "fa-check" : "fa-pen"}"></i></button>`;
-      if (["diario", "historia", "jornal", "outro"].includes(tipo)) botoes += `<button type="button" data-action="fichaNativa" data-tooltip="${T("Abrir na ficha padrão do Foundry")}"><i class="fa-solid fa-up-right-from-square"></i></button>`;
+      if (!["diario", "historia", "jornal"].includes(tipo)) botoes += `<button type="button" data-action="editar" class="${ed ? "ativo" : ""}" data-tooltip="${ed ? T("Janela.ConcluirEdicao") : T("Janela.Editar")}"><i class="fa-solid ${ed ? "fa-check" : "fa-pen"}"></i></button>`;
+      if (["diario", "historia", "jornal", "outro"].includes(tipo)) botoes += `<button type="button" data-action="fichaNativa" data-tooltip="${T("Janela.AbrirNaFichaPadraoDo")}"><i class="fa-solid fa-up-right-from-square"></i></button>`;
       botoes += `
-        <button type="button" data-action="visivel" class="jm-vis ${visivel}" data-tooltip="${{ todos: T("Todos os jogadores veem"), alguns: T("Alguns jogadores veem"), ninguem: T("Oculto dos jogadores") }[visivel]} — ${T("clique para escolher quem vê")}"><i class="fa-solid ${{ todos: "fa-eye", alguns: "fa-user-check", ninguem: "fa-eye-slash" }[visivel]}"></i></button>
-        <button type="button" data-action="mostrar" data-tooltip="${T("Abrir na tela dos jogadores que podem ver esta página")}"><i class="fa-solid fa-bullhorn"></i></button>
-        ${calApi() && !calNota(entry) ? `<button type="button" data-action="calAdicionar" data-tooltip="${T("Colocar no calendário")}"><i class="fa-solid fa-calendar-plus"></i></button>` : ""}
-        <button type="button" class="jm-lixeira" data-action="apagar" data-tooltip="${T("Apagar esta página (pede confirmação)")}"><i class="fa-solid fa-trash"></i></button>`;
+        <button type="button" data-action="visivel" class="jm-vis ${visivel}" data-tooltip="${{ todos: T("Janela.TodosOsJogadoresVeem"), alguns: T("Janela.AlgunsJogadoresVeem"), ninguem: T("Janela.OcultoDosJogadores") }[visivel]} — ${T("Janela.CliqueParaEscolherQuemVe")}"><i class="fa-solid ${{ todos: "fa-eye", alguns: "fa-user-check", ninguem: "fa-eye-slash" }[visivel]}"></i></button>
+        <button type="button" data-action="mostrar" data-tooltip="${T("Janela.AbrirNaTelaDosJogadores2")}"><i class="fa-solid fa-bullhorn"></i></button>
+        ${calApi() && !calNota(entry) ? `<button type="button" data-action="calAdicionar" data-tooltip="${T("Janela.ColocarNoCalendario")}"><i class="fa-solid fa-calendar-plus"></i></button>` : ""}
+        <button type="button" class="jm-lixeira" data-action="apagar" data-tooltip="${T("Janela.ApagarEstaPaginaPedeConfirmacao")}"><i class="fa-solid fa-trash"></i></button>`;
     }
 
     const blocos = [];
     const caminho = entry.folder ? `<span class="jm-caminho"><i class="fa-solid fa-folder"></i> ${esc(caminhoDaPasta(entry.folder).join(" / "))}</span>` : "";
     const imgCab = tipo === "jornal" ? (Jornal.identidade(entry).logo || null) : page?.src ?? (["diario", "historia"].includes(tipo) ? a.pages.find((p) => p.type === "image")?.src : null);
     blocos.push(`<header class="jm-cabecalho">
-      <div class="jm-retrato ${ed ? "editavel" : ""}" ${ed ? `data-action="imagem" data-tooltip="${T("Trocar imagem")}"` : ""}>${avatar(imgCab, tipo, "grande")}</div>
+      <div class="jm-retrato ${ed ? "editavel" : ""}" ${ed ? `data-action="imagem" data-tooltip="${T("Janela.TrocarImagem")}"` : ""}>${avatar(imgCab, tipo, "grande")}</div>
       <div class="jm-cab-texto">
         <div class="jm-selos"><span class="jm-selo tipo-${tipo}"><i class="${t.icone}"></i> ${esc(selo)}</span>${caminho}</div>
         ${ed ? `<input class="jm-titulo" data-campo="__nome" value="${esc(entry.name)}">` : `<h1 class="jm-titulo">${esc(entry.name)}</h1>`}
         ${detalhes}
         ${gm ? (notaMestre(entry)
-          ? `<a class="jm-nota-mestre" data-action="notaMestre" data-tooltip="${T("Nota do mestre (só você vê) — clique para editar")}"><i class="fa-solid fa-note-sticky"></i> ${dicaNota(notaMestre(entry))}</a>`
-          : `<a class="jm-nota-mestre vazia" data-action="notaMestre"><i class="fa-solid fa-note-sticky"></i> ${T("Adicionar nota do mestre")}</a>`) : ""}
+          ? `<a class="jm-nota-mestre" data-action="notaMestre" data-tooltip="${T("Janela.NotaDoMestreSoVoce")}"><i class="fa-solid fa-note-sticky"></i> ${dicaNota(notaMestre(entry))}</a>`
+          : `<a class="jm-nota-mestre vazia" data-action="notaMestre"><i class="fa-solid fa-note-sticky"></i> ${T("Janela.AdicionarNotaDoMestre")}</a>`) : ""}
       </div>
       <div class="jm-cab-botoes">${botoes}</div>
     </header>`);
@@ -815,16 +815,16 @@ class JournalApp extends ApplicationV2 {
       const hoje = Tempo.ok() ? Tempo.hoje() : null;
       const comData = paginas.filter((p) => acontecimento(p).td != null).length;
       blocos.push(`<div class="jm-hist-barra">
-        ${gm ? `<button type="button" data-action="histNovo"><i class="fa-solid fa-feather-pointed"></i> ${T("Novo acontecimento")}</button>` : ""}
-        <button type="button" class="sec" data-action="histOrdem" data-tooltip="${T("Trocar a ordem")}"><i class="fa-solid ${this.histDesc ? "fa-arrow-up-wide-short" : "fa-arrow-down-short-wide"}"></i> ${this.histDesc ? T("Mais recentes primeiro") : T("Mais antigos primeiro")}</button>
-        ${Tempo.ok() ? `<button type="button" class="sec" data-action="histLinha" data-tooltip="${T("Abrir a linha do tempo mostrando só a História")}"><i class="fa-solid fa-timeline"></i> ${T("Linha do tempo")}</button>` : ""}
-        <span class="jm-hist-conta">${paginas.length} ${T("acontecimento(s)")}${paginas.length !== comData ? ` · ${paginas.length - comData} ${T("sem data")}` : ""}</span>
+        ${gm ? `<button type="button" data-action="histNovo"><i class="fa-solid fa-feather-pointed"></i> ${T("Janela.NovoAcontecimento")}</button>` : ""}
+        <button type="button" class="sec" data-action="histOrdem" data-tooltip="${T("Janela.TrocarAOrdem")}"><i class="fa-solid ${this.histDesc ? "fa-arrow-up-wide-short" : "fa-arrow-down-short-wide"}"></i> ${this.histDesc ? T("Janela.MaisRecentesPrimeiro") : T("Janela.MaisAntigosPrimeiro")}</button>
+        ${Tempo.ok() ? `<button type="button" class="sec" data-action="histLinha" data-tooltip="${T("Janela.AbrirALinhaDoTempo")}"><i class="fa-solid fa-timeline"></i> ${T("Janela.LinhaDoTempo")}</button>` : ""}
+        <span class="jm-hist-conta">${paginas.length} ${T("Janela.AcontecimentoS")}${paginas.length !== comData ? ` · ${paginas.length - comData} ${T("Janela.SemData")}` : ""}</span>
       </div>`);
       let anoAtual;
       for (const p of ordenarAcontecimentos(paginas, this.histDesc)) {
         const ac = acontecimento(p);
         const ano = ac.td != null && Tempo.ok() ? Tempo.partes(ac.td).ano : null;
-        if (ano !== anoAtual) { blocos.push(`<div class="jm-hist-ano"><span>${ano != null ? `${T("Ano")} ${esc(ano)}` : T("Sem data")}</span></div>`); anoAtual = ano; }
+        if (ano !== anoAtual) { blocos.push(`<div class="jm-hist-ano"><span>${ano != null ? `${T("Comum.Ano")} ${esc(ano)}` : T("Janela.SemData2")}</span></div>`); anoAtual = ano; }
         let origem = "";
         if (ac.origem.startsWith("JournalEntry.")) {
           const doc = fromUuidSync(ac.origem);
@@ -834,28 +834,28 @@ class JournalApp extends ApplicationV2 {
         const naLinha = ac.td != null && hoje != null && ac.td <= hoje + 30;
         const quando = `<div class="jm-hist-quando">
           <i class="fa-solid ${ac.icone}" style="color:${ac.cor}"></i>
-          <div><b>${ac.td != null ? esc(Tempo.ok() ? Tempo.texto(ac.td) : `${T("dia")} ${ac.td}`) : T("Sem data")}</b>
-            ${ac.td != null && Tempo.ok() ? `<small>${esc(Tempo.relativo(ac.td))}${ac.td > hoje ? T(" · ainda vai acontecer") : ""}</small>` : ""}</div>
+          <div><b>${ac.td != null ? esc(Tempo.ok() ? Tempo.texto(ac.td) : `${T("Comum.Dia")} ${ac.td}`) : T("Janela.SemData2")}</b>
+            ${ac.td != null && Tempo.ok() ? `<small>${esc(Tempo.relativo(ac.td))}${ac.td > hoje ? T("Janela.AindaVaiAcontecer") : ""}</small>` : ""}</div>
           ${origem ? `<div class="jm-hist-origem">${origem}</div>` : ""}
         </div>`;
         const edicao = gm ? `<details class="jm-hist-ed" data-hist-ed="${p.id}" ${this.histAbertos.has(p.id) ? "open" : ""}>
-            <summary><i class="fa-solid fa-sliders"></i> ${T("Data, ícone e cor")}</summary>
+            <summary><i class="fa-solid fa-sliders"></i> ${T("Janela.DataIconeECor")}</summary>
             <div class="jm-hist-ed-campos">
-              ${Tempo.ok() ? `<label>${T("Data")} ${campoData("hist", ac.td ?? hoje, `data-page="${p.id}"`)}</label>
-                ${ac.td != null ? `<button type="button" class="sec" data-action="histSemData" data-page="${p.id}" data-tooltip="${T("Tirar a data (sai da linha do tempo)")}"><i class="fa-solid fa-calendar-xmark"></i></button>` : `<span class="jm-dica">${T("Escolha uma data para pôr na linha do tempo.")}</span>`}` : ""}
-              <label>${T("Ícone")} <select data-hist-campo="icone" data-page="${p.id}">${Object.entries(HIST_ICONES).map(([k, r]) => `<option value="${k}" ${k === ac.icone ? "selected" : ""}>${esc(r)}</option>`).join("")}</select></label>
-              <label>${T("Cor")} <input type="color" data-hist-campo="cor" data-page="${p.id}" value="${ac.cor}"></label>
+              ${Tempo.ok() ? `<label>${T("Comum.Data")} ${campoData("hist", ac.td ?? hoje, `data-page="${p.id}"`)}</label>
+                ${ac.td != null ? `<button type="button" class="sec" data-action="histSemData" data-page="${p.id}" data-tooltip="${T("Janela.TirarADataSaiDa")}"><i class="fa-solid fa-calendar-xmark"></i></button>` : `<span class="jm-dica">${T("Janela.EscolhaUmaDataParaPor")}</span>`}` : ""}
+              <label>${T("Comum.Icone")} <select data-hist-campo="icone" data-page="${p.id}">${Object.entries(HIST_ICONES).map(([k, r]) => `<option value="${k}" ${k === ac.icone ? "selected" : ""}>${esc(r)}</option>`).join("")}</select></label>
+              <label>${T("Janela.Cor")} <input type="color" data-hist-campo="cor" data-page="${p.id}" value="${ac.cor}"></label>
             </div></details>` : "";
-        const ctrl = `${naLinha ? `<a class="jm-mini-btn" data-action="histLinha" data-td="${ac.td}" data-tooltip="${T("Ver este dia na linha do tempo")}"><i class="fa-solid fa-timeline"></i></a>` : ""}${gm ? `
-          ${traduzir && p.type === "text" ? `<a class="jm-mini-btn" data-action="editarPagina" data-page="${p.id}" data-tooltip="${T("Traduzir (abre a página)")}"><i class="fa-solid fa-language"></i></a>` : ""}
-          <a class="jm-mini-btn" data-action="editarPagina" data-page="${p.id}" data-tooltip="${T("Editar o texto")}"><i class="fa-solid fa-pen"></i></a>
-          <a class="jm-mini-btn" data-action="apagarPagina" data-page="${p.id}" data-tooltip="${T("Apagar acontecimento")}"><i class="fa-solid fa-trash"></i></a>` : ""}`;
+        const ctrl = `${naLinha ? `<a class="jm-mini-btn" data-action="histLinha" data-td="${ac.td}" data-tooltip="${T("Janela.VerEsteDiaNaLinha")}"><i class="fa-solid fa-timeline"></i></a>` : ""}${gm ? `
+          ${traduzir && p.type === "text" ? `<a class="jm-mini-btn" data-action="editarPagina" data-page="${p.id}" data-tooltip="${T("Janela.TraduzirAbreAPagina")}"><i class="fa-solid fa-language"></i></a>` : ""}
+          <a class="jm-mini-btn" data-action="editarPagina" data-page="${p.id}" data-tooltip="${T("Janela.EditarOTexto")}"><i class="fa-solid fa-pen"></i></a>
+          <a class="jm-mini-btn" data-action="apagarPagina" data-page="${p.id}" data-tooltip="${T("Janela.ApagarAcontecimento")}"><i class="fa-solid fa-trash"></i></a>` : ""}`;
         blocos.push(secao(esc(p.name), ICONES_PAGINA[p.type] ?? "fa-solid fa-file", quando + edicao + await this._paginaNativa(p),
           "jm-hist-item", `data-page-id="${p.id}" style="--hist-cor:${ac.cor}"`, ctrl, gm ? `pg-${p.id}` : null));
       }
       blocos.push(avisoEscondidas());
-      if (!paginas.length) blocos.push(`<p class="jm-vazio jm-centro">${gm ? `${T("Nenhum acontecimento ainda. Crie um aqui ou registre direto da linha do tempo (pena")} <i class="fa-solid fa-feather-pointed"></i> ${T("ao lado de cada item).")}` : T("Nada registrado ainda.")}</p>`);
-      if (gm) blocos.push(`<div class="jm-add-paginas"><span>${T("Adicionar página")}</span>${tiposDePagina().map((tp) =>
+      if (!paginas.length) blocos.push(`<p class="jm-vazio jm-centro">${gm ? `${T("Janela.NenhumAcontecimentoAindaCrieUm")} <i class="fa-solid fa-feather-pointed"></i> ${T("Janela.AoLadoDeCadaItem")}` : T("Janela.NadaRegistradoAinda")}</p>`);
+      if (gm) blocos.push(`<div class="jm-add-paginas"><span>${T("Janela.AdicionarPagina")}</span>${tiposDePagina().map((tp) =>
         `<button type="button" data-action="novaPagina" data-tipo="${tp}"><i class="${ICONES_PAGINA[tp] ?? "fa-solid fa-file"}"></i> ${esc(nomeDoTipoDePagina(tp))}</button>`).join("")}</div>`);
       blocos.push(this._notas(paginas[0] ?? null, secao));
       return `<article class="jm-pagina tipo-${tipo}">${blocos.join("")}</article>`;
@@ -867,14 +867,14 @@ class JournalApp extends ApplicationV2 {
       escondidas += a.pages.length - paginas.length;
       for (const p of paginas) {
         const ctrl = gm ? `
-          ${traduzir && p.type === "text" ? `<a class="jm-mini-btn" data-action="editarPagina" data-page="${p.id}" data-tooltip="${T("Traduzir (abre a página)")}"><i class="fa-solid fa-language"></i></a>` : ""}
-          <a class="jm-mini-btn" data-action="editarPagina" data-page="${p.id}" data-tooltip="${T("Editar página")}"><i class="fa-solid fa-pen"></i></a>
-          <a class="jm-mini-btn" data-action="apagarPagina" data-page="${p.id}" data-tooltip="${T("Apagar página")}"><i class="fa-solid fa-trash"></i></a>` : "";
+          ${traduzir && p.type === "text" ? `<a class="jm-mini-btn" data-action="editarPagina" data-page="${p.id}" data-tooltip="${T("Janela.TraduzirAbreAPagina")}"><i class="fa-solid fa-language"></i></a>` : ""}
+          <a class="jm-mini-btn" data-action="editarPagina" data-page="${p.id}" data-tooltip="${T("Janela.EditarPagina")}"><i class="fa-solid fa-pen"></i></a>
+          <a class="jm-mini-btn" data-action="apagarPagina" data-page="${p.id}" data-tooltip="${T("Comum.ApagarPagina")}"><i class="fa-solid fa-trash"></i></a>` : "";
         blocos.push(secao(esc(p.name), ICONES_PAGINA[p.type] ?? "fa-solid fa-file", await this._paginaNativa(p), "", `data-page-id="${p.id}"`, ctrl, gm ? `pg-${p.id}` : null));
       }
       blocos.push(avisoEscondidas());
-      if (!paginas.length && gm) blocos.push(secao(T("Conteúdo"), "fa-solid fa-file-lines", `<p class="jm-vazio">${T("Diário vazio.")}</p>`));
-      if (gm) blocos.push(`<div class="jm-add-paginas"><span>${T("Adicionar página")}</span>${tiposDePagina().map((tp) =>
+      if (!paginas.length && gm) blocos.push(secao(T("Janela.Conteudo"), "fa-solid fa-file-lines", `<p class="jm-vazio">${T("Janela.DiarioVazio")}</p>`));
+      if (gm) blocos.push(`<div class="jm-add-paginas"><span>${T("Janela.AdicionarPagina")}</span>${tiposDePagina().map((tp) =>
         `<button type="button" data-action="novaPagina" data-tipo="${tp}"><i class="${ICONES_PAGINA[tp] ?? "fa-solid fa-file"}"></i> ${esc(nomeDoTipoDePagina(tp))}</button>`).join("")}</div>`);
       blocos.push(this._notas(paginas[0] ?? null, secao));
       return `<article class="jm-pagina tipo-${tipo}">${blocos.join("")}</article>`;
@@ -890,15 +890,15 @@ class JournalApp extends ApplicationV2 {
     }
 
     /* ---- descrição (text.content nativo) ---- */
-    const tituloResumo = { shop: T("Sobre a loja"), journalentry: T("Anotação"), deus: T("Mitos e lendas"), loot: T("Sobre o baú") }[tipo] ?? T("Descrição");
+    const tituloResumo = { shop: T("Janela.SobreALoja"), journalentry: T("Janela.Anotacao"), deus: T("Janela.MitosELendas"), loot: T("Janela.SobreOBau") }[tipo] ?? T("Janela.Descricao");
     const html = page.text?.content ?? "";
     if ((html || ed || tipo !== "loot") && (tipo !== "deus" || this.subDeus === "geral")) blocos.push(secao(tituloResumo, "fa-solid fa-align-left", ed
       ? `<div class="jm-editor-alvo" data-editor></div>`
-      : `<div class="jm-texto">${html ? await TE().enrichHTML(html, { secrets: gm, relativeTo: page }) : `<em class="jm-vazio">${T("Sem descrição.")}</em>`}</div>`,
-      "", "", gm ? `<a class="jm-mini-btn" data-action="traduzir" data-tooltip="${T("Abrir no editor completo do Foundry")}"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></a>` : "", "descricao"));
+      : `<div class="jm-texto">${html ? await TE().enrichHTML(html, { secrets: gm, relativeTo: page }) : `<em class="jm-vazio">${T("Janela.SemDescricao")}</em>`}</div>`,
+      "", "", gm ? `<a class="jm-mini-btn" data-action="traduzir" data-tooltip="${T("Janela.AbrirNoEditorCompletoDo")}"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></a>` : "", "descricao"));
 
-    if (tipo === "outro") blocos.push(secao(T("Monk's Enhanced Journal"), "fa-solid fa-puzzle-piece",
-      `<p class="jm-dica">${T("Este é um")} "${esc(NOMES_MEJ[a.tipoBase] ?? a.tipoBase)}" ${T("do Monk's. Aqui dá para editar nome, imagem e descrição")} <i class="fa-solid fa-pen"></i>${T("; o resto dos dados dele fica intacto e pode ser editado na ficha padrão")} <i class="fa-solid fa-up-right-from-square"></i>.</p>`));
+    if (tipo === "outro") blocos.push(secao(T("Janela.MonkSEnhancedJournal"), "fa-solid fa-puzzle-piece",
+      `<p class="jm-dica">${T("Janela.EsteEUm")} "${esc(NOMES_MEJ[a.tipoBase] ?? a.tipoBase)}" ${T("Janela.DoMonkSAquiDa")} <i class="fa-solid fa-pen"></i>${T("Janela.ORestoDosDadosDele")} <i class="fa-solid fa-up-right-from-square"></i>.</p>`));
 
     /* ---- divindade: seções da aba ---- */
     if (tipo === "deus") {
@@ -911,7 +911,7 @@ class JournalApp extends ApplicationV2 {
       if (this.subDeus === "fe") blocos.push(this._diasSagrados(entry, secao));
       if (this.subDeus === "poder") blocos.push(await this._reliquiasDeus(x, ed, secao));
       if (gm && !ed && this.subDeus !== "geral" && !this._deusTemConteudo(x, this.subDeus, null))
-        blocos.push(`<p class="jm-vazio jm-centro">${T("Nada escrito nesta aba ainda. Use o lápis para preencher.")}</p>`);
+        blocos.push(`<p class="jm-vazio jm-centro">${T("Janela.NadaEscritoNestaAbaAinda")}</p>`);
     }
 
     /* ---- NPC: ficha do ator (formato Monk's: flags.actor) ---- */
@@ -921,10 +921,10 @@ class JournalApp extends ApplicationV2 {
       const pode = ator && (gm || ator.testUserPermission(game.user, "LIMITED"));
       let corpo = "";
       if (pode) corpo = `<div class="jm-ator"><img src="${esc(ator.img)}"><b>${esc(ator.name)}</b>
-        <button type="button" data-action="abrirAtor"><i class="fa-solid fa-id-card"></i> ${T("Abrir ficha")}</button>
+        <button type="button" data-action="abrirAtor"><i class="fa-solid fa-id-card"></i> ${T("Janela.AbrirFicha")}</button>
         ${ed ? `<button type="button" class="sec" data-action="limparAtor"><i class="fa-solid fa-link-slash"></i></button>` : ""}</div>`;
-      else if (ed) corpo = `<div class="jm-soltar"><i class="fa-solid fa-user-plus"></i> ${T("Arraste um ator aqui para ligar a ficha")}</div>`;
-      if (corpo) blocos.push(secao(T("Ficha"), "fa-solid fa-id-card", corpo, "", ed ? `data-drop="ator"` : ""));
+      else if (ed) corpo = `<div class="jm-soltar"><i class="fa-solid fa-user-plus"></i> ${T("Janela.ArrasteUmAtorAquiPara")}</div>`;
+      if (corpo) blocos.push(secao(T("Janela.Ficha"), "fa-solid fa-id-card", corpo, "", ed ? `data-drop="ator"` : ""));
     }
 
     if (tipo === "shop") blocos.push(await this._secaoLoja(entry, a, ed, secao));
@@ -943,13 +943,13 @@ class JournalApp extends ApplicationV2 {
           ${ed ? `<input data-obj-texto data-id="${id}" value="${esc(String(o.content ?? "").replace(/<[^>]+>/g, ""))}">`
                : `<span class="texto">${await enr(o.content)}</span>`}
           ${req ? `<small class="jm-contador">${Number(o.done) || 0}/${req}</small>` : ""}
-          ${gm ? `<a class="jm-mini-btn" data-action="ocultarObjetivo" data-id="${id}" data-tooltip="${o.available === false ? T("Oculto dos jogadores") : T("Visível aos jogadores")}"><i class="fa-solid ${o.available === false ? "fa-eye-slash" : "fa-eye"}"></i></a>` : ""}
+          ${gm ? `<a class="jm-mini-btn" data-action="ocultarObjetivo" data-id="${id}" data-tooltip="${o.available === false ? T("Janela.OcultoDosJogadores") : T("Janela.VisivelAosJogadores")}"><i class="fa-solid ${o.available === false ? "fa-eye-slash" : "fa-eye"}"></i></a>` : ""}
           ${ed ? `<a class="jm-mini-btn" data-action="removerObjetivo" data-id="${id}"><i class="fa-solid fa-trash"></i></a>` : ""}
         </div>`);
       }
-      blocos.push(secao(T("Objetivos"), "fa-solid fa-list-check",
-        (linhas.join("") || `<em class="jm-vazio">${T("Nenhum objetivo ainda.")}</em>`) +
-        (gm ? `<button type="button" class="jm-add" data-action="novoObjetivo"><i class="fa-solid fa-plus"></i> ${T("Novo objetivo")}</button>` : ""), "", "", "", "objetivos"));
+      blocos.push(secao(T("Janela.Objetivos"), "fa-solid fa-list-check",
+        (linhas.join("") || `<em class="jm-vazio">${T("Janela.NenhumObjetivoAinda")}</em>`) +
+        (gm ? `<button type="button" class="jm-add" data-action="novoObjetivo"><i class="fa-solid fa-plus"></i> ${T("Janela.NovoObjetivo")}</button>` : ""), "", "", "", "objetivos"));
 
       blocos.push(await this._secaoRecompensas(a, ed, secao, enr));
     }
@@ -960,25 +960,25 @@ class JournalApp extends ApplicationV2 {
       const chip = chipPagina(r.id ?? id, r.relationship, r.hidden, true);
       if (!chip) return "";
       return `<div class="jm-link">${chip}${gm ? `
-        <a class="jm-mini-btn jm-olho ${r.hidden ? "fechado" : "aberto"}" data-action="ocultarLink" data-id="${id}" data-tooltip="${r.hidden ? T("Oculta: os jogadores não veem esta conexão") : T("Os jogadores veem esta conexão")}"><i class="fa-solid ${r.hidden ? "fa-eye-slash" : "fa-eye"}"></i></a>` : ""}${gm && ed ? `
-        <a class="jm-mini-btn" data-action="removerLink" data-id="${id}" data-tooltip="${T("Remover conexão")}"><i class="fa-solid fa-xmark"></i></a>` : ""}</div>`;
+        <a class="jm-mini-btn jm-olho ${r.hidden ? "fechado" : "aberto"}" data-action="ocultarLink" data-id="${id}" data-tooltip="${r.hidden ? T("Janela.OcultaOsJogadoresNaoVeem") : T("Janela.OsJogadoresVeemEstaConexao")}"><i class="fa-solid ${r.hidden ? "fa-eye-slash" : "fa-eye"}"></i></a>` : ""}${gm && ed ? `
+        <a class="jm-mini-btn" data-action="removerLink" data-id="${id}" data-tooltip="${T("Janela.RemoverConexao")}"><i class="fa-solid fa-xmark"></i></a>` : ""}</div>`;
     }).join("");
     /* fichas de personagem ligadas */
     const fichas = fichasDe(page).filter(([, f]) => gm || !f.hidden).map(([id, f]) => {
       const ator = fromUuidSync(f.uuid);
-      if (!ator) return gm ? `<div class="jm-link"><span class="jm-ref trancada" data-con-tipo="ficha" data-con-busca="ficha apagada"><i class="fa-solid fa-user-slash"></i><span><b>${T("Ficha apagada")}</b></span></span>${ed ? `
-        <a class="jm-mini-btn" data-action="removerFicha" data-id="${id}" data-tooltip="${T("Remover conexão")}"><i class="fa-solid fa-xmark"></i></a>` : ""}</div>` : "";
+      if (!ator) return gm ? `<div class="jm-link"><span class="jm-ref trancada" data-con-tipo="ficha" data-con-busca="ficha apagada"><i class="fa-solid fa-user-slash"></i><span><b>${T("Janela.FichaApagada")}</b></span></span>${ed ? `
+        <a class="jm-mini-btn" data-action="removerFicha" data-id="${id}" data-tooltip="${T("Janela.RemoverConexao")}"><i class="fa-solid fa-xmark"></i></a>` : ""}</div>` : "";
       const pode = gm || ator.testUserPermission(game.user, "LIMITED");
       const dono = game.users.find((u) => !u.isGM && u.character?.id === ator.id) ?? game.users.find((u) => !u.isGM && ator.testUserPermission(u, "OWNER"));
-      const extra = [f.relacao, dono ? `${T("jogador")}: ${dono.name}` : ""].filter(Boolean).join(" · ");
+      const extra = [f.relacao, dono ? `${T("Janela.Jogador")}: ${dono.name}` : ""].filter(Boolean).join(" · ");
       const busca = esc(`${ator.name} ${f.relacao ?? ""} ${dono?.name ?? ""}`.toLowerCase());
       const miolo = `<img class="jm-av mini" src="${esc(ator.img)}" alt=""><span><b>${esc(ator.name)}</b>${extra ? `<small>${esc(extra)}</small>` : ""}</span><i class="fa-solid fa-user-shield jm-ficha-ico"></i>`;
       const chip = pode
-        ? `<a class="jm-ref jm-ref-ficha ${f.hidden ? "oculta" : ""}" data-action="abrirFicha" data-uuid="${esc(f.uuid)}" data-con-tipo="ficha" data-con-busca="${busca}" data-tooltip="${T("Abrir a ficha")}">${miolo}</a>`
+        ? `<a class="jm-ref jm-ref-ficha ${f.hidden ? "oculta" : ""}" data-action="abrirFicha" data-uuid="${esc(f.uuid)}" data-con-tipo="ficha" data-con-busca="${busca}" data-tooltip="${T("Janela.AbrirAFicha")}">${miolo}</a>`
         : `<span class="jm-ref jm-ref-ficha trancada" data-con-tipo="ficha" data-con-busca="${busca}">${miolo}</span>`;
       return `<div class="jm-link">${chip}${gm ? `
-        <a class="jm-mini-btn jm-olho ${f.hidden ? "fechado" : "aberto"}" data-action="ocultarFicha" data-id="${id}" data-tooltip="${f.hidden ? T("Oculta: os jogadores não veem esta conexão") : T("Os jogadores veem esta conexão")}"><i class="fa-solid ${f.hidden ? "fa-eye-slash" : "fa-eye"}"></i></a>` : ""}${gm && ed ? `
-        <a class="jm-mini-btn" data-action="removerFicha" data-id="${id}" data-tooltip="${T("Remover conexão")}"><i class="fa-solid fa-xmark"></i></a>` : ""}</div>`;
+        <a class="jm-mini-btn jm-olho ${f.hidden ? "fechado" : "aberto"}" data-action="ocultarFicha" data-id="${id}" data-tooltip="${f.hidden ? T("Janela.OcultaOsJogadoresNaoVeem") : T("Janela.OsJogadoresVeemEstaConexao")}"><i class="fa-solid ${f.hidden ? "fa-eye-slash" : "fa-eye"}"></i></a>` : ""}${gm && ed ? `
+        <a class="jm-mini-btn" data-action="removerFicha" data-id="${id}" data-tooltip="${T("Janela.RemoverConexao")}"><i class="fa-solid fa-xmark"></i></a>` : ""}</div>`;
     }).join("");
 
     /* páginas já ligadas daqui (inclusive as ocultas, para a ligação de volta não "vazar" uma conexão escondida) */
@@ -987,18 +987,18 @@ class JournalApp extends ApplicationV2 {
     for (const j of game.journal.contents) {
       if (j.id === entry.id || ja.has(j.id)) continue;
       const aj = analisar(j);
-      if (aj.tipo === "shop" && aj.x.dono === entry.id) reversos.push(chipPagina(j.id, T("trabalha aqui")));
-      else if (aj.tipo === "quest" && aj.x.doador === entry.id) reversos.push(chipPagina(j.id, T("missão oferecida")));
+      if (aj.tipo === "shop" && aj.x.dono === entry.id) reversos.push(chipPagina(j.id, T("Janela.TrabalhaAqui")));
+      else if (aj.tipo === "quest" && aj.x.doador === entry.id) reversos.push(chipPagina(j.id, T("Janela.MissaoOferecida")));
       else {
         const r = comoLista(aj.m.relationships).find(([id, rr]) => (rr.id ?? id) === entry.id);
-        if (r && (gm || !r[1].hidden)) reversos.push(chipPagina(j.id, r[1].relationship || T("menciona"), false, true));
+        if (r && (gm || !r[1].hidden)) reversos.push(chipPagina(j.id, r[1].relationship || T("Janela.Menciona"), false, true));
       }
     }
     const outros = visiveis.filter((j) => j.id !== entry.id && analisar(j).page)
       .map((j) => ({ id: j.id, tipo: analisar(j).tipo, nome: j.name }))
       .sort((a2, b2) => a2.nome.localeCompare(b2.nome));
     /* seletor de páginas para ligar: busca + tipo, opções agrupadas por tipo */
-    const ROTULOS_LIGAR = tipo === "deus" ? { deus: T("Panteão (divindades)"), organization: T("Igrejas (organizações)"), person: T("Fiéis (NPCs)") } : {};
+    const ROTULOS_LIGAR = tipo === "deus" ? { deus: T("Janela.PanteaoDivindades"), organization: T("Janela.IgrejasOrganizacoes"), person: T("Janela.FieisNPCs") } : {};
     const ordemLigar = [...(tipo === "deus" ? ["deus", "organization", "person"] : []), ...Object.keys(TIPOS)].filter((k, i, arr) => arr.indexOf(k) === i);
     const gruposLigar = ordemLigar.map((k) => [k, outros.filter((o) => o.tipo === k)]).filter(([, l]) => l.length);
     /* fichas dos jogadores (primeiro) e as demais fichas de personagem do mundo */
@@ -1009,21 +1009,21 @@ class JournalApp extends ApplicationV2 {
     if (atoresLigar.length) gruposLigar.unshift(["ficha", atoresLigar]);
     const totalLigar = outros.length + atoresLigar.length;
     const addLink = ed ? `<div class="jm-ligar-filtro" data-ligar-filtro>
-        <div class="jm-con-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" data-link-busca placeholder="${T("Buscar página para ligar...")}"></div>
-        <select data-link-tipo><option value="">${T("Todos os tipos")} (${totalLigar})</option>${gruposLigar.map(([k, l]) =>
+        <div class="jm-con-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" data-link-busca placeholder="${T("Janela.BuscarPaginaParaLigar")}"></div>
+        <select data-link-tipo><option value="">${T("Janela.TodosOsTipos")} (${totalLigar})</option>${gruposLigar.map(([k, l]) =>
           `<option value="${k}">${esc(ROTULOS_LIGAR[k] ?? infoCon(k).plural)} (${l.length})</option>`).join("")}</select>
       </div>
       <div class="jm-add-link">
-        <select data-novo-link><option value="" data-vazio>— ${T("escolha uma página ou ficha")} (${totalLigar}) —</option>${gruposLigar.map(([k, l]) =>
+        <select data-novo-link><option value="" data-vazio>— ${T("Janela.EscolhaUmaPaginaOuFicha")} (${totalLigar}) —</option>${gruposLigar.map(([k, l]) =>
           `<optgroup label="${esc(ROTULOS_LIGAR[k] ?? infoCon(k).plural)}" data-grupo-tipo="${k}">${l.map((o) =>
             `<option value="${esc(o.id)}" data-con-tipo="${o.tipo}" data-con-busca="${esc(`${o.nome} ${o.dono ?? ""}`.toLowerCase())}">${esc(o.nome)}${o.dono ? ` (${esc(o.dono)})` : ""}</option>`).join("")}</optgroup>`).join("")}</select>
-        <input data-novo-rotulo placeholder="${tipo === "deus" ? T("Relação (ex.: igreja, rival, consorte)") : T("Relação (ex.: irmão, fornecedor, rival)")}">
-        <button type="button" data-action="adicionarLink"><i class="fa-solid fa-link"></i> ${T("Ligar")}</button>
-      </div><p class="jm-dica">${T("Ou arraste uma página da lista (ou uma ficha da aba de Atores) para cá. Ligação entre páginas aparece nas duas.")}</p>` : "";
+        <input data-novo-rotulo placeholder="${tipo === "deus" ? T("Janela.RelacaoExIgrejaRivalConsorte") : T("Janela.RelacaoExIrmaoFornecedorRival")}">
+        <button type="button" data-action="adicionarLink"><i class="fa-solid fa-link"></i> ${T("Janela.Ligar")}</button>
+      </div><p class="jm-dica">${T("Janela.OuArrasteUmaPaginaDa")}</p>` : "";
     const reversosVisiveis = reversos.filter(Boolean);
     reversos.length = 0; reversos.push(...reversosVisiveis);
     /* filtros: por texto e por tipo (Panteão = divindades, Igrejas = organizações, Fiéis = NPCs) */
-    const ROTULOS_CON = tipo === "deus" ? { deus: T("Panteão"), organization: T("Igrejas"), person: T("Fiéis") } : {};
+    const ROTULOS_CON = tipo === "deus" ? { deus: T("Janela.Panteao"), organization: T("Janela.Igrejas"), person: T("Janela.Fieis") } : {};
     const contagem = {};
     const contar = (html) => { for (const mt of String(html).matchAll(/data-con-tipo="(\w+)"/g)) contagem[mt[1]] = (contagem[mt[1]] ?? 0) + 1; };
     contar(meus); contar(fichas); reversos.forEach(contar);
@@ -1032,20 +1032,20 @@ class JournalApp extends ApplicationV2 {
     const total = Object.values(contagem).reduce((a2, b2) => a2 + b2, 0);
     if (this.conFiltro?.tipo && !tiposCon.includes(this.conFiltro.tipo)) this.conFiltro.tipo = "";
     const filtroCon = total > 3 ? `<div class="jm-con-filtros">
-        <div class="jm-con-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" data-con-busca-campo placeholder="${T("Filtrar conexões (nome ou relação)...")}" value="${esc(this.conFiltro?.texto ?? "")}"></div>
+        <div class="jm-con-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" data-con-busca-campo placeholder="${T("Janela.FiltrarConexoesNomeOuRelacao")}" value="${esc(this.conFiltro?.texto ?? "")}"></div>
         <div class="jm-con-chips">
-          <button type="button" class="jm-chip ${!this.conFiltro?.tipo ? "ativo" : ""}" data-action="conTipo" data-tipo="">${T("Todos")} <span>${total}</span></button>
-          ${tiposCon.map((k) => `<button type="button" class="jm-chip ${this.conFiltro?.tipo === k ? "ativo" : ""}" data-action="conTipo" data-tipo="${k}"><i class="${infoCon(k).icone}"></i> ${esc(ROTULOS_CON[k] ?? (k === "ficha" ? T("Personagens") : TIPOS[k].plural))} <span>${contagem[k] ?? 0}</span></button>`).join("")}
+          <button type="button" class="jm-chip ${!this.conFiltro?.tipo ? "ativo" : ""}" data-action="conTipo" data-tipo="">${T("Janela.Todos")} <span>${total}</span></button>
+          ${tiposCon.map((k) => `<button type="button" class="jm-chip ${this.conFiltro?.tipo === k ? "ativo" : ""}" data-action="conTipo" data-tipo="${k}"><i class="${infoCon(k).icone}"></i> ${esc(ROTULOS_CON[k] ?? (k === "ficha" ? T("Janela.Personagens") : TIPOS[k].plural))} <span>${contagem[k] ?? 0}</span></button>`).join("")}
         </div></div>` : "";
-    if (meus || fichas || reversos.length || ed) blocos.push(secao(tipo === "deus" ? T("Panteão, igrejas e fiéis") : T("Conexões"), "fa-solid fa-diagram-project",
-      filtroCon + `<p class="jm-vazio jm-con-nada" hidden>${T("Nenhuma conexão com esse filtro.")}</p>` +
+    if (meus || fichas || reversos.length || ed) blocos.push(secao(tipo === "deus" ? T("Janela.PanteaoIgrejasEFieis") : T("Janela.Conexoes"), "fa-solid fa-diagram-project",
+      filtroCon + `<p class="jm-vazio jm-con-nada" hidden>${T("Janela.NenhumaConexaoComEsseFiltro")}</p>` +
       `<div class="jm-links">${fichas}${meus}</div>` +
-      (reversos.length ? `<div class="jm-reversos"><span>${T("Também ligado a")}</span><div class="jm-links">${reversos.join("")}</div></div>` : "") +
+      (reversos.length ? `<div class="jm-reversos"><span>${T("Janela.TambemLigadoA")}</span><div class="jm-links">${reversos.join("")}</div></div>` : "") +
       addLink, "jm-conexoes", ed ? `data-drop="link"` : ""));
 
     /* ---- segredos ---- */
-    if (gm && (x.segredo || ed)) blocos.push(secao(T("Segredos do mestre"), "fa-solid fa-user-secret", ed
-      ? `<textarea data-campo="x:segredo" rows="4" placeholder="${T("Só o mestre vê isto.")}">${esc(x.segredo)}</textarea>`
+    if (gm && (x.segredo || ed)) blocos.push(secao(T("Janela.SegredosDoMestre"), "fa-solid fa-user-secret", ed
+      ? `<textarea data-campo="x:segredo" rows="4" placeholder="${T("Janela.SoOMestreVeIsto")}">${esc(x.segredo)}</textarea>`
       : `<div class="jm-texto">${await enr(x.segredo)}</div>`, "jm-segredo"));
 
     /* ---- matérias de jornal ligadas a esta página ---- */
@@ -1090,25 +1090,25 @@ class JournalApp extends ApplicationV2 {
       return `<div class="jm-festa" style="border-left-color:${cor}">
         <i class="fa-solid ${CAL_ICONES[n?.icone] ? n.icone : "fa-hands-praying"}" style="color:${cor}"></i>
         <div class="info"><a data-action="abrir" data-id="${j.id}"><b>${esc(j.name)}</b></a>
-          <small>${n ? `${esc(calResumoRepeticao(j))}${prox != null ? ` · ${T("próxima")}: ${esc(calTextoDia(prox))}` : ""}` : T("sem data no calendário")}</small></div>
+          <small>${n ? `${esc(calResumoRepeticao(j))}${prox != null ? ` · ${T("Janela.Proxima")}: ${esc(calTextoDia(prox))}` : ""}` : T("Janela.SemDataNoCalendario")}</small></div>
         ${gm && n && Tempo.ok() ? campoData("festa", Number(n.td), `data-festa="${j.id}"`) : ""}
-        ${gm ? `<a class="jm-mini-btn" data-action="desligarFesta" data-id="${j.id}" data-tooltip="${T("Desligar desta divindade (a página continua)")}"><i class="fa-solid fa-link-slash"></i></a>` : ""}
+        ${gm ? `<a class="jm-mini-btn" data-action="desligarFesta" data-id="${j.id}" data-tooltip="${T("Janela.DesligarDestaDivindadeAPagina")}"><i class="fa-solid fa-link-slash"></i></a>` : ""}
       </div>`;
     }).join("");
     /* eventos do calendário que ainda não são dias sagrados desta divindade */
     const livres = gm ? game.journal.filter((j) => j.id !== entry.id && calNota(j) && calNota(j).divindade !== entry.uuid && analisar(j).tipo !== "deus")
       .sort((a, b) => a.name.localeCompare(b.name)) : [];
     const ligar = gm ? `<div class="jm-festa-ligar">
-        <select data-festa-livre><option value="">— ${T("ligar um evento que já está no calendário")} —</option>${livres.map((j) => {
+        <select data-festa-livre><option value="">— ${T("Janela.LigarUmEventoQueJa")} —</option>${livres.map((j) => {
           const outro = deusDaFesta(j);
-          return `<option value="${j.id}">${esc(j.name)}${outro ? ` (${T("hoje de")} ${esc(outro.name)})` : ""}</option>`;
+          return `<option value="${j.id}">${esc(j.name)}${outro ? ` (${T("Janela.HojeDe")} ${esc(outro.name)})` : ""}</option>`;
         }).join("")}</select>
-        <button type="button" data-action="ligarFesta"><i class="fa-solid fa-link"></i> ${T("Ligar")}</button>
+        <button type="button" data-action="ligarFesta"><i class="fa-solid fa-link"></i> ${T("Janela.Ligar")}</button>
       </div>
-      <div class="jm-soltar jm-festa-drop"><i class="fa-solid fa-calendar-plus"></i> ${T("Arraste aqui um evento (ou qualquer página) da lista para virar dia sagrado")}</div>` : "";
-    return secao(T("Dias sagrados no calendário"), "fa-solid fa-calendar-days",
-      (linhas || `<p class="jm-vazio">${T("Nenhum dia sagrado marcado.")}</p>`) +
-      (gm ? `<button type="button" class="jm-add" data-action="novoDiaSagrado"><i class="fa-solid fa-plus"></i> ${T("Novo dia sagrado")}</button>` : "") + ligar,
+      <div class="jm-soltar jm-festa-drop"><i class="fa-solid fa-calendar-plus"></i> ${T("Janela.ArrasteAquiUmEventoOu")}</div>` : "";
+    return secao(T("Janela.DiasSagradosNoCalendario"), "fa-solid fa-calendar-days",
+      (linhas || `<p class="jm-vazio">${T("Janela.NenhumDiaSagradoMarcado")}</p>`) +
+      (gm ? `<button type="button" class="jm-add" data-action="novoDiaSagrado"><i class="fa-solid fa-plus"></i> ${T("Janela.NovoDiaSagrado")}</button>` : "") + ligar,
       "jm-dias-sagrados", gm ? `data-drop="festa"` : "", "", "diasSagrados");
   }
 
@@ -1122,54 +1122,54 @@ class JournalApp extends ApplicationV2 {
     const quando = `<div class="jm-cal-quando">
       <i class="fa-solid ${n.icone}" style="color:${n.cor}"></i>
       <div><b>${esc(calTextoDia(n.td))}${n.hora ? ` · ${esc(n.hora)}` : ""}</b>
-        <small>${esc(calResumoRepeticao(entry))}${!api ? T(" · Calendário da Mesa desativado") : ""}</small>
-        ${n.repetir !== "nao" && prox.length ? `<small>${T("Próximas")}: ${prox.map((td) => esc(Tempo.texto(td))).join(" · ")}</small>` : ""}</div>
+        <small>${esc(calResumoRepeticao(entry))}${!api ? T("Janela.CalendarioDaMesaDesativado") : ""}</small>
+        ${n.repetir !== "nao" && prox.length ? `<small>${T("Janela.Proximas")}: ${prox.map((td) => esc(Tempo.texto(td))).join(" · ")}</small>` : ""}</div>
     </div>`;
     const historia = String(entry.getFlag(MOD, "historia") ?? "");
     const historiaHtml = historia ? await TE().enrichHTML(textoParaHtml(historia), { secrets: gm, relativeTo: entry }) : "";
     const blocoHistoria = gm
-      ? `<label class="jm-cal-historia"><span><i class="fa-solid fa-book-open"></i> ${T("História")}</span>
-          <textarea data-historia rows="3" placeholder="${T("A origem desta data, o que se conta sobre ela, como o povo lembra...")}">${esc(historia)}</textarea></label>`
-      : (historiaHtml ? `<div class="jm-cal-historia"><span><i class="fa-solid fa-book-open"></i> ${T("História")}</span><div class="jm-texto">${historiaHtml}</div></div>` : "");
-    if (!gm) return secao(T("Calendário"), "fa-solid fa-calendar-days", quando + blocoHistoria, "jm-cal", "", "", "calendario");
+      ? `<label class="jm-cal-historia"><span><i class="fa-solid fa-book-open"></i> ${T("Comum.Historia")}</span>
+          <textarea data-historia rows="3" placeholder="${T("Janela.AOrigemDestaDataO")}">${esc(historia)}</textarea></label>`
+      : (historiaHtml ? `<div class="jm-cal-historia"><span><i class="fa-solid fa-book-open"></i> ${T("Comum.Historia")}</span><div class="jm-texto">${historiaHtml}</div></div>` : "");
+    if (!gm) return secao(T("Janela.Calendario"), "fa-solid fa-calendar-days", quando + blocoHistoria, "jm-cal", "", "", "calendario");
 
     const op = (obj, sel) => Object.entries(obj).map(([k, v]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${esc(v)}</option>`).join("");
     const semana = Tempo.semana();
-    const unidade = { dias: T("dia(s)"), semanas: T("semana(s)"), meses: T("mês(es)"), anos: T("ano(s)") }[n.repetir];
+    const unidade = { dias: T("Comum.DiaS"), semanas: T("Janela.SemanaS"), meses: T("Janela.MesEs"), anos: T("Janela.AnoS") }[n.repetir];
     const repeticao = `<div class="jm-cal-campos">
-        <label>${T("Repetir")} <select data-cal-campo="repetir">${op(CAL_REPETIR, n.repetir)}</select></label>
-        ${n.repetir !== "nao" ? `<label class="curto">${T("A cada")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="cada" value="${n.cada}"> ${unidade}</span></label>` : ""}
-        ${["meses", "anos"].includes(n.repetir) ? `<label>${T("Qual dia")} <select data-cal-campo="modoMes">${op(CAL_MODOS_MES, n.modoMes)}</select></label>` : ""}
-        <label class="curto">${T("Dura")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="duracao" value="${n.duracao}"> ${T("dia(s)")}</span></label>
+        <label>${T("Janela.Repetir")} <select data-cal-campo="repetir">${op(CAL_REPETIR, n.repetir)}</select></label>
+        ${n.repetir !== "nao" ? `<label class="curto">${T("Comum.ACada")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="cada" value="${n.cada}"> ${unidade}</span></label>` : ""}
+        ${["meses", "anos"].includes(n.repetir) ? `<label>${T("Janela.QualDia")} <select data-cal-campo="modoMes">${op(CAL_MODOS_MES, n.modoMes)}</select></label>` : ""}
+        <label class="curto">${T("Janela.Dura")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="duracao" value="${n.duracao}"> ${T("Comum.DiaS")}</span></label>
       </div>
       ${n.repetir === "semanas" && semana.length ? `<div class="jm-cal-semana">${semana.map((nome, i) =>
         `<label class="jm-dia-sem ${n.diasSemana.includes(i) ? "marcado" : ""}"><input type="checkbox" data-cal-semana="${i}" ${n.diasSemana.includes(i) ? "checked" : ""}>${esc(nome)}</label>`).join("")}</div>` : ""}
       ${n.repetir !== "nao" ? `<div class="jm-cal-campos">
-        <label>${T("Termina")} <select data-cal-campo="fim.tipo">${op(CAL_FIM, n.fim.tipo)}</select></label>
-        ${n.fim.tipo === "data" ? `<label>${T("Em")} ${campoData("calFim", n.fim.td)}</label>` : ""}
-        ${n.fim.tipo === "vezes" ? `<label class="curto">${T("Depois de")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="fim.vezes" value="${n.fim.vezes}"> ${T("vez(es)")}</span></label>` : ""}
+        <label>${T("Janela.Termina")} <select data-cal-campo="fim.tipo">${op(CAL_FIM, n.fim.tipo)}</select></label>
+        ${n.fim.tipo === "data" ? `<label>${T("Janela.Em")} ${campoData("calFim", n.fim.td)}</label>` : ""}
+        ${n.fim.tipo === "vezes" ? `<label class="curto">${T("Janela.DepoisDe")} <span class="jm-linha-curta"><input type="number" min="1" data-cal-campo="fim.vezes" value="${n.fim.vezes}"> ${T("Janela.VezEs")}</span></label>` : ""}
       </div>` : ""}`;
     const corpo = `${quando}
-      ${Tempo.ok() ? `<div class="jm-cal-data"><span>${T("Começa em")}:</span>${campoData("cal", n.td)}</div>` : ""}
+      ${Tempo.ok() ? `<div class="jm-cal-data"><span>${T("Janela.ComecaEm")}:</span>${campoData("cal", n.td)}</div>` : ""}
       <div class="jm-cal-mover">
-        <span>${T("Mover")}:</span>
-        ${[[-7, "−7"], [-1, "−1"], [1, "+1"], [7, "+7"]].map(([d, r]) => `<button type="button" data-action="calMover" data-dias="${d}" data-tooltip="${d > 0 ? T("Adiar") : T("Antecipar")} ${Math.abs(d)} ${T("dia(s)")}">${r}</button>`).join("")}
-        <button type="button" data-action="calHoje" data-tooltip="${T("Marcar para hoje")}"><i class="fa-solid fa-calendar-check"></i> ${T("Hoje")}</button>
-        ${api ? `<button type="button" data-action="calAbrir" data-tooltip="${T("Abrir o calendário")}"><i class="fa-solid fa-calendar-days"></i></button>` : ""}
+        <span>${T("Janela.Mover")}:</span>
+        ${[[-7, "−7"], [-1, "−1"], [1, "+1"], [7, "+7"]].map(([d, r]) => `<button type="button" data-action="calMover" data-dias="${d}" data-tooltip="${d > 0 ? T("Janela.Adiar") : T("Janela.Antecipar")} ${Math.abs(d)} ${T("Comum.DiaS")}">${r}</button>`).join("")}
+        <button type="button" data-action="calHoje" data-tooltip="${T("Janela.MarcarParaHoje")}"><i class="fa-solid fa-calendar-check"></i> ${T("Comum.Hoje2")}</button>
+        ${api ? `<button type="button" data-action="calAbrir" data-tooltip="${T("Janela.AbrirOCalendario")}"><i class="fa-solid fa-calendar-days"></i></button>` : ""}
       </div>
       ${repeticao}
       <div class="jm-cal-campos">
-        <label>${T("Hora")} <input type="text" data-cal-campo="hora" value="${esc(n.hora)}" placeholder="HH:MM"></label>
-        <label class="curto">${T("Cor")} <input type="color" data-cal-campo="cor" value="${n.cor}"></label>
-        <label>${T("Aviso")} <select data-cal-campo="aviso">${op(CAL_AVISOS, n.aviso)}</select></label>
+        <label>${T("Janela.Hora")} <input type="text" data-cal-campo="hora" value="${esc(n.hora)}" placeholder="HH:MM"></label>
+        <label class="curto">${T("Janela.Cor")} <input type="color" data-cal-campo="cor" value="${n.cor}"></label>
+        <label>${T("Janela.Aviso")} <select data-cal-campo="aviso">${op(CAL_AVISOS, n.aviso)}</select></label>
       </div>
       <details class="jm-cal-icones" ${this.iconesAbertos ? "open" : ""}>
-        <summary><i class="fa-solid ${n.icone}" style="color:${n.cor}"></i> ${T("Ícone")}: <b>${esc(CAL_ICONES[n.icone])}</b> <small>${T("clique para trocar")}</small></summary>
+        <summary><i class="fa-solid ${n.icone}" style="color:${n.cor}"></i> ${T("Comum.Icone")}: <b>${esc(CAL_ICONES[n.icone])}</b> <small>${T("Janela.CliqueParaTrocar")}</small></summary>
         ${CAL_ICONES_GRUPOS.map(([g, lista]) => `<div class="jm-cal-icones-grupo"><small>${esc(g)}</small><div class="jm-cal-icones-grade">${lista.map(([k, r]) =>
           `<button type="button" class="${k === n.icone ? "ativo" : ""}" data-action="calIcone" data-icone="${k}" data-tooltip="${esc(r)}"><i class="fa-solid ${k}" ${CAL_CORES_ELEMENTO[k] ? `style="color:${CAL_CORES_ELEMENTO[k]}"` : ""}></i></button>`).join("")}</div></div>`).join("")}
       </details>
       ${blocoHistoria}`;
-    return secao(T("Calendário"), "fa-solid fa-calendar-days", corpo, "jm-cal", "", `<a class="jm-mini-btn" data-action="calTirar" data-tooltip="${T("Tirar do calendário (a página continua)")}"><i class="fa-solid fa-calendar-xmark"></i></a>`, "calendario");
+    return secao(T("Janela.Calendario"), "fa-solid fa-calendar-days", corpo, "jm-cal", "", `<a class="jm-mini-btn" data-action="calTirar" data-tooltip="${T("Janela.TirarDoCalendarioAPagina")}"><i class="fa-solid fa-calendar-xmark"></i></a>`, "calendario");
   }
 
   _deusTemConteudo(x, aba, entry = null) {
@@ -1189,8 +1189,8 @@ class JournalApp extends ApplicationV2 {
     const campos = SIMBOLOS_DEUS.map(([k, r]) => ed
       ? `<label class="jm-sub-campo">${r}<input data-campo="x:deus.${k}" value="${esc(d[k] ?? "")}"></label>`
       : (d[k] ? `<div class="jm-simbolo-campo"><small>${r}</small><span>${esc(d[k])}</span></div>` : "")).join("");
-    return secao(T("Símbolos sagrados"), "fa-solid fa-ankh",
-      `<div class="jm-simbolos">${ed ? `<a class="jm-simbolo-troca" data-action="imagemSimbolo" data-tooltip="${T("Escolher imagem do símbolo")}">${img}</a>` : img}
+    return secao(T("Janela.SimbolosSagrados"), "fa-solid fa-ankh",
+      `<div class="jm-simbolos">${ed ? `<a class="jm-simbolo-troca" data-action="imagemSimbolo" data-tooltip="${T("Janela.EscolherImagemDoSimbolo")}">${img}</a>` : img}
         <div class="jm-simbolos-campos">${campos}</div></div>`, "jm-deus-simbolos", "", "", "simbolos");
   }
 
@@ -1205,8 +1205,8 @@ class JournalApp extends ApplicationV2 {
         ${gm && ed ? `<a class="jm-mini-btn" data-action="removerReliquia" data-uuid="${esc(uuid)}"><i class="fa-solid fa-trash"></i></a>` : ""}</div>`);
     }
     if (!lista.length && !(gm && ed)) return "";
-    return secao(T("Relíquias e artefatos sagrados"), "fa-solid fa-gem",
-      `<div class="jm-premio-itens">${lista.join("")}</div>${gm && ed ? `<div class="jm-soltar jm-premio-drop"><i class="fa-solid fa-hand-holding-heart"></i> ${T("Arraste itens aqui (relíquias, armas sagradas, símbolos)")}</div>` : ""}`,
+    return secao(T("Janela.ReliquiasEArtefatosSagrados"), "fa-solid fa-gem",
+      `<div class="jm-premio-itens">${lista.join("")}</div>${gm && ed ? `<div class="jm-soltar jm-premio-drop"><i class="fa-solid fa-hand-holding-heart"></i> ${T("Janela.ArrasteItensAquiReliquiasArmas")}</div>` : ""}`,
       "", gm && ed ? `data-drop="reliquia"` : "", "", "reliquias");
   }
 
@@ -1217,34 +1217,34 @@ class JournalApp extends ApplicationV2 {
     switch (p.type) {
       case "text":
       case "map":
-        return `<div class="jm-texto">${(await enr(p.text?.content)) || `<em class="jm-vazio">${T("Página vazia.")}</em>`}</div>`;
+        return `<div class="jm-texto">${(await enr(p.text?.content)) || `<em class="jm-vazio">${T("Janela.PaginaVazia")}</em>`}</div>`;
       case "image":
         return p.src ? `<figure class="jm-figura"><img src="${esc(p.src)}" alt="">${p.image?.caption ? `<figcaption>${esc(p.image.caption)}</figcaption>` : ""}</figure>`
-          : `<em class="jm-vazio">${T("Sem imagem.")}</em>`;
+          : `<em class="jm-vazio">${T("Janela.SemImagem")}</em>`;
       case "pdf": {
-        if (!p.src) return `<em class="jm-vazio">${T("Nenhum PDF escolhido. Edite a página para escolher o arquivo.")}</em>`;
+        if (!p.src) return `<em class="jm-vazio">${T("Janela.NenhumPDFEscolhidoEditeA")}</em>`;
         const absoluto = /^(https?:|blob:|data:)/i.test(p.src) ? p.src
           : new URL(foundry.utils.getRoute(p.src.replace(/^\//, "")), window.location.origin).href;
         const visor = `${foundry.utils.getRoute("scripts/pdfjs/web/viewer.html")}?${new URLSearchParams({ file: absoluto })}`;
         return `<div class="jm-pdf-busca" data-pdf>
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="search" placeholder="${T("Buscar no PDF...")}" data-pdf-busca>
+            <input type="search" placeholder="${T("Janela.BuscarNoPDF")}" data-pdf-busca>
             <span class="jm-pdf-contagem" data-pdf-contagem></span>
-            <a class="jm-mini-btn" data-pdf-ir="anterior" data-tooltip="${T("Anterior (Shift+Enter)")}"><i class="fa-solid fa-chevron-up"></i></a>
-            <a class="jm-mini-btn" data-pdf-ir="proximo" data-tooltip="${T("Próximo (Enter)")}"><i class="fa-solid fa-chevron-down"></i></a>
-            <a class="jm-mini-btn" href="${esc(visor)}" target="_blank" data-tooltip="${T("Abrir numa aba")}"><i class="fa-solid fa-up-right-from-square"></i></a>
+            <a class="jm-mini-btn" data-pdf-ir="anterior" data-tooltip="${T("Janela.AnteriorShiftEnter")}"><i class="fa-solid fa-chevron-up"></i></a>
+            <a class="jm-mini-btn" data-pdf-ir="proximo" data-tooltip="${T("Janela.ProximoEnter")}"><i class="fa-solid fa-chevron-down"></i></a>
+            <a class="jm-mini-btn" href="${esc(visor)}" target="_blank" data-tooltip="${T("Janela.AbrirNumaAba")}"><i class="fa-solid fa-up-right-from-square"></i></a>
           </div>
           <iframe class="jm-pdf" src="${esc(visor)}"></iframe>`;
       }
       case "video": {
-        if (!p.src) return `<em class="jm-vazio">${T("Nenhum vídeo escolhido.")}</em>`;
+        if (!p.src) return `<em class="jm-vazio">${T("Janela.NenhumVideoEscolhido")}</em>`;
         const yt = p.src.match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/);
         return yt ? `<iframe class="jm-video" src="https://www.youtube.com/embed/${yt[1]}" allowfullscreen></iframe>`
           : `<video class="jm-video" src="${esc(p.src)}" controls></video>`;
       }
       case "rule": {
         const dica = p.system?.tooltip?.value ?? (typeof p.system?.tooltip === "string" ? p.system.tooltip : "");
-        return `<div class="jm-texto">${await enr(p.text?.content)}</div>${dica ? `<div class="jm-regra-dica"><small>${T("Dica (tooltip)")}</small>${await enr(dica)}</div>` : ""}`;
+        return `<div class="jm-texto">${await enr(p.text?.content)}</div>${dica ? `<div class="jm-regra-dica"><small>${T("Janela.DicaTooltip")}</small>${await enr(dica)}</div>` : ""}`;
       }
       case "spells": {
         const uuids = [...(p.system?.spells ?? [])];
@@ -1257,24 +1257,24 @@ class JournalApp extends ApplicationV2 {
           if (!porNivel.has(nv)) porNivel.set(nv, []);
           porNivel.get(nv).push(o);
         }
-        const rotNivel = (nv) => nv === "todas" ? T("Magias")
-          : (CONFIG.DND5E?.spellLevels?.[nv] ? game.i18n.localize(CONFIG.DND5E.spellLevels[nv]) : (nv === 0 ? T("Truques") : `${nv}${T("º círculo")}`));
+        const rotNivel = (nv) => nv === "todas" ? T("Janela.Magias")
+          : (CONFIG.DND5E?.spellLevels?.[nv] ? game.i18n.localize(CONFIG.DND5E.spellLevels[nv]) : (nv === 0 ? T("Janela.Truques") : `${nv}${T("Janela.Circulo")}`));
         const grupos = [...porNivel.keys()].sort((a, b) => (a === "todas" ? 0 : a) - (b === "todas" ? 0 : b)).map((nv) => {
           const lista = porNivel.get(nv).sort((a, b) => a.d.name.localeCompare(b.d.name, game.i18n.lang)).map(({ u, d }) =>
             `<a class="content-link jm-magia" draggable="true" data-link data-uuid="${esc(u)}" data-type="Item" data-tooltip="${esc(d.name)}"><img src="${esc(d.img)}" alt="">${esc(d.name)}</a>`).join("");
           return `<div class="jm-magias-grupo"><h4>${esc(rotNivel(nv))}</h4><div class="jm-magias">${lista}</div></div>`;
         }).join("");
-        return `${desc ? `<div class="jm-texto">${await enr(desc)}</div>` : ""}${grupos || `<em class="jm-vazio">${T("Lista de magias vazia.")}</em>`}`;
+        return `${desc ? `<div class="jm-texto">${await enr(desc)}</div>` : ""}${grupos || `<em class="jm-vazio">${T("Janela.ListaDeMagiasVazia")}</em>`}`;
       }
       case "class":
       case "subclass": {
         const item = p.system?.item ? fromUuidSync(p.system.item) : null;
         const intro = p.system?.description?.value ?? "";
         return `${item ? `<p>${await enr(`@UUID[${p.system.item}]{${item.name}}`)}</p>` : ""}${intro ? `<div class="jm-texto">${await enr(intro)}</div>` : ""}
-          <p class="jm-dica">${T("Tabela e detalhes completos ficam na página original")} <i class="fa-solid fa-pen"></i>.</p>`;
+          <p class="jm-dica">${T("Janela.TabelaEDetalhesCompletosFicam")} <i class="fa-solid fa-pen"></i>.</p>`;
       }
       default:
-        return `<p class="jm-vazio">${T("Página do tipo")} "${esc(nomeDoTipoDePagina(p.type))}". ${T("Use o lápis para abrir.")}</p>`;
+        return `<p class="jm-vazio">${T("Janela.PaginaDoTipo")} "${esc(nomeDoTipoDePagina(p.type))}". ${T("Janela.UseOLapisParaAbrir")}</p>`;
     }
   }
 
@@ -1298,40 +1298,40 @@ class JournalApp extends ApplicationV2 {
         cartas.push(`<div class="jm-premio-card">
           <img src="${esc(it.img)}" alt="">
           <div class="nome">${nome}<small>${esc(rotuloTipo(it.type))}</small></div>
-          ${r.awarded ? `<button type="button" class="primario" data-action="pegarRecompensa" data-grupo="${gid}" data-id="${iid}"><i class="fa-solid fa-hand"></i> ${T("Pegar")}</button>` : ""}
-          ${gm ? `<a class="jm-mini-btn" data-action="removerPremio" data-grupo="${gid}" data-id="${iid}" data-tooltip="${T("Tirar da recompensa")}"><i class="fa-solid fa-trash"></i></a>` : ""}
+          ${r.awarded ? `<button type="button" class="primario" data-action="pegarRecompensa" data-grupo="${gid}" data-id="${iid}"><i class="fa-solid fa-hand"></i> ${T("Janela.Pegar")}</button>` : ""}
+          ${gm ? `<a class="jm-mini-btn" data-action="removerPremio" data-grupo="${gid}" data-id="${iid}" data-tooltip="${T("Janela.TirarDaRecompensa")}"><i class="fa-solid fa-trash"></i></a>` : ""}
         </div>`);
       }
       const xp = Number(r.xp) || 0;
       const blocoXp = gm
-        ? `<label class="jm-xp-ed" data-tooltip="${T("XP que cada personagem recebe")}"><i class="fa-solid fa-star"></i><input type="number" min="0" data-campo="m:rewards.${gid}.xp" data-num value="${xp}"><span>XP</span></label>`
+        ? `<label class="jm-xp-ed" data-tooltip="${T("Janela.XPQueCadaPersonagemRecebe")}"><i class="fa-solid fa-star"></i><input type="number" min="0" data-campo="m:rewards.${gid}.xp" data-num value="${xp}"><span>XP</span></label>`
         : (xp ? `<div class="jm-xp"><i class="fa-solid fa-star"></i> <b>${xp}</b> XP</div>` : "");
       const blocoMoedas = gm ? camposMoedas(r.currency ?? {}, `m:rewards.${gid}.currency`) : mostrarMoedas(r.currency ?? {});
       const topo = gm ? `<div class="jm-premio-topo">
-          ${ed ? `<input class="jm-premio-nome" data-campo="m:rewards.${gid}.name" value="${esc(r.name ?? T("Recompensas"))}">` : `<b>${esc(r.name ?? T("Recompensas"))}</b>`}
-          ${r.awarded ? `<span class="jm-tag achado">${T("Entregue")}</span>` : ""}
-          <a class="jm-mini-btn jm-olho ${r.visible ? "aberto" : "fechado"}" data-action="recompensaVisivel" data-grupo="${gid}" data-tooltip="${r.visible ? T("Jogadores veem esta recompensa") : T("Oculta dos jogadores")}"><i class="fa-solid ${r.visible ? "fa-eye" : "fa-eye-slash"}"></i></a>
-          <button type="button" class="primario" data-action="entregarRecompensa" data-grupo="${gid}" data-tooltip="${T("XP para cada personagem, moedas divididas e itens liberados para pegar")}"><i class="fa-solid fa-gift"></i> ${T("Entregar")}</button>
-          ${ed ? `<a class="jm-mini-btn" data-action="apagarRecompensa" data-grupo="${gid}" data-tooltip="${T("Apagar este grupo")}"><i class="fa-solid fa-trash"></i></a>` : ""}
-        </div>` : (grupos.length > 1 ? `<div class="jm-premio-topo"><b>${esc(r.name ?? T("Recompensas"))}</b></div>` : "");
+          ${ed ? `<input class="jm-premio-nome" data-campo="m:rewards.${gid}.name" value="${esc(r.name ?? T("Comum.Recompensas"))}">` : `<b>${esc(r.name ?? T("Comum.Recompensas"))}</b>`}
+          ${r.awarded ? `<span class="jm-tag achado">${T("Janela.Entregue")}</span>` : ""}
+          <a class="jm-mini-btn jm-olho ${r.visible ? "aberto" : "fechado"}" data-action="recompensaVisivel" data-grupo="${gid}" data-tooltip="${r.visible ? T("Janela.JogadoresVeemEstaRecompensa") : T("Janela.OcultaDosJogadores")}"><i class="fa-solid ${r.visible ? "fa-eye" : "fa-eye-slash"}"></i></a>
+          <button type="button" class="primario" data-action="entregarRecompensa" data-grupo="${gid}" data-tooltip="${T("Janela.XPParaCadaPersonagemMoedas")}"><i class="fa-solid fa-gift"></i> ${T("Janela.Entregar")}</button>
+          ${ed ? `<a class="jm-mini-btn" data-action="apagarRecompensa" data-grupo="${gid}" data-tooltip="${T("Janela.ApagarEsteGrupo")}"><i class="fa-solid fa-trash"></i></a>` : ""}
+        </div>` : (grupos.length > 1 ? `<div class="jm-premio-topo"><b>${esc(r.name ?? T("Comum.Recompensas"))}</b></div>` : "");
       partes.push(`<div class="jm-premio-grupo">
         ${topo}
         <div class="jm-premio-linha">${blocoXp}${blocoMoedas}</div>
         <div class="jm-premio-itens">${cartas.join("")}</div>
-        ${gm ? `<div class="jm-soltar jm-premio-drop" data-drop="recompensa" data-grupo="${gid}"><i class="fa-solid fa-hand-holding-heart"></i> ${T("Arraste itens, talentos ou magias aqui")}</div>` : ""}
+        ${gm ? `<div class="jm-soltar jm-premio-drop" data-drop="recompensa" data-grupo="${gid}"><i class="fa-solid fa-hand-holding-heart"></i> ${T("Janela.ArrasteItensTalentosOuMagias")}</div>` : ""}
         ${r.additional ? `<div class="jm-texto jm-premio-extra">${await enr(r.additional)}</div>` : ""}
       </div>`);
     }
-    if (gm) partes.push(`<button type="button" class="jm-add" data-action="novaRecompensa"><i class="fa-solid fa-plus"></i> ${grupos.length ? T("Outro grupo de recompensa") : T("Criar recompensa")}</button>`);
+    if (gm) partes.push(`<button type="button" class="jm-add" data-action="novaRecompensa"><i class="fa-solid fa-plus"></i> ${grupos.length ? T("Janela.OutroGrupoDeRecompensa") : T("Janela.CriarRecompensa")}</button>`);
     if (x.recompensas) partes.push(`<div class="jm-texto jm-premio-extra">${await enr(x.recompensas)}</div>`);
-    return secao(T("Recompensas"), "fa-solid fa-gem", partes.join(""), "jm-recompensas", "", "", "recompensas");
+    return secao(T("Comum.Recompensas"), "fa-solid fa-gem", partes.join(""), "jm-recompensas", "", "", "recompensas");
   }
 
   _notas(page, secao) {
     if (!page) return "";
     const nota = page.flags?.[MOD]?.[CHAVE_DADOS]?.notas?.[game.user.id] ?? "";
-    return secao(`${T("Minhas notas")} <small>${T("pessoais")}</small>`, "fa-solid fa-feather",
-      `<textarea data-nota rows="4" placeholder="${T("Suas suspeitas, nomes, pistas...")}">${esc(String(nota).replace(/<\/?p>/g, ""))}</textarea>`, "jm-notas");
+    return secao(`${T("Janela.MinhasNotas")} <small>${T("Janela.Pessoais")}</small>`, "fa-solid fa-feather",
+      `<textarea data-nota rows="4" placeholder="${T("Janela.SuasSuspeitasNomesPistas")}">${esc(String(nota).replace(/<\/?p>/g, ""))}</textarea>`, "jm-notas");
   }
 
   /** Lista de itens de estoque usada pela loja e pelo baú. */
@@ -1354,19 +1354,19 @@ class JournalApp extends ApplicationV2 {
         const precoFinal = mult != null ? Math.round(preco * mult * 100) / 100 : preco;
         const etiqueta = mult != null && mult !== 1
           ? `<small class="jm-ajuste ${mult < 1 ? "bom" : "ruim"}">${mult < 1 ? "−" : "+"}${Math.round(Math.abs(1 - mult) * 100)}%</small>` : "";
-        colPreco = ed ? `<input type="number" step="0.01" min="0" data-item-campo="preco" data-id="${id}" value="${Math.round(preco * 100) / 100}" data-tooltip="${T("Preço em po")}">`
+        colPreco = ed ? `<input type="number" step="0.01" min="0" data-item-campo="preco" data-id="${id}" value="${Math.round(preco * 100) / 100}" data-tooltip="${T("Janela.PrecoEmPo")}">`
           : (mult != null && mult !== 1 ? `<s>${formatarPreco(preco)}</s> ${formatarPreco(precoFinal)}${etiqueta}` : formatarPreco(preco));
-        colQtd = gm ? `<input type="number" min="0" class="jm-estoque" data-item-campo="quantidade" data-id="${id}" value="${qtd ?? ""}" placeholder="∞" data-tooltip="${T("Estoque da loja (vazio = ilimitado)")}">`
-          : (qtd === 0 ? T("esgotado") : (qtd == null ? T("à vontade") : `${qtd} ${T("un.")}`));
+        colQtd = gm ? `<input type="number" min="0" class="jm-estoque" data-item-campo="quantidade" data-id="${id}" value="${qtd ?? ""}" placeholder="∞" data-tooltip="${T("Janela.EstoqueDaLojaVazioIlimitado")}">`
+          : (qtd === 0 ? T("Janela.Esgotado") : (qtd == null ? T("Janela.AVontade") : `${qtd} ${T("Janela.Un")}`));
         const pendente = neg && mult == null;
-        const botaoNeg = esgotado || neg ? (pendente ? `<span class="jm-neg-pendente" data-tooltip="${T("Pechincha em andamento no chat")}"><i class="fa-solid fa-hourglass-half"></i></span>` : "")
-          : `<button type="button" class="sec" data-action="negociarCompra" data-id="${id}" data-nome="${esc(it.name)}" data-tooltip="${T("Pechinchar: Persuasão contra o vendedor (uma vez por dia)")}"><i class="fa-solid fa-handshake"></i></button>`;
-        acao = botaoNeg + (esgotado || ed ? "" : `<input type="number" class="jm-qtd" min="1" ${typeof qtd === "number" ? `max="${qtd}"` : ""} value="1" data-tooltip="${T("Quantidade")}">`) +
-          `<button type="button" class="primario" data-action="comprarSemanal" data-id="${id}" ${esgotado ? "disabled" : ""}><i class="fa-solid fa-coins"></i> ${T("Comprar")}</button>`;
+        const botaoNeg = esgotado || neg ? (pendente ? `<span class="jm-neg-pendente" data-tooltip="${T("Janela.PechinchaEmAndamentoNoChat")}"><i class="fa-solid fa-hourglass-half"></i></span>` : "")
+          : `<button type="button" class="sec" data-action="negociarCompra" data-id="${id}" data-nome="${esc(it.name)}" data-tooltip="${T("Janela.PechincharPersuasaoContraOVendedor")}"><i class="fa-solid fa-handshake"></i></button>`;
+        acao = botaoNeg + (esgotado || ed ? "" : `<input type="number" class="jm-qtd" min="1" ${typeof qtd === "number" ? `max="${qtd}"` : ""} value="1" data-tooltip="${T("Janela.Quantidade")}">`) +
+          `<button type="button" class="primario" data-action="comprarSemanal" data-id="${id}" ${esgotado ? "disabled" : ""}><i class="fa-solid fa-coins"></i> ${T("Janela.Comprar")}</button>`;
       } else {
         colPreco = `<span class="jm-valor">${formatarPreco(preco)}</span>`;
         colQtd = `${Number(it.system?.quantity) || 1}×`;
-        acao = `<button type="button" class="primario" data-action="pegar" data-id="${id}"><i class="fa-solid fa-hand"></i> ${T("Pegar")}</button>`;
+        acao = `<button type="button" class="primario" data-action="pegar" data-id="${id}"><i class="fa-solid fa-hand"></i> ${T("Janela.Pegar")}</button>`;
       }
       linhas.push(`<div class="jm-produto ${esgotado ? "esgotado" : ""} ${it.hidden ? "oculto" : ""}">
         <img src="${esc(it.img)}" alt="">
@@ -1374,8 +1374,8 @@ class JournalApp extends ApplicationV2 {
         <div class="preco">${colPreco}</div>
         <div class="qtd">${colQtd}</div>
         <div class="acoes">${acao}
-          ${gm ? `<a class="jm-mini-btn" data-action="ocultarItemLoja" data-id="${id}" data-tooltip="${it.hidden ? T("Oculto dos jogadores") : T("Visível aos jogadores")}"><i class="fa-solid ${it.hidden ? "fa-eye-slash" : "fa-eye"}"></i></a>` : ""}
-          ${gm ? `<a class="jm-mini-btn" data-action="removerItemLoja" data-id="${id}" data-tooltip="${T("Remover")}"><i class="fa-solid fa-trash"></i></a>` : ""}
+          ${gm ? `<a class="jm-mini-btn" data-action="ocultarItemLoja" data-id="${id}" data-tooltip="${it.hidden ? T("Janela.OcultoDosJogadores") : T("Janela.VisivelAosJogadores")}"><i class="fa-solid ${it.hidden ? "fa-eye-slash" : "fa-eye"}"></i></a>` : ""}
+          ${gm ? `<a class="jm-mini-btn" data-action="removerItemLoja" data-id="${id}" data-tooltip="${T("Janela.Remover")}"><i class="fa-solid fa-trash"></i></a>` : ""}
         </div></div>`);
     }
     return linhas;
@@ -1387,33 +1387,33 @@ class JournalApp extends ApplicationV2 {
     const fechada = textoHorarioLoja(entry);
     if (fechada && !fechada.aberta && !gm) {
       const h = horarioLoja(entry);
-      return secao(T("Balcão"), "fa-solid fa-store", `<div class="jm-loja-fechada"><i class="fa-solid fa-door-closed"></i>
-        <b>${fechada.texto === T("Folga hoje") ? T("A loja está de folga hoje.") : T("A loja está fechada.")}</b>
-        <span>${h.abre !== h.fecha ? `${T("Funciona das")} ${minParaHora(h.abre)} ${T("às")} ${minParaHora(h.fecha)}` : ""}${h.folga.length ? ` · ${T("folga")}: ${h.folga.map((i) => Tempo.semana()[i] ?? "?").join(", ")}` : ""}</span></div>`, "jm-loja");
+      return secao(T("Janela.Balcao"), "fa-solid fa-store", `<div class="jm-loja-fechada"><i class="fa-solid fa-door-closed"></i>
+        <b>${fechada.texto === T("Comum.FolgaHoje") ? T("Janela.ALojaEstaDeFolga") : T("Janela.ALojaEstaFechada")}</b>
+        <span>${h.abre !== h.fecha ? `${T("Janela.FuncionaDas")} ${minParaHora(h.abre)} ${T("Janela.As")} ${minParaHora(h.fecha)}` : ""}${h.folga.length ? ` · ${T("Janela.Folga")}: ${h.folga.map((i) => Tempo.semana()[i] ?? "?").join(", ")}` : ""}</span></div>`, "jm-loja");
     }
     const sub = this.subLoja;
-    const tabs = [["semanal", T("Estoque da semana"), "fa-solid fa-calendar-week"], ["diaria", T("Oferta do dia"), "fa-solid fa-sun"], ["vender", T("Vender"), "fa-solid fa-hand-holding-dollar"]];
-    if (gm) tabs.push(["config", T("Configurar"), "fa-solid fa-sliders"]);
+    const tabs = [["semanal", T("Comum.EstoqueDaSemana"), "fa-solid fa-calendar-week"], ["diaria", T("Janela.OfertaDoDia"), "fa-solid fa-sun"], ["vender", T("Janela.Vender"), "fa-solid fa-hand-holding-dollar"]];
+    if (gm) tabs.push(["config", T("Janela.Configurar"), "fa-solid fa-sliders"]);
     const nav = `<div class="jm-subabas">${tabs.map(([k, r, i]) => `<button type="button" class="${sub === k ? "ativo" : ""}" data-action="subLoja" data-sub="${k}"><i class="${i}"></i> ${r}</button>`).join("")}</div>`
-      + (gm && fechada && !fechada.aberta ? `<div class="jm-aviso-loja"><i class="fa-solid fa-door-closed"></i> ${esc(fechada.texto)}: ${T("os jogadores não conseguem comprar nem vender agora.")}</div>` : "");
+      + (gm && fechada && !fechada.aberta ? `<div class="jm-aviso-loja"><i class="fa-solid fa-door-closed"></i> ${esc(fechada.texto)}: ${T("Janela.OsJogadoresNaoConseguemComprar")}</div>` : "");
     const tabelas = tabelasDasLojas([x.semanal.tabela, x.diaria.tabela]);
     /* sem tabela própria: a padrão das configurações do módulo (Tabelas de itens das lojas) */
-    const vazioTabela = (tipo) => { const p = tabelaDaLoja("", tipo); return p ? `— ${T("padrão")}: ${nomeTabela(p) || "?"} —` : T("— escolha uma tabela —"); };
+    const vazioTabela = (tipo) => { const p = tabelaDaLoja("", tipo); return p ? `— ${T("Comum.Padrao")}: ${nomeTabela(p) || "?"} —` : T("Janela.EscolhaUmaTabela"); };
     const linkItem = async (uuid, nome) => uuid ? await TE().enrichHTML(`@UUID[${uuid}]{${String(nome).replace(/[{}]/g, "")}}`) : esc(nome);
     let corpo = "";
 
     if (sub === "semanal") {
       const barra = gm ? `<div class="jm-barra">
-          <label>${T("Tabela")} <select data-campo="x:semanal.tabela">${opcoes(tabelas, x.semanal.tabela, vazioTabela("semanal"))}</select></label>
-          <label class="curto">${T("Itens")} <input type="number" min="1" max="40" data-campo="x:semanal.qtd" data-num value="${x.semanal.qtd}"></label>
-          <button type="button" class="primario" data-action="rolarSemanal"><i class="fa-solid fa-dice"></i> ${T("Renovar estoque")}</button>
-          <button type="button" class="sec" data-action="exportarItens" data-tooltip="${T("Copiar os itens para a aba Itens")}"><i class="fa-solid fa-file-export"></i></button>
-          <button type="button" class="sec" data-action="limparSemanal" data-tooltip="${T("Esvaziar estoque")}"><i class="fa-solid fa-broom"></i></button>
+          <label>${T("Janela.Tabela")} <select data-campo="x:semanal.tabela">${opcoes(tabelas, x.semanal.tabela, vazioTabela("semanal"))}</select></label>
+          <label class="curto">${T("Janela.Itens")} <input type="number" min="1" max="40" data-campo="x:semanal.qtd" data-num value="${x.semanal.qtd}"></label>
+          <button type="button" class="primario" data-action="rolarSemanal"><i class="fa-solid fa-dice"></i> ${T("Janela.RenovarEstoque")}</button>
+          <button type="button" class="sec" data-action="exportarItens" data-tooltip="${T("Janela.CopiarOsItensParaA")}"><i class="fa-solid fa-file-export"></i></button>
+          <button type="button" class="sec" data-action="limparSemanal" data-tooltip="${T("Janela.EsvaziarEstoque")}"><i class="fa-solid fa-broom"></i></button>
         </div>` : "";
       const linhas = await this._listaItens(m, ed, "loja", x);
-      const vazio = `<p class="jm-vazio">${gm ? T("Estoque vazio. Renove pela tabela ou arraste itens para cá.") : T("As prateleiras estão vazias esta semana.")}</p>`;
+      const vazio = `<p class="jm-vazio">${gm ? T("Janela.EstoqueVazioRenovePelaTabela") : T("Janela.AsPrateleirasEstaoVaziasEsta")}</p>`;
       corpo = barra + `<div class="jm-produtos" ${gm ? `data-drop="itemLoja"` : ""}>${linhas.join("") || vazio}
-        ${gm && linhas.length ? `<p class="jm-dica">${T("Arraste itens para cá para adicionar ao estoque. No modo edição dá para mudar preço e quantidade.")}</p>` : ""}</div>`;
+        ${gm && linhas.length ? `<p class="jm-dica">${T("Janela.ArrasteItensParaCaPara")}</p>` : ""}</div>`;
     }
 
     if (sub === "diaria") {
@@ -1422,23 +1422,23 @@ class JournalApp extends ApplicationV2 {
       let topo;
       if (minha && minha.dia === dia) topo = await this._cartaOferta(minha, false, linkItem);
       else if (tabelaDaLoja(x.diaria.tabela, "diaria")) topo = `<div class="jm-rolar">
-          <p>${T("O balcão muda todo dia. Tente a sorte: pode sair um")} <b>${T("achado")}</b>, ${T("uma")} <b>${T("raridade")}</b>... ${T("ou um")} <b>${T("escambo")}</b> ${T("barato demais para ser verdade.")}</p>
-          <button type="button" class="primario grande" data-action="rolarDiaria"><i class="fa-solid fa-dice-d20"></i> ${T("Rolar oferta do dia")}</button>
+          <p>${T("Janela.OBalcaoMudaTodoDia")} <b>${T("Janela.Achado")}</b>, ${T("Janela.Uma")} <b>${T("Janela.Raridade")}</b>... ${T("Janela.OuUm")} <b>${T("Janela.Escambo")}</b> ${T("Janela.BaratoDemaisParaSerVerdade")}</p>
+          <button type="button" class="primario grande" data-action="rolarDiaria"><i class="fa-solid fa-dice-d20"></i> ${T("Janela.RolarOfertaDoDia")}</button>
         </div>`;
-      else topo = `<p class="jm-vazio">${gm ? T("Defina a tabela das ofertas diárias na aba Configurar.") : T("Hoje não há ofertas especiais.")}</p>`;
+      else topo = `<p class="jm-vazio">${gm ? T("Janela.DefinaATabelaDasOfertas") : T("Janela.HojeNaoHaOfertasEspeciais")}</p>`;
       let outras = "";
       if (gm) {
         const lista = Object.entries(x.diaria.ofertas).filter(([u, o]) => u !== game.user.id && o?.dia === dia);
         const cartas = [];
         for (const [u, o] of lista) cartas.push(`<div class="jm-oferta-de"><span><i class="fa-solid fa-user"></i> ${esc(game.users.get(u)?.name ?? "?")}</span>${await this._cartaOferta(o, true, linkItem, u)}</div>`);
-        outras = `<h4 class="jm-h4">${T("Ofertas dos jogadores hoje")}</h4>${cartas.join("") || `<p class="jm-vazio">${T("Ninguém rolou ainda hoje.")}</p>`}`;
+        outras = `<h4 class="jm-h4">${T("Janela.OfertasDosJogadoresHoje")}</h4>${cartas.join("") || `<p class="jm-vazio">${T("Janela.NinguemRolouAindaHoje")}</p>`}`;
       }
-      corpo = `<div class="jm-dia-info"><i class="fa-solid fa-sun"></i> ${T("Dia")} ${dia}</div>${topo}${outras}`;
+      corpo = `<div class="jm-dia-info"><i class="fa-solid fa-sun"></i> ${T("Comum.Dia2")} ${dia}</div>${topo}${outras}`;
     }
 
     if (sub === "vender") {
       const ator = atorDoJogador();
-      if (!ator) corpo = `<p class="jm-vazio">${T("Selecione seu token ou defina seu personagem para ver o que dá para vender.")}</p>`;
+      if (!ator) corpo = `<p class="jm-vazio">${T("Janela.SelecioneSeuTokenOuDefina2")}</p>`;
       else {
         const vendiveis = ator.items.filter((i) => TIPOS_SAQUE.includes(i.type) && precoEmPo(i) > 0)
           .sort((a2, b2) => a2.name.localeCompare(b2.name, game.i18n.lang));
@@ -1452,19 +1452,19 @@ class JournalApp extends ApplicationV2 {
           const pendente = neg && neg.mult == null;
           return `<div class="jm-produto venda">
             <img src="${esc(it.img)}" alt="">
-            <div class="nome">${esc(it.name)}<small class="jm-de">${T("vale")} ${formatarPreco(base)} ${T("cada")}${qtd > 1 ? ` · ${T("você tem")} ${qtd}` : ""}</small></div>
+            <div class="nome">${esc(it.name)}<small class="jm-de">${T("Janela.Vale")} ${formatarPreco(base)} ${T("Janela.Cada")}${qtd > 1 ? ` · ${T("Janela.VoceTem")} ${qtd}` : ""}</small></div>
             <div class="preco">${formatarPreco(oferta)}<small class="jm-ajuste ${neg?.mult != null ? (mult >= padrao ? "bom" : "ruim") : ""}">${Math.round(mult * 100)}%</small></div>
-            <div class="qtd">${neg?.mult != null ? `<i class="fa-solid fa-handshake" data-tooltip="${T("Já negociado hoje")}"></i>` : ""}</div>
+            <div class="qtd">${neg?.mult != null ? `<i class="fa-solid fa-handshake" data-tooltip="${T("Janela.JaNegociadoHoje")}"></i>` : ""}</div>
             <div class="acoes">
-              ${pendente ? `<span class="jm-neg-pendente" data-tooltip="${T("Pechincha em andamento no chat")}"><i class="fa-solid fa-hourglass-half"></i></span>`
-                : (neg ? "" : `<button type="button" class="sec" data-action="negociarVenda" data-id="${it.id}" data-nome="${esc(it.name)}" data-tooltip="${T("Pechinchar: Persuasão contra o vendedor (uma vez por dia)")}"><i class="fa-solid fa-handshake"></i></button>`)}
-              ${qtd > 1 ? `<input type="number" class="jm-qtd" min="1" max="${qtd}" value="1" data-tooltip="${T("Quantos vender")}">` : ""}
-              <button type="button" class="primario" data-action="vender" data-id="${it.id}"><i class="fa-solid fa-hand-holding-dollar"></i> ${T("Vender")}</button>
+              ${pendente ? `<span class="jm-neg-pendente" data-tooltip="${T("Janela.PechinchaEmAndamentoNoChat")}"><i class="fa-solid fa-hourglass-half"></i></span>`
+                : (neg ? "" : `<button type="button" class="sec" data-action="negociarVenda" data-id="${it.id}" data-nome="${esc(it.name)}" data-tooltip="${T("Janela.PechincharPersuasaoContraOVendedor")}"><i class="fa-solid fa-handshake"></i></button>`)}
+              ${qtd > 1 ? `<input type="number" class="jm-qtd" min="1" max="${qtd}" value="1" data-tooltip="${T("Janela.QuantosVender")}">` : ""}
+              <button type="button" class="primario" data-action="vender" data-id="${it.id}"><i class="fa-solid fa-hand-holding-dollar"></i> ${T("Janela.Vender")}</button>
             </div></div>`;
         });
         const t = tabelaNegocio(x, "venda");
-        corpo = `<div class="jm-dica jm-venda-dica"><i class="fa-solid fa-circle-info"></i> ${T("A loja paga")} <b>${t.empate}%</b> ${T("do valor. Pechinchando: se você vencer")}, ${t.venceJ}${T("% (crítico")}: ${t.critJ}${T("%); se o vendedor vencer")}, ${t.venceN}${T("% (crítico dele")}: ${t.critN}${T("%). Uma tentativa por item por dia.")}</div>
-          <div class="jm-produtos">${linhas.join("") || `<p class="jm-vazio">${esc(ator.name)} ${T("não tem nada que esta loja compre.")}</p>`}</div>`;
+        corpo = `<div class="jm-dica jm-venda-dica"><i class="fa-solid fa-circle-info"></i> ${T("Janela.ALojaPaga")} <b>${t.empate}%</b> ${T("Janela.DoValorPechinchandoSeVoce")}, ${t.venceJ}${T("Janela.Critico")}: ${t.critJ}${T("Janela.SeOVendedorVencer")}, ${t.venceN}${T("Janela.CriticoDele")}: ${t.critN}${T("Janela.UmaTentativaPorItemPor")}</div>
+          <div class="jm-produtos">${linhas.join("") || `<p class="jm-vazio">${esc(ator.name)} ${T("Janela.NaoTemNadaQueEsta")}</p>`}</div>`;
       }
     }
 
@@ -1475,44 +1475,44 @@ class JournalApp extends ApplicationV2 {
       const semana = Tempo.semana();
       corpo = `<div class="jm-config">
         <div class="jm-config-horario">
-          <h4><i class="fa-solid fa-clock"></i> ${T("Horário")}</h4>
-          <label class="jm-check"><input type="checkbox" data-campo="x:horario.ativo" ${h?.ativo ? "checked" : ""}> ${T("Respeitar horário e folgas (fechada = jogadores não compram nem vendem)")}</label>
+          <h4><i class="fa-solid fa-clock"></i> ${T("Janela.Horario")}</h4>
+          <label class="jm-check"><input type="checkbox" data-campo="x:horario.ativo" ${h?.ativo ? "checked" : ""}> ${T("Janela.RespeitarHorarioEFolgasFechada")}</label>
           <div class="jm-sub-linha ${h?.ativo ? "" : "desligado"}">
-            <label class="jm-sub-campo">${T("Abre")} <input type="text" data-horario="opening" value="${minParaHora(h?.abre ?? 480)}" placeholder="08:00"></label>
-            <label class="jm-sub-campo">${T("Fecha")} <input type="text" data-horario="closing" value="${minParaHora(h?.fecha ?? 1020)}" placeholder="17:00"></label>
-            <span class="jm-dica">${T("Fechar antes de abrir = vira a noite (ex.: taverna 18:00–02:00). Abre = fecha: o dia todo.")}</span>
+            <label class="jm-sub-campo">${T("Janela.Abre")} <input type="text" data-horario="opening" value="${minParaHora(h?.abre ?? 480)}" placeholder="08:00"></label>
+            <label class="jm-sub-campo">${T("Janela.Fecha")} <input type="text" data-horario="closing" value="${minParaHora(h?.fecha ?? 1020)}" placeholder="17:00"></label>
+            <span class="jm-dica">${T("Janela.FecharAntesDeAbrirVira")}</span>
           </div>
-          ${semana.length ? `<div class="jm-cal-semana jm-folgas ${h?.ativo ? "" : "inativo"}"><span>${T("Folga")}:</span>${semana.map((nome, i) =>
+          ${semana.length ? `<div class="jm-cal-semana jm-folgas ${h?.ativo ? "" : "inativo"}"><span>${T("Janela.Folga2")}:</span>${semana.map((nome, i) =>
             `<label class="jm-dia-sem ${h?.folga.includes(i) ? "marcado" : ""}"><input type="checkbox" data-folga="${i}" ${h?.folga.includes(i) ? "checked" : ""}>${esc(nome)}</label>`).join("")}</div>` : ""}
         </div>
         <div class="jm-config-negocio">
-          <label>${T("Perícia do vendedor nas pechinchas")} <select data-campo="x:vendedorPericia">${Object.entries(PERICIAS_VENDEDOR).map(([k, r]) => `<option value="${k}" ${k === x.vendedorPericia ? "selected" : ""}>${r}</option>`).join("")}</select></label>
-          ${npc ? `<p class="jm-dica">${T("Usa a ficha de")} <b>${esc(npc.name)}</b> (${bonusPericia(npc, x.vendedorPericia) >= 0 ? "+" : ""}${bonusPericia(npc, x.vendedorPericia)}).</p>`
-            : `<label class="curto">${T("Bônus do vendedor")} <input type="number" data-campo="x:vendedorBonus" data-num value="${Number(x.vendedorBonus) || 0}"></label>
-               <p class="jm-dica">${T("O dono da loja não tem ficha ligada; usa este bônus. Ligue uma ficha ao NPC dono para usar a perícia dele.")}</p>`}
+          <label>${T("Janela.PericiaDoVendedorNasPechinchas")} <select data-campo="x:vendedorPericia">${Object.entries(PERICIAS_VENDEDOR).map(([k, r]) => `<option value="${k}" ${k === x.vendedorPericia ? "selected" : ""}>${r}</option>`).join("")}</select></label>
+          ${npc ? `<p class="jm-dica">${T("Janela.UsaAFichaDe")} <b>${esc(npc.name)}</b> (${bonusPericia(npc, x.vendedorPericia) >= 0 ? "+" : ""}${bonusPericia(npc, x.vendedorPericia)}).</p>`
+            : `<label class="curto">${T("Janela.BonusDoVendedor")} <input type="number" data-campo="x:vendedorBonus" data-num value="${Number(x.vendedorBonus) || 0}"></label>
+               <p class="jm-dica">${T("Janela.ODonoDaLojaNao")}</p>`}
         </div>
         ${["compra", "venda"].map((modo) => {
           const t = tabelaNegocio(x, modo);
           return `<div class="jm-tabela-negocio">
-            <h4><i class="fa-solid ${modo === "compra" ? "fa-coins" : "fa-hand-holding-dollar"}"></i> ${T("Pechincha na")} ${T(modo)}
-              <small>${modo === "compra" ? T("% somado ao preço (negativo = desconto)") : T("% do valor que a loja paga (empate = oferta padrão)")}</small></h4>
+            <h4><i class="fa-solid ${modo === "compra" ? "fa-coins" : "fa-hand-holding-dollar"}"></i> ${T("Janela.PechinchaNa")} ${modo === "compra" ? T("Janela.Compra") : T("Janela.Venda")}
+              <small>${modo === "compra" ? T("Janela.SomadoAoPrecoNegativoDesconto") : T("Janela.DoValorQueALoja")}</small></h4>
             <div class="jm-chances cinco">
               ${RESULTADOS.map(([k, r, cor]) => `<label><span class="jm-tag ${cor}">${r}</span>
                 <span class="jm-pct"><input type="number" step="1" data-campo="x:negocio.${modo}.${k}" data-num value="${t[k]}"><b>%</b></span></label>`).join("")}
             </div></div>`;
         }).join("")}
-        <label>${T("Tabela das ofertas diárias")} <select data-campo="x:diaria.tabela">${opcoes(tabelas, x.diaria.tabela, vazioTabela("diaria"))}</select></label>
+        <label>${T("Janela.TabelaDasOfertasDiarias")} <select data-campo="x:diaria.tabela">${opcoes(tabelas, x.diaria.tabela, vazioTabela("diaria"))}</select></label>
         <div class="jm-chances">
           ${Object.entries(OFERTAS).map(([k, o]) => `<label><span class="jm-tag ${k}">${o.rotulo}</span><small>${o.desc}</small>
-            <input type="number" min="0" data-campo="x:diaria.chances.${k}" data-num value="${ch[k]}"> ${T("peso")}</label>`).join("")}
+            <input type="number" min="0" data-campo="x:diaria.chances.${k}" data-num value="${ch[k]}"> ${T("Janela.Peso")}</label>`).join("")}
         </div>
-        <label>${T("Custos ocultos do escambo")} <small>(${T("um por linha — sorteado e revelado só a você")})</small>
+        <label>${T("Janela.CustosOcultosDoEscambo")} <small>(${T("Janela.UmPorLinhaSorteadoE")})</small>
           <textarea data-campo="x:diaria.custos" rows="6">${esc(x.diaria.custos)}</textarea></label>
-        <p class="jm-dica">${T("O preço base vem do item. Achado: 35–60% · Raridade: 150–250% · Escambo: 5–20% em ouro + custo oculto. Cada jogador rola uma vez por dia em cada loja; avance o dia pelo botão")} <i class="fa-solid fa-forward"></i> ${T("na lateral.")}</p>
+        <p class="jm-dica">${T("Janela.OPrecoBaseVemDo")} <i class="fa-solid fa-forward"></i> ${T("Janela.NaLateral")}</p>
       </div>`;
     }
 
-    return secao(T("Balcão"), "fa-solid fa-store", nav + corpo, "jm-loja");
+    return secao(T("Janela.Balcao"), "fa-solid fa-store", nav + corpo, "jm-loja");
   }
 
   async _secaoBau(entry, a, ed, secao) {
@@ -1521,15 +1521,15 @@ class JournalApp extends ApplicationV2 {
     const moedas = m.currency ?? {};
     const campoMoedas = ed
       ? camposMoedas(moedas, "m:currency")
-      : (mostrarMoedas(moedas) || `<div class="jm-moedas"><i class="fa-solid fa-coins"></i> ${T("nenhuma moeda")}</div>`);
+      : (mostrarMoedas(moedas) || `<div class="jm-moedas"><i class="fa-solid fa-coins"></i> ${T("Comum.NenhumaMoeda")}</div>`);
     const barra = gm ? `<div class="jm-barra">
-        <button type="button" class="primario" data-action="dividirMoedas" data-tooltip="${T("Divide as moedas igualmente entre os personagens dos jogadores")}"><i class="fa-solid fa-scale-balanced"></i> ${T("Dividir moedas")}</button>
-        ${temModulo("item-piles") ? `<button type="button" data-action="itemPiles" data-tooltip="${T("Cria uma pilha do Item Piles no centro da tela com tudo do baú")}"><i class="fa-solid fa-box-archive"></i> ${T("Colocar no mapa")}</button>` : ""}
-        <button type="button" class="sec" data-action="exportarItens" data-tooltip="${T("Copiar os itens para a aba Itens")}"><i class="fa-solid fa-file-export"></i></button>
+        <button type="button" class="primario" data-action="dividirMoedas" data-tooltip="${T("Janela.DivideAsMoedasIgualmenteEntre")}"><i class="fa-solid fa-scale-balanced"></i> ${T("Janela.DividirMoedas")}</button>
+        ${temModulo("item-piles") ? `<button type="button" data-action="itemPiles" data-tooltip="${T("Janela.CriaUmaPilhaDoItem")}"><i class="fa-solid fa-box-archive"></i> ${T("Janela.ColocarNoMapa")}</button>` : ""}
+        <button type="button" class="sec" data-action="exportarItens" data-tooltip="${T("Janela.CopiarOsItensParaA")}"><i class="fa-solid fa-file-export"></i></button>
       </div>` : "";
     const linhas = await this._listaItens(m, ed, "bau");
-    const vazio = `<p class="jm-vazio">${gm ? T("Baú vazio. Arraste itens para cá.") : T("O baú está vazio.")}</p>`;
-    return secao(T("Conteúdo do baú"), "fa-solid fa-box-open",
+    const vazio = `<p class="jm-vazio">${gm ? T("Janela.BauVazioArrasteItensPara") : T("Janela.OBauEstaVazio")}</p>`;
+    return secao(T("Janela.ConteudoDoBau"), "fa-solid fa-box-open",
       campoMoedas + barra + `<div class="jm-produtos" ${gm ? `data-drop="itemLoja"` : ""}>${linhas.join("") || vazio}</div>`, "jm-bau");
   }
 
@@ -1537,15 +1537,15 @@ class JournalApp extends ApplicationV2 {
     const cfg = OFERTAS[o.tipo] ?? OFERTAS.achado;
     let extra = "";
     if (o.tipo === "escambo") extra = visaoGM
-      ? `<div class="jm-custo"><i class="fa-solid fa-skull"></i> ${T("Custo oculto")}: ${esc(o.custoOculto)}</div>`
+      ? `<div class="jm-custo"><i class="fa-solid fa-skull"></i> ${T("Janela.CustoOculto")}: ${esc(o.custoOculto)}</div>`
       : (o.comprado
-        ? `<div class="jm-custo misterio"><i class="fa-solid fa-handshake"></i> ${T("Acordo fechado. O que ele custou de verdade... só o tempo dirá.")}</div>`
-        : `<div class="jm-custo misterio"><i class="fa-solid fa-question"></i> ${T("O vendedor sorri um pouco demais...")}</div>`);
+        ? `<div class="jm-custo misterio"><i class="fa-solid fa-handshake"></i> ${T("Janela.AcordoFechadoOQueEle")}</div>`
+        : `<div class="jm-custo misterio"><i class="fa-solid fa-question"></i> ${T("Janela.OVendedorSorriUmPouco")}</div>`);
     const riscado = o.tipo !== "luxo" && o.precoBase > o.preco ? `<s>${formatarPreco(o.precoBase)}</s>` : "";
     let acao;
-    if (o.comprado) acao = `<span class="jm-comprado"><i class="fa-solid fa-check"></i> ${T("Comprado")}</span>`;
-    else if (visaoGM) acao = `<button type="button" class="sec" data-action="limparOferta" data-user="${userId}" data-tooltip="${T("Permitir que role de novo hoje")}"><i class="fa-solid fa-rotate"></i></button>`;
-    else acao = `<button type="button" class="primario" data-action="comprarDiaria"><i class="fa-solid fa-coins"></i> ${T("Comprar")}</button>`;
+    if (o.comprado) acao = `<span class="jm-comprado"><i class="fa-solid fa-check"></i> ${T("Janela.Comprado")}</span>`;
+    else if (visaoGM) acao = `<button type="button" class="sec" data-action="limparOferta" data-user="${userId}" data-tooltip="${T("Janela.PermitirQueRoleDeNovo")}"><i class="fa-solid fa-rotate"></i></button>`;
+    else acao = `<button type="button" class="primario" data-action="comprarDiaria"><i class="fa-solid fa-coins"></i> ${T("Janela.Comprar")}</button>`;
     return `<div class="jm-oferta ${o.tipo} ${o.comprado ? "comprada" : ""}">
       <img src="${esc(o.img)}" alt="">
       <div class="info">
@@ -1652,7 +1652,7 @@ class JournalApp extends ApplicationV2 {
     let timer = null;
     const gravar = async (valor) => {
       try { await page.update({ "text.content": valor }); }
-      catch (err) { relatarErro(T("salvar a descrição"), err); }
+      catch (err) { relatarErro(T("Janela.SalvarADescricao"), err); }
       finally { if (this._editorPendente?.valor === valor) this._editorPendente = null; }
     };
     const salvar = (valor) => {
@@ -1667,9 +1667,9 @@ class JournalApp extends ApplicationV2 {
     };
     this.editorAtivo = true;
     try {
-      if (game.settings.get(MOD, "editor") === "simples") throw new Error(T("modo simples"));
+      if (game.settings.get(MOD, "editor") === "simples") throw new Error(T("Janela.ModoSimples"));
       const PM = foundry.applications?.elements?.HTMLProseMirrorElement;
-      if (!PM?.create) throw new Error(T("sem ProseMirror"));
+      if (!PM?.create) throw new Error(T("Janela.SemProseMirror"));
       const el = PM.create({ name: "text.content", value: html, toggled: false, documentUUID: page.uuid, height: 280 });
       el.classList.add("jm-editor");
       el.addEventListener("change", () => salvar(el.value));
@@ -1685,7 +1685,7 @@ class JournalApp extends ApplicationV2 {
       alvo.replaceWith(el);
     } catch (err) {
       // sem o editor rico do Foundry (API mudou?): caixa de texto simples, e um aviso no console
-      avisoUmaVez(T("editor de texto rico"), err);
+      avisoUmaVez(T("Janela.EditorDeTextoRico"), err);
       const ta = document.createElement("textarea");
       ta.rows = 10;
       ta.className = "jm-editor";
@@ -1739,7 +1739,7 @@ class JournalApp extends ApplicationV2 {
     root.querySelectorAll("[data-data]").forEach((caixa) => caixa.querySelectorAll("[data-parte]").forEach((el) => el.addEventListener("change", () => {
       const val = (k) => Number(caixa.querySelector(`[data-parte="${k}"]`)?.value);
       const td = Tempo.tdDe(val("ano"), val("mes"), val("dia"));
-      if (td == null) return ui.notifications.warn(T("Essa data não existe neste calendário."));
+      if (td == null) return ui.notifications.warn(T("Comum.EssaDataNaoExisteNeste"));
       this._aoEscolherData(caixa.dataset.data, td, caixa);
     })));
 
@@ -1777,7 +1777,7 @@ class JournalApp extends ApplicationV2 {
     root.querySelectorAll("[data-cal-campo]").forEach((el) => el.addEventListener("change", () => {
       const k = el.dataset.calCampo;
       let v = el.value;
-      if (k === "hora" && v && !/^\d{1,2}:\d{2}$/.test(v.trim())) return ui.notifications.warn(T("Use o formato HH:MM (ex.: 18:30)."));
+      if (k === "hora" && v && !/^\d{1,2}:\d{2}$/.test(v.trim())) return ui.notifications.warn(T("Janela.UseOFormatoHHMM2"));
       if (["cada", "duracao", "fim.vezes"].includes(k)) v = Math.max(1, Math.trunc(Number(v) || 1));
       const e = this._entry();
       const n = calNormalizar(calNota(e));
@@ -1816,7 +1816,7 @@ class JournalApp extends ApplicationV2 {
 
     root.querySelectorAll("[data-horario]").forEach((el) => el.addEventListener("change", async () => {
       const min = horaParaMin(el.value);
-      if (min == null) return ui.notifications.warn(T("Use o formato HH:MM (ex.: 08:00)."));
+      if (min == null) return ui.notifications.warn(T("Janela.UseOFormatoHHMM"));
       await dadosSet(analisar(this._entry()).page, el.dataset.horario, min);
     }));
     /* dias de folga: sempre clicáveis (antes ficavam travados com o horário desligado, sem nenhum aviso).
@@ -1826,13 +1826,13 @@ class JournalApp extends ApplicationV2 {
       const page = analisar(this._entry()).page;
       const ligar = dias.length && !page.flags?.[MOD]?.horario?.ativo;
       await page.update({ [`flags.${MOD}.horario.folga`]: dias, ...(ligar ? { [`flags.${MOD}.horario.ativo`]: true } : {}) });
-      if (ligar) ui.notifications.info(T("Horário e folgas ligados nesta loja: nos dias de folga e fora do horário os jogadores não compram nem vendem."));
+      if (ligar) ui.notifications.info(T("Janela.HorarioEFolgasLigadosNesta"));
     }));
 
     root.querySelectorAll("[data-cal-semana]").forEach((el) => el.addEventListener("change", () => {
       const e = this._entry();
       const dias = [...root.querySelectorAll("[data-cal-semana]:checked")].map((x) => Number(x.dataset.calSemana));
-      if (!dias.length) { el.checked = true; return ui.notifications.warn(T("Escolha pelo menos um dia da semana.")); }
+      if (!dias.length) { el.checked = true; return ui.notifications.warn(T("Janela.EscolhaPeloMenosUmDia")); }
       calSalvar(e, { diasSemana: dias });
     }));
 
@@ -1883,7 +1883,7 @@ class JournalApp extends ApplicationV2 {
       const app = () => { try { return iframe.contentWindow?.PDFViewerApplication ?? null; } catch { return null; } };
       const buscar = async (tipo = "", anterior = false) => {
         const pdf = app();
-        if (!pdf) return ui.notifications.warn(T("O PDF ainda está carregando."));
+        if (!pdf) return ui.notifications.warn(T("Janela.OPDFAindaEstaCarregando"));
         await pdf.initializedPromise;
         if (!ligado) {
           ligado = true;
@@ -1944,23 +1944,23 @@ class JournalApp extends ApplicationV2 {
     const a = analisar(e);
     const visivel = estaVisivel(e);
     Menu.abrir(ev, [
-      { icone: "fa-solid fa-book-open", rotulo: T("Abrir"), acao: () => this.abrirPagina(id) },
-      { icone: "fa-solid fa-thumbtack", rotulo: fixados().has(id) ? T("Desafixar") : T("Fixar"), acao: () => JournalApp._fixar.call(this, null, { dataset: { id } }) },
-      this.abas.includes(id) && !fixados().has(id) && { icone: "fa-solid fa-xmark", rotulo: T("Fechar aba"), acao: () => JournalApp._fecharAba.call(this, { stopPropagation() {} }, { dataset: { id } }) },
-      gm && !["diario", "historia"].includes(a.tipo) && { icone: "fa-solid fa-pen", rotulo: T("Editar"), acao: () => this.abrirPagina(id, { editar: true }) },
-      gm && { icone: "fa-solid fa-i-cursor", rotulo: T("Renomear"), acao: () => this._renomear(e) },
-      gm && { icone: "fa-solid fa-note-sticky", rotulo: T("Nota do mestre..."), acao: () => editarNotaMestre(e) },
+      { icone: "fa-solid fa-book-open", rotulo: T("Janela.Abrir"), acao: () => this.abrirPagina(id) },
+      { icone: "fa-solid fa-thumbtack", rotulo: fixados().has(id) ? T("Janela.Desafixar") : T("Janela.Fixar"), acao: () => JournalApp._fixar.call(this, null, { dataset: { id } }) },
+      this.abas.includes(id) && !fixados().has(id) && { icone: "fa-solid fa-xmark", rotulo: T("Janela.FecharAba"), acao: () => JournalApp._fecharAba.call(this, { stopPropagation() {} }, { dataset: { id } }) },
+      gm && !["diario", "historia"].includes(a.tipo) && { icone: "fa-solid fa-pen", rotulo: T("Janela.Editar"), acao: () => this.abrirPagina(id, { editar: true }) },
+      gm && { icone: "fa-solid fa-i-cursor", rotulo: T("Janela.Renomear"), acao: () => this._renomear(e) },
+      gm && { icone: "fa-solid fa-note-sticky", rotulo: T("Janela.NotaDoMestre"), acao: () => editarNotaMestre(e) },
       gm && "-",
-      gm && { icone: "fa-solid fa-user-check", rotulo: T("Quem vê (por jogador)..."), acao: () => revelarPara(e) },
-      gm && { icone: `fa-solid ${visivel ? "fa-eye-slash" : "fa-eye"}`, rotulo: visivel ? T("Ocultar de todos") : T("Mostrar a todos"), acao: () => e.update({ "ownership.default": visivel ? LV().NONE : LV().OBSERVER }) },
-      gm && { icone: "fa-solid fa-bullhorn", rotulo: T("Abrir na tela dos jogadores"), acao: () => mostrarAosJogadores(e) },
-      gm && { icone: "fa-solid fa-lock", rotulo: T("Permissões"), acao: () => abrirPermissoes(e) },
+      gm && { icone: "fa-solid fa-user-check", rotulo: T("Janela.QuemVePorJogador"), acao: () => revelarPara(e) },
+      gm && { icone: `fa-solid ${visivel ? "fa-eye-slash" : "fa-eye"}`, rotulo: visivel ? T("Janela.OcultarDeTodos") : T("Janela.MostrarATodos"), acao: () => e.update({ "ownership.default": visivel ? LV().NONE : LV().OBSERVER }) },
+      gm && { icone: "fa-solid fa-bullhorn", rotulo: T("Janela.AbrirNaTelaDosJogadores"), acao: () => mostrarAosJogadores(e) },
+      gm && { icone: "fa-solid fa-lock", rotulo: T("Janela.Permissoes"), acao: () => abrirPermissoes(e) },
       gm && "-",
-      gm && { icone: "fa-solid fa-copy", rotulo: T("Duplicar"), acao: () => e.clone({ name: `${e.name} (${T("cópia")})` }, { save: true }) },
-      gm && { icone: "fa-solid fa-file-export", rotulo: T("Exportar JSON"), acao: () => baixarJson(e.toObject(), e.name) },
-      gm && { icone: "fa-solid fa-up-right-from-square", rotulo: T("Abrir na ficha padrão"), acao: () => abrirFichaPadrao(e) },
+      gm && { icone: "fa-solid fa-copy", rotulo: T("Janela.Duplicar"), acao: () => e.clone({ name: `${e.name} (${T("Janela.Copia")})` }, { save: true }) },
+      gm && { icone: "fa-solid fa-file-export", rotulo: T("Janela.ExportarJSON"), acao: () => baixarJson(e.toObject(), e.name) },
+      gm && { icone: "fa-solid fa-up-right-from-square", rotulo: T("Janela.AbrirNaFichaPadrao"), acao: () => abrirFichaPadrao(e) },
       gm && "-",
-      gm && { icone: "fa-solid fa-trash", rotulo: T("Apagar"), perigo: true, acao: () => apagarEntrada(e) }
+      gm && { icone: "fa-solid fa-trash", rotulo: T("Comum.Apagar"), perigo: true, acao: () => apagarEntrada(e) }
     ]);
   }
 
@@ -1972,12 +1972,12 @@ class JournalApp extends ApplicationV2 {
     const nome = linha?.querySelector(".nome, b")?.childNodes[0]?.textContent?.trim() || linha?.textContent?.trim() || e?.name || "";
     const jogadores = game.users.filter((u) => !u.isGM && u.active);
     Menu.abrir(ev, [
-      { icone: "fa-solid fa-magnifying-glass-plus", rotulo: T("Ampliar (só para mim)"), acao: () => abrirImagem(src, nome) },
+      { icone: "fa-solid fa-magnifying-glass-plus", rotulo: T("Janela.AmpliarSoParaMim"), acao: () => abrirImagem(src, nome) },
       ehGM() && "-",
-      ehGM() && { icone: "fa-solid fa-image", rotulo: T("Mostrar só a imagem (sem nome)"), acao: () => mostrarImagem(src, "") },
-      ehGM() && { icone: "fa-solid fa-id-card", rotulo: `${T("Mostrar imagem e nome")} (${nome})`, acao: () => mostrarImagem(src, nome) },
+      ehGM() && { icone: "fa-solid fa-image", rotulo: T("Janela.MostrarSoAImagemSem"), acao: () => mostrarImagem(src, "") },
+      ehGM() && { icone: "fa-solid fa-id-card", rotulo: `${T("Janela.MostrarImagemENome")} (${nome})`, acao: () => mostrarImagem(src, nome) },
       ...(ehGM() && jogadores.length ? ["-", ...jogadores.map((u) => ({
-        icone: "fa-solid fa-user", rotulo: `${T("Só a imagem para")} ${u.name}`, acao: () => mostrarImagem(src, "", [u.id])
+        icone: "fa-solid fa-user", rotulo: `${T("Janela.SoAImagemPara")} ${u.name}`, acao: () => mostrarImagem(src, "", [u.id])
       }))] : [])
     ]);
   }
@@ -1987,24 +1987,24 @@ class JournalApp extends ApplicationV2 {
     const f = game.folders.get(id);
     if (!f) return;
     Menu.abrir(ev, [
-      { icone: "fa-solid fa-crosshairs", rotulo: T("Criar novas páginas aqui"), acao: () => { this.pastaAlvo = id; this.render(); } },
-      { icone: "fa-solid fa-folder-plus", rotulo: T("Nova subpasta"), acao: () => this._criarPasta(id) },
-      { icone: "fa-solid fa-i-cursor", rotulo: T("Renomear"), acao: () => this._renomear(f) },
-      { icone: "fa-solid fa-gear", rotulo: T("Configurar (nome, cor, ordem)"), acao: () => f.sheet.render(true) },
-      { icone: `fa-solid ${pastaMarcadaOculta(f) ? "fa-eye" : "fa-eye-slash"}`, rotulo: pastaMarcadaOculta(f) ? T("Mostrar pasta") : T("Ocultar pasta"), acao: () => alternarPastaOculta(f) },
+      { icone: "fa-solid fa-crosshairs", rotulo: T("Janela.CriarNovasPaginasAqui"), acao: () => { this.pastaAlvo = id; this.render(); } },
+      { icone: "fa-solid fa-folder-plus", rotulo: T("Janela.NovaSubpasta"), acao: () => this._criarPasta(id) },
+      { icone: "fa-solid fa-i-cursor", rotulo: T("Janela.Renomear"), acao: () => this._renomear(f) },
+      { icone: "fa-solid fa-gear", rotulo: T("Janela.ConfigurarNomeCorOrdem"), acao: () => f.sheet.render(true) },
+      { icone: `fa-solid ${pastaMarcadaOculta(f) ? "fa-eye" : "fa-eye-slash"}`, rotulo: pastaMarcadaOculta(f) ? T("Janela.MostrarPasta") : T("Janela.OcultarPasta"), acao: () => alternarPastaOculta(f) },
       "-",
-      { icone: "fa-solid fa-file-export", rotulo: T("Exportar pasta (JSON)"), acao: () => exportarPasta(f) },
-      { icone: "fa-solid fa-file-import", rotulo: T("Importar JSON aqui"), acao: () => importarJson(id) },
+      { icone: "fa-solid fa-file-export", rotulo: T("Janela.ExportarPastaJSON"), acao: () => exportarPasta(f) },
+      { icone: "fa-solid fa-file-import", rotulo: T("Janela.ImportarJSONAqui"), acao: () => importarJson(id) },
       "-",
-      { icone: "fa-solid fa-trash", rotulo: T("Apagar pasta"), perigo: true, acao: () => f.deleteDialog() }
+      { icone: "fa-solid fa-trash", rotulo: T("Janela.ApagarPasta"), perigo: true, acao: () => f.deleteDialog() }
     ]);
   }
 
   async _renomear(doc) {
     const nome = await Dialogo().prompt({
-      window: { title: T("Renomear") },
+      window: { title: T("Janela.Renomear") },
       content: `<input type="text" name="nome" value="${esc(doc.name)}" autofocus style="width:100%">`,
-      ok: { label: T("Salvar"), callback: (ev, botao) => botao.form.elements.nome.value }
+      ok: { label: T("Comum.Salvar"), callback: (ev, botao) => botao.form.elements.nome.value }
     }).catch(() => null);
     if (!nome?.trim()) return;
     await doc.update({ name: nome.trim() });
@@ -2019,8 +2019,8 @@ class JournalApp extends ApplicationV2 {
       const f = await Folder.implementation.createDialog({ type: "JournalEntry", folder: pai ?? null });
       if (f) { this.pastaAlvo = f.id; if (pai) { const ab = this.abertas; ab.add(pai); this._setAbertas(ab); } }
     } catch (err) {
-      avisoUmaVez(T("janela de nova pasta"), err);
-      const f = await Folder.create({ name: T("Nova pasta"), type: "JournalEntry", folder: pai ?? null });
+      avisoUmaVez(T("Janela.JanelaDeNovaPasta"), err);
+      const f = await Folder.create({ name: T("Janela.NovaPasta"), type: "JournalEntry", folder: pai ?? null });
       f?.sheet.render(true);
     }
   }
@@ -2032,7 +2032,7 @@ class JournalApp extends ApplicationV2 {
     let v = el.type === "checkbox" ? el.checked : el.value;
     if (el.dataset.num !== undefined) v = Number(v) || 0;
     if (campo === "__nome") {
-      const nome = String(v).trim() || T("Sem nome");
+      const nome = String(v).trim() || T("Janela.SemNome");
       await e.update({ name: nome });
       if (page) await page.update({ name: nome });
       return;
@@ -2045,7 +2045,7 @@ class JournalApp extends ApplicationV2 {
       if (chave === "status") {
         const fim = ["completed", "failed"].includes(v);
         await page.update({ [`flags.${MOD}.concluidaEm`]: fim ? Tempo.hoje() : null });
-        if (fim) Sessao.registrar("missao", `${T("Missão")} <b>${esc(e.name)}</b>: ${esc(STATUS[v]?.rotulo ?? v)}.`);
+        if (fim) Sessao.registrar("missao", `${T("Janela.Missao")} <b>${esc(e.name)}</b>: ${esc(STATUS[v]?.rotulo ?? v)}.`);
       }
       return dadosSet(page, chave, v);
     }
@@ -2071,28 +2071,28 @@ class JournalApp extends ApplicationV2 {
 
     if (tipo === "festa") {
       const alvo = doc.documentName === "JournalEntryPage" ? doc.parent : doc;
-      if (alvo?.documentName !== "JournalEntry" || alvo.id === e.id) return ui.notifications.warn(T("Arraste um evento (página do Journal da Mesa)."));
+      if (alvo?.documentName !== "JournalEntry" || alvo.id === e.id) return ui.notifications.warn(T("Janela.ArrasteUmEventoPaginaDo"));
       return this._tornarDiaSagrado(e, alvo);
     }
     if (tipo === "link") {
       if (doc.documentName === "Actor") return this._ligarFicha(page, doc, "");
-      if (doc.documentName !== "JournalEntry" || doc.id === e.id) return ui.notifications.warn(T("Arraste uma página do Journal da Mesa ou uma ficha."));
+      if (doc.documentName !== "JournalEntry" || doc.id === e.id) return ui.notifications.warn(T("Janela.ArrasteUmaPaginaDoJournal"));
       return this._ligar(e, page, doc, "");
     }
     if (tipo === "ator") {
-      if (doc.documentName !== "Actor") return ui.notifications.warn(T("Arraste um ator."));
+      if (doc.documentName !== "Actor") return ui.notifications.warn(T("Janela.ArrasteUmAtor"));
       await dadosSet(page, "actor", doc.uuid);
       if (!page.src) await page.update({ src: doc.img });
       return;
     }
     if (tipo === "reliquia") {
-      if (doc.documentName !== "Item") return ui.notifications.warn(T("Arraste um item."));
+      if (doc.documentName !== "Item") return ui.notifications.warn(T("Janela.ArrasteUmItem"));
       const atuais = analisar(e).x.deus.reliquias ?? [];
       if (!atuais.includes(doc.uuid)) await page.setFlag(MOD, "deus.reliquias", [...atuais, doc.uuid]);
       return;
     }
     if (tipo === "recompensa") {
-      if (doc.documentName !== "Item") return ui.notifications.warn(T("Arraste um item, talento ou magia."));
+      if (doc.documentName !== "Item") return ui.notifications.warn(T("Janela.ArrasteUmItemTalentoOu"));
       await garantirObjeto(page, "rewards");
       await garantirObjeto(page, "items");
       const gid = el.dataset.grupo;
@@ -2103,7 +2103,7 @@ class JournalApp extends ApplicationV2 {
       return;
     }
     if (tipo === "itemLoja") {
-      if (doc.documentName !== "Item") return ui.notifications.warn(T("Arraste um item."));
+      if (doc.documentName !== "Item") return ui.notifications.warn(T("Janela.ArrasteUmItem"));
       await garantirObjeto(page, "items");
       const data2 = itemParaLoja(doc, {}, analisar(e).tipo === "loot" ? null : 1);
       await dadosSet(page, `items.${data2._id}`, data2);
@@ -2119,7 +2119,7 @@ class JournalApp extends ApplicationV2 {
     if (doc.documentName !== alvo.documentName) return this._moverParaPasta(doc, pai);
     if (doc.documentName === "Folder") {
       if (doc.type !== "JournalEntry") return;
-      for (let p = pai ? game.folders.get(pai) : null; p; p = p.folder) if (p.id === doc.id) return ui.notifications.warn(T("Não dá para colocar uma pasta dentro dela mesma."));
+      for (let p = pai ? game.folders.get(pai) : null; p; p = p.folder) if (p.id === doc.id) return ui.notifications.warn(T("Janela.NaoDaParaColocarUma"));
     }
     const irmaos = doc.documentName === "Folder"
       ? game.folders.filter((f) => f.type === "JournalEntry" && (f.folder?.id ?? null) === pai && f.id !== doc.id)
@@ -2129,7 +2129,7 @@ class JournalApp extends ApplicationV2 {
       const pastaPai = pai ? game.folders.get(pai) : null;
       if (pastaPai && pastaPai.sorting === "a") {
         await pastaPai.update({ sorting: "m" });
-        ui.notifications.info(`"${pastaPai.name}" ${T("passou para ordem manual.")}`);
+        ui.notifications.info(`"${pastaPai.name}" ${T("Janela.PassouParaOrdemManual")}`);
       }
     } catch (err) {
       ui.notifications.error(err.message ?? String(err));
@@ -2145,7 +2145,7 @@ class JournalApp extends ApplicationV2 {
         await doc.update({ folder: pastaId });
       } else if (doc.documentName === "Folder" && doc.type === "JournalEntry") {
         if (doc.id === pastaId || (doc.folder?.id ?? null) === pastaId) return;
-        for (let p = alvo; p; p = p.folder) if (p.id === doc.id) return ui.notifications.warn(T("Não dá para colocar uma pasta dentro dela mesma."));
+        for (let p = alvo; p; p = p.folder) if (p.id === doc.id) return ui.notifications.warn(T("Janela.NaoDaParaColocarUma"));
         await doc.update({ folder: pastaId });
       } else return;
       if (pastaId) { const ab = this.abertas; ab.add(pastaId); this._setAbertas(ab); }
@@ -2167,13 +2167,13 @@ class JournalApp extends ApplicationV2 {
   /** Liga uma ficha de personagem (ator) à página. */
   async _ligarFicha(page, ator, rotulo) {
     if (!page) return;
-    if (fichasDe(page).some(([id]) => id === ator.id)) return ui.notifications.info(`"${ator.name}" ${T("já está ligado aqui.")}`);
+    if (fichasDe(page).some(([id]) => id === ator.id)) return ui.notifications.info(`"${ator.name}" ${T("Janela.JaEstaLigadoAqui")}`);
     await page.update({ [`flags.${MOD}.fichas.${ator.id}`]: { uuid: ator.uuid, relacao: rotulo, hidden: false } });
   }
 
   _precisaAtor() {
     const ator = atorDoJogador();
-    if (!ator) ui.notifications.warn(T("Selecione seu token ou defina seu personagem (Configurações do Jogador)."));
+    if (!ator) ui.notifications.warn(T("Janela.SelecioneSeuTokenOuDefina"));
     return ator;
   }
 
@@ -2183,7 +2183,7 @@ class JournalApp extends ApplicationV2 {
 
   static _fecharAba(ev, el) {
     ev.stopPropagation();
-    if (fixados().has(el.dataset.id)) return ui.notifications.info(T("Página fixada: desafixe para fechar a aba."));
+    if (fixados().has(el.dataset.id)) return ui.notifications.info(T("Janela.PaginaFixadaDesafixeParaFechar"));
     this.abas = this.abas.filter((i) => i !== el.dataset.id);
     if (this.ativa === el.dataset.id) { this.ativa = this.abas.at(-1) ?? null; this.editando = false; }
     this.render();
@@ -2200,7 +2200,7 @@ class JournalApp extends ApplicationV2 {
     const id = el?.dataset?.id ?? this.ativa;
     if (!id || !game.journal.get(id)) return;
     const agora = await alternarFixado(id);
-    ui.notifications.info(`"${game.journal.get(id).name}" ${agora ? T("fixada.") : T("desafixada.")}`);
+    ui.notifications.info(`"${game.journal.get(id).name}" ${agora ? T("Janela.Fixada") : T("Janela.Desafixada")}`);
     if (agora && !this.abas.includes(id)) this.abas.push(id);
     this.render();
   }
@@ -2268,8 +2268,8 @@ class JournalApp extends ApplicationV2 {
 
   static async _abrirFicha(ev, el) {
     const ator = await fromUuid(el.dataset.uuid);
-    if (!ator) return ui.notifications.warn(T("Essa ficha não existe mais."));
-    if (!ehGM() && !ator.testUserPermission(game.user, "LIMITED")) return ui.notifications.warn(T("Você não tem acesso a esta ficha."));
+    if (!ator) return ui.notifications.warn(T("Janela.EssaFichaNaoExisteMais"));
+    if (!ehGM() && !ator.testUserPermission(game.user, "LIMITED")) return ui.notifications.warn(T("Janela.VoceNaoTemAcessoA"));
     ator.sheet.render(true);
   }
   static async _ocultarFicha(ev, el) {
@@ -2288,11 +2288,11 @@ class JournalApp extends ApplicationV2 {
     const raiz = el.closest(".jm-add-link");
     const id = raiz.querySelector("[data-novo-link]").value;
     const rotulo = raiz.querySelector("[data-novo-rotulo]").value.trim();
-    if (!id) return ui.notifications.warn(T("Escolha uma página ou ficha para ligar."));
+    if (!id) return ui.notifications.warn(T("Janela.EscolhaUmaPaginaOuFicha2"));
     const e = this._entry();
     if (id.startsWith("ficha:")) {
       const ator = await fromUuid(id.slice(6));
-      return ator ? this._ligarFicha(analisar(e).page, ator, rotulo) : ui.notifications.warn(T("Essa ficha não existe mais."));
+      return ator ? this._ligarFicha(analisar(e).page, ator, rotulo) : ui.notifications.warn(T("Janela.EssaFichaNaoExisteMais"));
     }
     await this._ligar(e, analisar(e).page, game.journal.get(id), rotulo);
   }
@@ -2327,16 +2327,16 @@ class JournalApp extends ApplicationV2 {
     const jogadores = game.users.filter((u) => !u.isGM);
     const r = el.getBoundingClientRect();
     Menu.abrir({ preventDefault() {}, stopPropagation() {}, clientX: r.left, clientY: r.bottom + 4 }, [
-      { icone: marca(st == null), rotulo: T("Seguir a permissão da página"), acao: () => salvar(null) },
-      { icone: marca(st === "todos"), rotulo: T("Revelar a todos que veem a página"), acao: () => salvar("todos") },
-      { icone: marca(st === "ninguem"), rotulo: T("Esconder (só o mestre)"), acao: () => salvar("ninguem") },
+      { icone: marca(st == null), rotulo: T("Janela.SeguirAPermissaoDaPagina"), acao: () => salvar(null) },
+      { icone: marca(st === "todos"), rotulo: T("Janela.RevelarATodosQueVeem"), acao: () => salvar("todos") },
+      { icone: marca(st === "ninguem"), rotulo: T("Janela.EsconderSoOMestre"), acao: () => salvar("ninguem") },
       jogadores.length && "-",
       ...jogadores.map((u) => {
         const dentro = lista.includes(u.id);
         const obs = e.testUserPermission(u, "OBSERVER");
         return {
           icone: dentro || (obs && st !== "ninguem") ? "fa-solid fa-square-check" : "fa-regular fa-square",
-          rotulo: `${u.name}${obs ? T(" (já é Observador)") : ""}`,
+          rotulo: `${u.name}${obs ? T("Janela.JaEObservador") : ""}`,
           acao: () => {
             const nova = dentro ? lista.filter((id) => id !== u.id) : [...lista, u.id];
             return salvar(nova.length ? nova : null);
@@ -2358,12 +2358,12 @@ class JournalApp extends ApplicationV2 {
   static _sessaoIniciar() { Sessao.iniciar(); }
   static async _sessaoEncerrar() {
     const escolha = await Dialogo().wait({
-      window: { title: `${T("Sessão")} ${Sessao.atual()?.n}`, icon: "fa-solid fa-book-bookmark" },
-      content: `<p>${(Sessao.atual()?.registros ?? []).length} ${T("registro(s) anotado(s) até agora.")}</p>`,
+      window: { title: `${T("Comum.Sessao")} ${Sessao.atual()?.n}`, icon: "fa-solid fa-book-bookmark" },
+      content: `<p>${(Sessao.atual()?.registros ?? []).length} ${T("Janela.RegistroSAnotadoSAte")}</p>`,
       buttons: [
-        { action: "encerrar", label: T("Encerrar e gerar diário"), icon: "fa-solid fa-check", default: true },
-        { action: "descartar", label: T("Descartar"), icon: "fa-solid fa-trash" },
-        { action: "voltar", label: T("Continuar a sessão") }
+        { action: "encerrar", label: T("Janela.EncerrarEGerarDiario"), icon: "fa-solid fa-check", default: true },
+        { action: "descartar", label: T("Janela.Descartar"), icon: "fa-solid fa-trash" },
+        { action: "voltar", label: T("Janela.ContinuarASessao") }
       ],
       rejectClose: false
     }).catch(() => null);
@@ -2406,7 +2406,7 @@ class JournalApp extends ApplicationV2 {
     let texto = d.texto ?? "";
     if (origem.startsWith("JournalEntry.")) {
       const nome = d.nome ?? "";
-      const extra = { missao: texto ? `${T("Missão")}: ${texto}.` : T("Missão."), sessao: `${texto}.`, evento: T("Evento do calendário."), jornal: `${T("Manchete")}: ${texto}.` }[d.tipoItem] ?? "";
+      const extra = { missao: texto ? `${T("Janela.Missao")}: ${texto}.` : T("Janela.Missao2"), sessao: `${texto}.`, evento: T("Janela.EventoDoCalendario"), jornal: `${T("Janela.Manchete")}: ${texto}.` }[d.tipoItem] ?? "";
       texto = `@UUID[${origem}]{${nome}} — ${extra}\n`;
     } else if (origem.startsWith("cal:") || origem.startsWith("nexus:")) texto = `${texto}\n`;
     await registrarNaHistoria({ td, nome: d.nome ?? "", texto, origem, icone: { missao: "fa-scroll", sessao: "fa-book-bookmark", evento: "fa-star", nexus: "fa-triangle-exclamation", jornal: "fa-scroll" }[d.tipoItem] ?? "fa-landmark" });
@@ -2422,7 +2422,7 @@ class JournalApp extends ApplicationV2 {
   static async _nexusApagar(ev, el) {
     const l = Nexus.lista();
     const nx = l.find((n) => n.id === el.dataset.id);
-    const ok = await Dialogo().confirm({ window: { title: T("Apagar Nexus") }, content: `<p>${T("Apagar o medidor")} <b>${esc(nx?.name ?? nx?.nome)}</b>?</p>` });
+    const ok = await Dialogo().confirm({ window: { title: T("Janela.ApagarNexus") }, content: `<p>${T("Janela.ApagarOMedidor")} <b>${esc(nx?.name ?? nx?.nome)}</b>?</p>` });
     if (ok) await Nexus.salvar(l.filter((n) => n.id !== el.dataset.id));
   }
   static _nexusMudar(ev, el) {
@@ -2439,9 +2439,9 @@ class JournalApp extends ApplicationV2 {
   /** Liga ou desliga na hora a anomalia ligada ao Nexus (sem mexer no valor). */
   static async _nexusAnomalia(ev, el) {
     const nx = Nexus.lista().find((n) => n.id === el.dataset.id);
-    if (!nx || !NexusClima.pronto(nx)) return ui.notifications.warn(T("Escolha a anomalia (e a região, se for o caso) primeiro."));
+    if (!nx || !NexusClima.pronto(nx)) return ui.notifications.warn(T("Janela.EscolhaAAnomaliaEA"));
     const ok = el.dataset.ligar === "1" ? await NexusClima.ligar(nx, "") : await NexusClima.desligar(nx, [], { forcar: true });
-    if (!ok) ui.notifications.warn(T("O Calendário não aceitou: confira a barra de Anomalias e a opção \"Anomalia cobrindo uma região inteira\"."));
+    if (!ok) ui.notifications.warn(T("Janela.OCalendarioNaoAceitouConfira"));
     atualizarTudo();
   }
   static async _nexusLimiarApagar(ev, el) {
@@ -2469,23 +2469,23 @@ class JournalApp extends ApplicationV2 {
 
   /** Liga um evento que já existe à divindade (vira dia sagrado dela). */
   async _tornarDiaSagrado(deus, evento) {
-    if (analisar(evento).tipo === "deus") return ui.notifications.warn(T("Uma divindade não pode ser dia sagrado de outra."));
+    if (analisar(evento).tipo === "deus") return ui.notifications.warn(T("Janela.UmaDivindadeNaoPodeSer"));
     const n = calNota(evento);
-    if (n?.divindade === deus.uuid) return ui.notifications.info(`"${evento.name}" ${T("já é dia sagrado de")} ${deus.name}.`);
+    if (n?.divindade === deus.uuid) return ui.notifications.info(`"${evento.name}" ${T("Janela.JaEDiaSagradoDe")} ${deus.name}.`);
     const outro = deusDaFesta(evento);
     if (outro) {
-      const ok = await Dialogo().confirm({ window: { title: T("Trocar a divindade") },
-        content: `<p><b>${esc(evento.name)}</b> ${T("hoje é dia sagrado de")} <b>${esc(outro.name)}</b>. ${T("Passar para")} <b>${esc(deus.name)}</b>?</p>` });
+      const ok = await Dialogo().confirm({ window: { title: T("Janela.TrocarADivindade") },
+        content: `<p><b>${esc(evento.name)}</b> ${T("Janela.HojeEDiaSagradoDe")} <b>${esc(outro.name)}</b>. ${T("Janela.PassarPara")} <b>${esc(deus.name)}</b>?</p>` });
       if (!ok) return;
     }
     if (!n) {
-      if (!Tempo.ok()) return ui.notifications.warn(T("O calendário do mundo não está disponível."));
-      const ok = await Dialogo().confirm({ window: { title: T("Sem data no calendário") },
-        content: `<p><b>${esc(evento.name)}</b> ${T("ainda não está no calendário. Marcar hoje como o dia sagrado, repetindo todo ano? (Dá para mudar a data depois.)")}</p>` });
+      if (!Tempo.ok()) return ui.notifications.warn(T("Janela.OCalendarioDoMundoNao"));
+      const ok = await Dialogo().confirm({ window: { title: T("Janela.SemDataNoCalendario2") },
+        content: `<p><b>${esc(evento.name)}</b> ${T("Janela.AindaNaoEstaNoCalendario")}</p>` });
       if (!ok) return;
       await calSalvar(evento, { repetir: "anos", cada: 1, icone: "fa-hands-praying", cor: "#d6a92b", divindade: deus.uuid });
     } else await calSalvar(evento, { divindade: deus.uuid });
-    ui.notifications.info(`"${evento.name}" ${T("agora é dia sagrado de")} ${deus.name}.`);
+    ui.notifications.info(`"${evento.name}" ${T("Janela.AgoraEDiaSagradoDe")} ${deus.name}.`);
   }
 
   static _conTipo(ev, el) {
@@ -2530,7 +2530,7 @@ class JournalApp extends ApplicationV2 {
       g.hidden = !algum;
     });
     const vazio = sel.querySelector("[data-vazio]");
-    if (vazio) vazio.textContent = n ? `— ${T("escolha uma página ou ficha")} (${n}) —` : T("— nada com esse filtro —");
+    if (vazio) vazio.textContent = n ? `— ${T("Janela.EscolhaUmaPaginaOuFicha")} (${n}) —` : T("Janela.NadaComEsseFiltro");
     if (sel.selectedOptions[0]?.hidden) sel.value = "";
     /* buscou e só sobrou uma (ou a busca está digitada): já deixa a primeira escolhida */
     if (texto && primeira && (!sel.value || sel.selectedOptions[0]?.hidden)) sel.value = primeira.value;
@@ -2538,7 +2538,7 @@ class JournalApp extends ApplicationV2 {
 
   static async _ligarFesta(ev, el) {
     const id = el.closest(".jm-festa-ligar")?.querySelector("[data-festa-livre]")?.value;
-    if (!id) return ui.notifications.warn(T("Escolha um evento para ligar."));
+    if (!id) return ui.notifications.warn(T("Janela.EscolhaUmEventoParaLigar"));
     const evento = game.journal.get(id);
     if (evento) await this._tornarDiaSagrado(this._entry(), evento);
   }
@@ -2546,31 +2546,31 @@ class JournalApp extends ApplicationV2 {
   /** Cria um dia sagrado (evento que se repete todo ano) ligado à divindade aberta. */
   static async _novoDiaSagrado() {
     const deus = this._entry();
-    if (!Tempo.ok()) return ui.notifications.warn(T("O calendário do mundo não está disponível."));
+    if (!Tempo.ok()) return ui.notifications.warn(T("Janela.OCalendarioDoMundoNao"));
     const p = Tempo.partes(Tempo.hoje());
     const op = (obj, sel) => Object.entries(obj).map(([k, v]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${esc(v)}</option>`).join("");
     const dados = await Dialogo().prompt({
-      window: { title: `${T("Novo dia sagrado")}: ${deus.name}`, icon: "fa-solid fa-hands-praying" },
+      window: { title: `${T("Janela.NovoDiaSagrado")}: ${deus.name}`, icon: "fa-solid fa-hands-praying" },
       position: { width: 460 },
       content: `<div class="jm-form-dialogo">
-        <label>${T("Nome")} <input type="text" name="nome" required autofocus></label>
-        <label>${T("Começa em")} <span class="jm-data">
+        <label>${T("Janela.Nome")} <input type="text" name="nome" required autofocus></label>
+        <label>${T("Janela.ComecaEm")} <span class="jm-data">
           <input type="number" name="dia" min="1" value="${p.dia}">
           <select name="mes">${Tempo.meses(p.ano).map((m) => `<option value="${m.i}" ${m.i === p.mes ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select>
           <input type="number" name="ano" value="${p.ano}"></span></label>
-        <label>${T("Repete a cada")} <span class="jm-linha-curta"><input type="number" name="cada" min="1" value="1"> ${T("ano(s)")}</span></label>
-        <label>${T("Dura quantos dias")} <input type="number" name="duracao" min="1" value="1"></label>
-        <label>${T("Quando chegar")} <select name="aviso">${op(CAL_AVISOS, "nenhum")}</select></label>
-        <label>${T("Descrição")} <textarea name="texto" rows="3"></textarea></label>
+        <label>${T("Janela.RepeteACada")} <span class="jm-linha-curta"><input type="number" name="cada" min="1" value="1"> ${T("Janela.AnoS")}</span></label>
+        <label>${T("Janela.DuraQuantosDias")} <input type="number" name="duracao" min="1" value="1"></label>
+        <label>${T("Janela.QuandoChegar")} <select name="aviso">${op(CAL_AVISOS, "nenhum")}</select></label>
+        <label>${T("Janela.Descricao")} <textarea name="texto" rows="3"></textarea></label>
       </div>`,
       ok: {
-        label: T("Criar"), icon: "fa-solid fa-check",
+        label: T("Comum.Criar"), icon: "fa-solid fa-check",
         callback: (ev, botao) => Object.fromEntries(["nome", "dia", "mes", "ano", "cada", "duracao", "aviso", "texto"].map((k) => [k, botao.form.elements[k]?.value]))
       }
     }).catch(() => null);
     if (!dados?.nome?.trim()) return;
     const td = Tempo.tdDe(Number(dados.ano), Number(dados.mes), Number(dados.dia));
-    if (td == null) return ui.notifications.warn(T("Essa data não existe neste calendário."));
+    if (td == null) return ui.notifications.warn(T("Comum.EssaDataNaoExisteNeste"));
     const pasta = game.folders.find((f) => f.type === "JournalEntry" && f.getFlag?.(CAL, "pasta"))?.id ?? deus.folder?.id ?? null;
     const nome = dados.nome.trim();
     await JournalEntry.create({
@@ -2581,12 +2581,12 @@ class JournalApp extends ApplicationV2 {
       }) } },
       pages: [{ name: nome, type: "text", text: { content: textoParaHtml(dados.texto ?? "") }, flags: { [MOD]: { [CHAVE_DADOS]: dadosPadrao("journalentry") } } }]
     });
-    ui.notifications.info(`"${nome}" ${T("criado no calendário.")}`);
+    ui.notifications.info(`"${nome}" ${T("Janela.CriadoNoCalendario")}`);
   }
 
   static async _calTirar() {
     const e = this._entry();
-    const ok = await Dialogo().confirm({ window: { title: T("Tirar do calendário") }, content: `<p>${T("Tirar")} <b>${esc(e.name)}</b> ${T("do calendário? A página continua no Journal da Mesa.")}</p>` });
+    const ok = await Dialogo().confirm({ window: { title: T("Janela.TirarDoCalendario") }, content: `<p>${T("Janela.Tirar")} <b>${esc(e.name)}</b> ${T("Janela.DoCalendarioAPaginaContinua")}</p>` });
     if (ok) calTirar(e);
   }
   static _calMover(ev, el) { const n = calNota(this._entry()); if (n) calSalvar(this._entry(), { td: Number(n.td) + Number(el.dataset.dias) }); }
@@ -2619,7 +2619,7 @@ class JournalApp extends ApplicationV2 {
   static async _rolarSemanal() {
     const e = this._entry();
     const r = await renovarEstoqueDaLoja(e);
-    if (r === null) ui.notifications.warn(T("Escolha uma tabela de rolagem para o estoque."));
+    if (r === null) ui.notifications.warn(T("Janela.EscolhaUmaTabelaDeRolagem"));
   }
 
   static async _limparSemanal() {
@@ -2665,7 +2665,7 @@ class JournalApp extends ApplicationV2 {
   static async _dividirMoedas() {
     const e = this._entry(); const { page, m } = analisar(e);
     const herois = [...new Set(game.users.filter((u) => !u.isGM && u.character).map((u) => u.character))];
-    if (!herois.length) return ui.notifications.warn(T("Nenhum jogador tem personagem definido (Configurações do Jogador)."));
+    if (!herois.length) return ui.notifications.warn(T("Janela.NenhumJogadorTemPersonagemDefinido"));
     const moedas = m.currency ?? {};
     const resto = {};
     const parte = {};
@@ -2674,7 +2674,7 @@ class JournalApp extends ApplicationV2 {
       parte[k] = Math.floor(total / herois.length);
       resto[k] = total - parte[k] * herois.length;
     }
-    if (!chavesMoedas().some((k) => parte[k] > 0)) return ui.notifications.warn(T("Não há moedas suficientes para dividir."));
+    if (!chavesMoedas().some((k) => parte[k] > 0)) return ui.notifications.warn(T("Janela.NaoHaMoedasSuficientesPara"));
     // todas as fichas numa gravação só (são independentes)
     const Ator = CONFIG.Actor?.documentClass ?? globalThis.Actor;
     await Ator.updateDocuments(herois.map((h) => {
@@ -2682,20 +2682,20 @@ class JournalApp extends ApplicationV2 {
       return { _id: h.id, "system.currency": Object.fromEntries(chavesMoedas().map((k) => [k, (Number(atual[k]) || 0) + parte[k]])) };
     }));
     await dadosSet(page, "currency", resto);
-    await chat(`<i class="fa-solid fa-scale-balanced"></i> ${T("As moedas de")} <b>${esc(e.name)}</b> ${T("foram divididas entre")} ${herois.length}: ${T("cada um recebeu")} <b>${esc(formatarMoedas(parte))}</b>.`);
+    await chat(`<i class="fa-solid fa-scale-balanced"></i> ${T("Janela.AsMoedasDe")} <b>${esc(e.name)}</b> ${T("Janela.ForamDivididasEntre")} ${herois.length}: ${T("Janela.CadaUmRecebeu")} <b>${esc(formatarMoedas(parte))}</b>.`);
   }
 
   static async _itemPiles() {
     const api = game.itempiles?.API;
-    if (!api?.createItemPile) return ui.notifications.warn(T("O Item Piles não está ativo."));
-    if (!canvas?.scene) return ui.notifications.warn(T("Abra uma cena para colocar o baú no mapa."));
+    if (!api?.createItemPile) return ui.notifications.warn(T("Janela.OItemPilesNaoEsta"));
+    if (!canvas?.scene) return ui.notifications.warn(T("Janela.AbraUmaCenaParaColocar"));
     const e = this._entry(); const { page, m } = analisar(e);
     const items = comoLista(m.items).map(([, it]) => itemLimpo(it));
     const moedas = m.currency ?? {};
-    if (!items.length && !chavesMoedas().some((k) => Number(moedas[k]) > 0)) return ui.notifications.warn(T("O baú está vazio."));
+    if (!items.length && !chavesMoedas().some((k) => Number(moedas[k]) > 0)) return ui.notifications.warn(T("Janela.OBauEstaVazio"));
     const ok = await Dialogo().confirm({
-      window: { title: T("Colocar no mapa") },
-      content: `<p>${T("Criar uma pilha do Item Piles no centro da tela com tudo de")} <b>${esc(e.name)}</b>?</p><p>${T("Os itens e as moedas saem do baú e vão para o mapa.")}</p>`
+      window: { title: T("Janela.ColocarNoMapa") },
+      content: `<p>${T("Janela.CriarUmaPilhaDoItem")} <b>${esc(e.name)}</b>?</p><p>${T("Janela.OsItensEAsMoedas")}</p>`
     });
     if (!ok) return;
     const centro = canvas.stage.pivot;
@@ -2709,25 +2709,25 @@ class JournalApp extends ApplicationV2 {
         tokenOverrides: { name: e.name }
       });
       await substituirMapa(page, `flags.${MOD}.${CHAVE_DADOS}.items`, {}, { [`flags.${MOD}.${CHAVE_DADOS}.currency`]: Object.fromEntries(chavesMoedas().map((k) => [k, 0])) });
-      ui.notifications.info(T("Baú colocado no mapa."));
+      ui.notifications.info(T("Janela.BauColocadoNoMapa"));
     } catch (err) {
       console.error(err);
-      ui.notifications.error(`${T("O Item Piles recusou")}: ${err.message ?? err}`);
+      ui.notifications.error(`${T("Janela.OItemPilesRecusou")}: ${err.message ?? err}`);
     }
   }
 
   static async _exportarItens() {
     const e = this._entry(); const { m } = analisar(e);
     const itens = comoLista(m.items).map(([, it]) => itemLimpo(it));
-    if (!itens.length) return ui.notifications.warn(T("Não há itens para exportar."));
-    const raiz = await obterPasta("Item", T("Journal"), "itens");
+    if (!itens.length) return ui.notifications.warn(T("Janela.NaoHaItensParaExportar"));
+    const raiz = await obterPasta("Item", T("Comum.Journal"), "itens");
     const pasta = await Folder.create({ name: e.name, type: "Item", folder: raiz?.id ?? null });
     await Item.createDocuments(itens.map((d) => ({ ...d, folder: pasta.id })));
-    ui.notifications.info(`${itens.length} ${T("item(ns) copiado(s) para a aba Itens, pasta \"Journal /")} ${e.name}".`);
+    ui.notifications.info(`${itens.length} ${T("Janela.ItemNsCopiadoSPara")} ${e.name}".`);
   }
 
   static async _bauCombate() {
-    if (!game.combat) return ui.notifications.warn(T("Não há combate ativo."));
+    if (!game.combat) return ui.notifications.warn(T("Janela.NaoHaCombateAtivo"));
     await criarBauDoCombate(game.combat);
   }
 
@@ -2735,24 +2735,24 @@ class JournalApp extends ApplicationV2 {
   static async _importarMonks() {
     if (!ehGM()) return;
     const ok = await Dialogo().confirm({
-      window: { title: T("Importar do Monk's Enhanced Journal") },
-      content: `<p>${T("Converte as páginas que estão no formato do Monk's e ainda não têm o formato do Journal da Mesa. A conversão só copia: nada é apagado, e as páginas continuam as mesmas (mesmos vínculos).")}</p><p>${T("Páginas já convertidas não são tocadas. Recomendo um backup do mundo antes.")}</p>`,
-      yes: { label: T("Converter") }, no: { label: T("Cancelar") }, rejectClose: false
+      window: { title: T("Comum.ImportarDoMonkSEnhanced") },
+      content: `<p>${T("Janela.ConverteAsPaginasQueEstao")}</p><p>${T("Janela.PaginasJaConvertidasNaoSao")}</p>`,
+      yes: { label: T("Janela.Converter") }, no: { label: T("Janela.Cancelar") }, rejectClose: false
     }).catch(() => false);
     if (ok) await importarDoMonks();
   }
 
   static async _voltarDia() {
     const n = Math.max(1, diaAtual() - 1);
-    if (n === diaAtual()) return ui.notifications.warn(T("Já é o dia 1."));
+    if (n === diaAtual()) return ui.notifications.warn(T("Janela.JaEODia1"));
     await game.settings.set(MOD, "dia", n);
-    ui.notifications.info(`${T("Voltou para o dia")} ${n}.`);
+    ui.notifications.info(`${T("Janela.VoltouParaODia")} ${n}.`);
   }
 
   static async _novoDia() {
     const n = diaAtual() + 1;
     await game.settings.set(MOD, "dia", n);
-    await chat(`<i class="fa-solid fa-sun"></i> ${T("Amanhece o")} <b>${T("dia")} ${n}</b>. ${T("As lojas têm novas ofertas do dia.")}`);
+    await chat(`<i class="fa-solid fa-sun"></i> ${T("Janela.AmanheceO")} <b>${T("Comum.Dia")} ${n}</b>. ${T("Janela.AsLojasTemNovasOfertas")}`);
   }
 
   static _rastreador() { game.settings.set(MOD, "rastreador", !game.settings.get(MOD, "rastreador")); }
@@ -2768,7 +2768,7 @@ class JournalApp extends ApplicationV2 {
     await garantirObjeto(page, "objectives");
     const id = novoId();
     this.editando = true;
-    await dadosSet(page, `objectives.${id}`, { id, content: T("Novo objetivo"), done: 0, required: "", available: true });
+    await dadosSet(page, `objectives.${id}`, { id, content: T("Janela.NovoObjetivo"), done: 0, required: "", available: true });
   }
 
   static async _alternarObjetivo(ev, el) {
@@ -2804,8 +2804,8 @@ class JournalApp extends ApplicationV2 {
     const item = ator.items.get(el.dataset.id);
     const quantidade = Number(el.closest(".jm-produto")?.querySelector(".jm-qtd")?.value) || 1;
     const ok = await Dialogo().confirm({
-      window: { title: T("Vender") },
-      content: `<p>${T("Vender")} ${quantidade > 1 ? `<b>${quantidade}×</b> ` : ""}<b>${esc(item?.name)}</b> ${T("para")} <b>${esc(this._entry().name)}</b>?</p>`
+      window: { title: T("Janela.Vender") },
+      content: `<p>${T("Janela.Vender")} ${quantidade > 1 ? `<b>${quantidade}×</b> ` : ""}<b>${esc(item?.name)}</b> ${T("Janela.Para")} <b>${esc(this._entry().name)}</b>?</p>`
     });
     if (ok) pedir("vender", { entryId: this.ativa, userId: game.user.id, actorUuid: ator.uuid, itemId: el.dataset.id, quantidade });
   }
@@ -2817,7 +2817,7 @@ class JournalApp extends ApplicationV2 {
     await garantirObjeto(page, "rewards");
     const id = novoId();
     await dadosSet(page, `rewards.${id}`, {
-      id, name: T("Recompensas"), active: true, visible: true, awarded: false,
+      id, name: T("Comum.Recompensas"), active: true, visible: true, awarded: false,
       itemIds: [], xp: 0, additional: "", currency: {}
     });
   }
@@ -2832,7 +2832,7 @@ class JournalApp extends ApplicationV2 {
   static async _apagarRecompensa(ev, el) {
     const { page, m } = analisar(this._entry());
     const r = Object.fromEntries(comoLista(m.rewards))[el.dataset.grupo];
-    const ok = await Dialogo().confirm({ window: { title: T("Apagar recompensa") }, content: `<p>${T("Apagar o grupo")} <b>${esc(r?.name ?? T("Recompensas"))}</b> ${T("e os itens dele?")}</p>` });
+    const ok = await Dialogo().confirm({ window: { title: T("Janela.ApagarRecompensa") }, content: `<p>${T("Janela.ApagarOGrupo")} <b>${esc(r?.name ?? T("Comum.Recompensas"))}</b> ${T("Janela.EOsItensDele")}</p>` });
     if (!ok) return;
     await garantirObjeto(page, "rewards");
     await garantirObjeto(page, "items");
@@ -2855,42 +2855,42 @@ class JournalApp extends ApplicationV2 {
     const r = Object.fromEntries(comoLista(m.rewards))[gid];
     if (!r) return;
     const herois = [...new Set(game.users.filter((u) => !u.isGM && u.character).map((u) => u.character))];
-    if (!herois.length) return ui.notifications.warn(T("Nenhum jogador tem personagem definido (Configurações do Jogador)."));
+    if (!herois.length) return ui.notifications.warn(T("Janela.NenhumJogadorTemPersonagemDefinido"));
     const itensMapa = Object.fromEntries(comoLista(m.items));
     const itens = (r.itemIds ?? []).map((iid) => [iid, itensMapa[iid]]).filter(([, it]) => it);
     const moedas = r.currency ?? {};
     const temMoedas = chavesMoedas().some((k) => Number(moedas[k]) > 0);
 
     const content = `<div class="jm-entrega">
-      <h4><i class="fa-solid fa-users"></i> ${T("Quem recebe")}</h4>
+      <h4><i class="fa-solid fa-users"></i> ${T("Janela.QuemRecebe")}</h4>
       <div class="jm-entrega-herois">${herois.map((h) => `<label class="jm-entrega-heroi">
         <input type="checkbox" name="h-${h.id}" checked>
         <img src="${esc(h.img)}" alt=""><b>${esc(h.name)}</b>
         <span class="jm-xp-ed"><i class="fa-solid fa-star"></i><input type="number" min="0" name="xp-${h.id}" value="${Number(r.xp) || 0}"><span>XP</span></span>
       </label>`).join("")}</div>
-      ${temMoedas ? `<h4><i class="fa-solid fa-coins"></i> ${T("Moedas")}: ${mostrarMoedas(moedas)}</h4>
+      ${temMoedas ? `<h4><i class="fa-solid fa-coins"></i> ${T("Janela.Moedas")}: ${mostrarMoedas(moedas)}</h4>
         <div class="jm-entrega-opcoes">
-          <label><input type="radio" name="moedas" value="dividir" checked> ${T("Dividir entre os marcados (o resto fica na missão)")}</label>
-          <label><input type="radio" name="moedas" value="cada"> ${T("Cada um recebe o valor inteiro")}</label>
-          <label><input type="radio" name="moedas" value="nada"> ${T("Não entregar moedas agora")}</label>
+          <label><input type="radio" name="moedas" value="dividir" checked> ${T("Janela.DividirEntreOsMarcadosO")}</label>
+          <label><input type="radio" name="moedas" value="cada"> ${T("Janela.CadaUmRecebeOValor")}</label>
+          <label><input type="radio" name="moedas" value="nada"> ${T("Janela.NaoEntregarMoedasAgora")}</label>
         </div>` : ""}
-      ${itens.length ? `<h4><i class="fa-solid fa-gem"></i> ${T("Itens, talentos e magias")}</h4>
+      ${itens.length ? `<h4><i class="fa-solid fa-gem"></i> ${T("Janela.ItensTalentosEMagias")}</h4>
         <div class="jm-entrega-itens">${itens.map(([iid, it]) => `<label class="jm-entrega-item">
           <img src="${esc(it.img)}" alt=""><b>${esc(it.name)}</b>
           <select name="i-${iid}">
-            <option value="">${T("Deixar na missão (quem quiser pega)")}</option>
-            ${herois.map((h) => `<option value="${h.id}">${T("Dar para")} ${esc(h.name)}</option>`).join("")}
-            <option value="todos">${T("Um para cada marcado")}</option>
+            <option value="">${T("Janela.DeixarNaMissaoQuemQuiser")}</option>
+            ${herois.map((h) => `<option value="${h.id}">${T("Janela.DarPara")} ${esc(h.name)}</option>`).join("")}
+            <option value="todos">${T("Janela.UmParaCadaMarcado")}</option>
           </select></label>`).join("")}</div>` : ""}
-      <label class="jm-entrega-check"><input type="checkbox" name="anunciar" checked> ${T("Anunciar no chat")}</label>
+      <label class="jm-entrega-check"><input type="checkbox" name="anunciar" checked> ${T("Janela.AnunciarNoChat")}</label>
     </div>`;
 
     const dados = await Dialogo().prompt({
-      window: { title: `${T("Entregar")}: ${r.name ?? T("Recompensas")}`, icon: "fa-solid fa-gift" },
+      window: { title: `${T("Janela.Entregar")}: ${r.name ?? T("Comum.Recompensas")}`, icon: "fa-solid fa-gift" },
       position: { width: 560 },
       content,
       ok: {
-        label: T("Entregar"), icon: "fa-solid fa-gift",
+        label: T("Janela.Entregar"), icon: "fa-solid fa-gift",
         callback: (ev2, botao) => {
           const f = botao.form;
           const val = (n) => f.querySelector(`[name="${n}"]`);
@@ -2905,7 +2905,7 @@ class JournalApp extends ApplicationV2 {
     }).catch(() => null);
     if (!dados) return;
     const escolhidos = dados.herois.map((h) => ({ ...h, ator: game.actors.get(h.id) })).filter((h) => h.ator);
-    if (!escolhidos.length) return ui.notifications.warn(T("Nenhum personagem marcado."));
+    if (!escolhidos.length) return ui.notifications.warn(T("Janela.NenhumPersonagemMarcado"));
 
     /* moedas */
     const parte = {};
@@ -2943,7 +2943,7 @@ class JournalApp extends ApplicationV2 {
       for (const alvo of alvos) {
         if (!porFicha.has(alvo)) porFicha.set(alvo, []);
         porFicha.get(alvo).push(itemLimpo(it));
-        linhasChat.push(`<b>${esc(alvo.name)}</b> ${T("recebeu")} <b>${esc(it.name)}</b>`);
+        linhasChat.push(`<b>${esc(alvo.name)}</b> ${T("Janela.Recebeu")} <b>${esc(it.name)}</b>`);
       }
       restantes = restantes.filter((i) => i !== iid);
       saem.push(`flags.${MOD}.${CHAVE_DADOS}.items.${iid}`);
@@ -2961,8 +2961,8 @@ class JournalApp extends ApplicationV2 {
       [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.awarded`]: true,
       [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.visible`]: true
     }, saem);
-    Sessao.registrar("missao", `${T("Recompensa de")} <b>${esc(e.name)}</b> entregue.${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}`);
-    if (dados.anunciar) await chat(`<i class="fa-solid fa-gift"></i> ${T("Recompensa de")} <b>${esc(e.name)}</b> entregue!${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}${restantes.length ? `<p>${T("Ainda há itens na missão para quem quiser pegar.")}</p>` : ""}`);
+    Sessao.registrar("missao", `${T("Janela.RecompensaDe")} <b>${esc(e.name)}</b> entregue.${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}`);
+    if (dados.anunciar) await chat(`<i class="fa-solid fa-gift"></i> ${T("Janela.RecompensaDe")} <b>${esc(e.name)}</b> entregue!${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}${restantes.length ? `<p>${T("Janela.AindaHaItensNaMissao")}</p>` : ""}`);
   }
 
   static _pegarRecompensa(ev, el) {
@@ -3004,7 +3004,7 @@ async function renovarEstoqueDaLoja(e, { avisarChat = true } = {}) {
   }
   // troca o estoque numa gravação só (antes: apagar tudo e depois gravar; uma falha no meio esvaziava a loja)
   await substituirMapa(page, `flags.${MOD}.${CHAVE_DADOS}.items`, novos);
-  if (avisarChat) await chat(`<i class="fa-solid fa-store"></i> <b>${esc(e.name)}</b> ${T("renovou o estoque da semana.")}`, estaVisivel(e) ? {} : { whisper: idsGM() });
+  if (avisarChat) await chat(`<i class="fa-solid fa-store"></i> <b>${esc(e.name)}</b> ${T("Janela.RenovouOEstoqueDaSemana")}`, estaVisivel(e) ? {} : { whisper: idsGM() });
   return Object.keys(novos).length;
 }
 
@@ -3016,9 +3016,9 @@ async function renovarEstoques() {
   const feitas = [];
   for (const e of lojas) {
     try { if ((await renovarEstoqueDaLoja(e, { avisarChat: false })) != null) feitas.push(e.name); }
-    catch (err) { console.error(`${T("Journal da Mesa | não renovei o estoque de")} "${e.name}"`, err); }
+    catch (err) { console.error(`${T("Janela.JournalDaMesaNaoRenovei")} "${e.name}"`, err); }
   }
-  if (feitas.length) await chat(`<i class="fa-solid fa-store"></i> ${T("Nova semana: estoque renovado em")} ${feitas.map((n) => `<b>${esc(n)}</b>`).join(", ")}.`, { whisper: idsGM() });
+  if (feitas.length) await chat(`<i class="fa-solid fa-store"></i> ${T("Janela.NovaSemanaEstoqueRenovadoEm")} ${feitas.map((n) => `<b>${esc(n)}</b>`).join(", ")}.`, { whisper: idsGM() });
   return true;
 }
 

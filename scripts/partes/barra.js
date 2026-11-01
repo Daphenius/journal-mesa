@@ -27,14 +27,14 @@ Hooks.on("renderDocumentDirectory", marcarDonos);
 /* menu de botão direito da barra lateral nativa */
 const elDe = (li) => (li instanceof HTMLElement ? li : null);
 function opcaoAbrirNoJournal(app, opcoesMenu) {
-  if (opcoesMenu.some((o) => o.name === T("Abrir no Journal da Mesa"))) return;
+  if (opcoesMenu.some((o) => o.name === T("Barra.AbrirNoJournalDaMesa"))) return;
   opcoesMenu.unshift({
-    name: T("Abrir no Journal da Mesa"),
+    name: T("Barra.AbrirNoJournalDaMesa"),
     icon: `<i class="fa-solid fa-book-open"></i>`,
     callback: (li) => { const el = elDe(li); abrirJournal(el?.dataset.entryId ?? el?.dataset.documentId); }
   });
   opcoesMenu.push({
-    name: T("Quem vê (por jogador)"),
+    name: T("Barra.QuemVePorJogador"),
     icon: `<i class="fa-solid fa-user-check"></i>`,
     condition: () => ehGM(),
     callback: (li) => { const el = elDe(li); const d = game.journal.get(el?.dataset.entryId ?? el?.dataset.documentId); if (d) revelarPara(d); }
@@ -44,9 +44,9 @@ Hooks.on("getJournalEntryContextOptions", opcaoAbrirNoJournal);
 
 function opcaoCriarNaPasta(app, opcoesMenu) {
   if (app && app.documentName && app.documentName !== "JournalEntry" && app.constructor?.name !== "JournalDirectory") return;
-  if (opcoesMenu.some((o) => o.name === T("Nova página do Journal da Mesa"))) return;
+  if (opcoesMenu.some((o) => o.name === T("Comum.NovaPaginaDoJournalDa"))) return;
   opcoesMenu.unshift({
-    name: T("Nova página do Journal da Mesa"),
+    name: T("Comum.NovaPaginaDoJournalDa"),
     icon: `<i class="fa-solid fa-book-open"></i>`,
     condition: (li) => ehGM() && game.folders.get(elDe(li)?.closest("[data-folder-id]")?.dataset.folderId)?.type === "JournalEntry",
     callback: (li) => escolherTipoECriar(elDe(li)?.closest("[data-folder-id]")?.dataset.folderId ?? null)
@@ -62,7 +62,7 @@ Hooks.on("renderJournalDirectory", (app, html) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "jm-abrir";
-    btn.innerHTML = `<i class="fa-solid fa-book-open"></i> ${T("Journal da Mesa")}`;
+    btn.innerHTML = `<i class="fa-solid fa-book-open"></i> ${T("Comum.JournalDaMesa")}`;
     btn.addEventListener("click", () => abrirJournal());
     const lugar = root.querySelector(".header-actions") ?? root.querySelector(".directory-header") ?? root;
     lugar.append(btn);
@@ -70,7 +70,7 @@ Hooks.on("renderJournalDirectory", (app, html) => {
       const novo = document.createElement("button");
       novo.type = "button";
       novo.className = "jm-abrir jm-novo-nativo";
-      novo.innerHTML = `<i class="fa-solid fa-plus"></i> ${T("Página do Journal da Mesa")}`;
+      novo.innerHTML = `<i class="fa-solid fa-plus"></i> ${T("Barra.PaginaDoJournalDaMesa")}`;
       novo.addEventListener("click", () => escolherTipoECriar(null));
       lugar.append(novo);
     }
