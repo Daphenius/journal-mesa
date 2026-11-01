@@ -1,5 +1,5 @@
 /* Journal — negociação com o dono da loja e rolagens da pechincha.
- * Parte do journal.js (dividido na 4.10); depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
+ * Parte do journal.js; depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
 import { T, TF } from "../idioma.js";
 import { lojaBloqueada } from "./calendario.js";
 import { Sessao } from "./sessao.js";

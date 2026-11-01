@@ -1,5 +1,27 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.4.0
+
+- **README novo, organizado por funcionalidade.** O README foi reescrito do zero: saiu o histórico espalhado pelos títulos ("(4.4)", "(4.7)"...), que já está aqui no CHANGELOG, e entrou uma seção curta para cada coisa que o módulo faz: instalação, cada tipo de página (NPC, Local, Loja, Missão, Divindade, Baú, História, Diário de sessão, Jornal, Regras da Mesa, Nexus, Linha do tempo), as integrações que realmente existem no código (Calendário da Mesa, Dados em Cena, Item Piles, Translate All), as configurações, a API para macros, limitações e privacidade, como traduzir e como o código está organizado. Ficou com cerca de metade do tamanho (de 38 KB para 20 KB).
+- **API documentada.** Tudo o que o módulo oferece em `game.modules.get("journal-mesa").api` (abrir, criar página, baú do combate, importar JSON e do Monk's, dia das ofertas, renovar estoques, fixados, Linha do tempo, Nexus e jornais) está numa tabela no README, com os parâmetros, o que devolve e exemplos de macro. No código, a API passou a ficar organizada no arquivo novo `scripts/api.js`, com a explicação de cada chamada; **o funcionamento não mudou** (as funções são as mesmas, só foram reunidas num lugar só). O Calendário da Mesa continua usando as mesmas chamadas.
+- **Segredos do Jornal: aviso claro.** A veracidade das matérias e as notas do mestre continuam numa configuração de mundo, e o README agora diz sem rodeios que um jogador consegue lê-las pelo console (F12). Mover para uma flag do diário não resolveria, porque o Foundry também manda as flags de todos os diários para todos os jogadores; por isso nada foi movido. Veja "Limitações e privacidade" no README.
+- Testes: `node tests/formato.test.mjs` continua passando (134 verificações) e `node tests/i18n.test.mjs` também (1.372 chaves, 1.280 chamadas conferidas).
+
+## 5.3.0
+
+- **Testada e aprovada pelo autor no Foundry VTT e no D&D 5e** antes da publicação.
+- **Reorganização interna: cada tipo de página tem seu arquivo.** O arquivo da janela (`scripts/partes/janela.js`, que tinha mais de 3.000 linhas) foi dividido: a janela em si ficou com as abas, a lista de pastas, a busca, o cabeçalho e a barra de baixo; o conteúdo e os botões de cada tipo de página (NPC, Local, Organização, Loja, Missão, Divindade, Baú, Anotação, História, Jornal, Diário e Monk's) e dos painéis (Linha do tempo, Nexus, Regras da Mesa) foram para `scripts/paginas/`, um arquivo por tipo. **Nada muda para quem joga**: as mesmas telas, os mesmos botões, os mesmos textos nos dois idiomas.
+- Para quem mexe no código: o README explica a nova pasta `scripts/paginas/` (veja [Arquivos do código](README.md#arquivos-do-código-53)). A janela do Journal passou a ser criada num lugar só do núcleo (`obterJanela()`).
+- Testes: `node tests/formato.test.mjs` continua passando (134 verificações) e `node tests/i18n.test.mjs` também (1.372 chaves, 1.280 chamadas conferidas — duas a menos porque dois trechos repetidos viraram um). Além disso, o HTML gerado pelo código novo foi comparado com o da 5.2.0, página por página, num Foundry simulado: saiu idêntico.
+
+## 5.2.0
+
+- **Testada e aprovada pelo autor no Foundry VTT e no D&D 5e** antes da publicação.
+- **Limpeza interna.** Foi removido o código que só existia para funcionar no Foundry 12 e 13 (o módulo exige o Foundry 14 desde a 4.9) e para versões antigas do Calendário da Mesa. Para as integrações com o calendário (histórico da campanha na Linha do tempo e no diário de sessão, anomalias dos Nexus) agora é preciso o **Calendário da Mesa 4.2 ou mais novo**; o `module.json` passa a indicar isso. Eventos já salvos no formato antigo do calendário continuam sendo lidos normalmente.
+- Também saíram várias proteções que não serviam para nada (leituras de configuração embrulhadas em "se der erro, ignora", verificações de coisas que o Foundry 14 sempre tem) e trechos repetidos em vários arquivos viraram um só. **Nada muda para quem joga.**
+- Pequeno acerto: "Permitir que role de novo" (limpar a oferta do dia de um jogador) agora apaga a oferta em vez de marcá-la como do "dia 0".
+- Testes: `node tests/formato.test.mjs` continua passando (134 verificações) e `node tests/i18n.test.mjs` também (1.372 chaves, 1.282 chamadas conferidas).
+
 ## 5.1.0
 
 - **Testada e aprovada pelo autor no Foundry VTT e no D&D 5e** antes da publicação.

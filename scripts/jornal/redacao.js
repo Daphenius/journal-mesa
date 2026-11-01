@@ -13,7 +13,7 @@ import { J } from "./contexto.js";
 import { VERACIDADE } from "./dados.js";
 
 const CHAVE = "jornalSegredos";
-const todos = () => { try { const s = game.settings.get(J.MOD, CHAVE); return s && typeof s === "object" ? s : {}; } catch { return {}; } };
+const todos = () => { const s = game.settings.get(J.MOD, CHAVE); return s && typeof s === "object" ? s : {}; };
 
 /** Segredos de uma edição (vazio para quem não é mestre). */
 export function segredosDe(pageId) {

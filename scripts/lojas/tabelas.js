@@ -7,7 +7,9 @@
  *    separadas por tipo e raridade, numa pasta própria. Os resultados apontam para os itens do compêndio
  *    (nada é copiado para o mundo até alguém comprar).
  * Setting "lojasTabelas" (mundo): { visiveis: [uuid], semanal: uuid, diaria: uuid }. */
-const C = {};   // MOD, T, esc (entregues pelo journal.js)
+import { esc as e, opcoes } from "../nucleo.js";
+
+const C = {};   // MOD, T, atualizar (entregues pelo journal.js)
 const ApplicationV2 = foundry.applications.api.ApplicationV2;
 const CHAVE = "lojasTabelas";
 const PASTA = "Journal — tabelas das lojas";   // nome em português da pasta criada antes da 4.9 (hoje ela sai no idioma do mestre)
@@ -15,10 +17,8 @@ const PASTA = "Journal — tabelas das lojas";   // nome em português da pasta 
 export function configurarTabelasLojas(ctx) { Object.assign(C, ctx); }
 
 export function cfgTabelas() {
-  try {
-    const c = game.settings.get(C.MOD, CHAVE) ?? {};
-    return { visiveis: Array.isArray(c.visiveis) ? c.visiveis.filter((u) => typeof u === "string") : [], semanal: String(c.semanal ?? ""), diaria: String(c.diaria ?? "") };
-  } catch { return { visiveis: [], semanal: "", diaria: "" }; }
+  const c = game.settings.get(C.MOD, CHAVE) ?? {};
+  return { visiveis: Array.isArray(c.visiveis) ? c.visiveis.filter((u) => typeof u === "string") : [], semanal: String(c.semanal ?? ""), diaria: String(c.diaria ?? "") };
 }
 /** Tabelas oferecidas nos seletores das lojas: [uuid, nome]. A escolhida pela loja aparece mesmo fora do filtro. */
 export function tabelasDasLojas(atuais = []) {
@@ -99,7 +99,7 @@ export class MenuTabelasLojas extends ApplicationV2 {
   get title() { return C.T("Tabelas.TabelasDeItensDasLojas"); }
 
   async _renderHTML() {
-    const T = C.T, e = C.esc;
+    const T = C.T;
     const c = cfgTabelas();
     const marcadas = new Set(c.visiveis);
     const pastas = new Map();
@@ -108,7 +108,7 @@ export class MenuTabelasLojas extends ApplicationV2 {
       if (!pastas.has(p)) pastas.set(p, []);
       pastas.get(p).push(t);
     }
-    const op = (sel) => `<option value="">${e(T("Tabelas.Nenhuma"))}</option>` + game.tables.contents.map((t) => `<option value="${t.uuid}" ${t.uuid === sel ? "selected" : ""}>${e(t.name)}</option>`).join("");
+    const op = (sel) => opcoes(game.tables.contents.map((t) => [t.uuid, t.name]), sel, T("Tabelas.Nenhuma"));
     const packs = compendiosDeItens();
     const padrao = compendioPadrao();
     return `<div class="jmj-sel">
@@ -134,7 +134,7 @@ export class MenuTabelasLojas extends ApplicationV2 {
   }
   _replaceHTML(html, content) {
     content.innerHTML = html;
-    try { this.element.dataset.tema = game.settings.get(C.MOD, "tema"); } catch { /* padrão */ }
+    this.element.dataset.tema = game.settings.get(C.MOD, "tema");
     const busca = content.querySelector("[data-busca]");
     busca?.addEventListener("input", () => {
       const q = busca.value.trim().toLowerCase();

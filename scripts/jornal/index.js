@@ -1,4 +1,4 @@
-/* Jornal de Notícias — Imprensa do Mundo (parte do Journal 4.7).
+/* Jornal de Notícias — Imprensa do Mundo.
  *   dados.js       publicações, edições e matérias (formato e leitura)
  *   redacao.js     veracidade e notas do mestre (fora das páginas que os jogadores leem)
  *   publicacao.js  rascunho → programada → publicada → arquivada; publicação automática; apresentar
@@ -21,7 +21,7 @@ import { exportarEdicao, dialogoImportar, importarNoJornal, novaAPartirDe, mostr
 export { caminhoSeguro } from "./dados.js";
 export { instalarContexto, ehJornal, corpoJornal, painelJornais, secaoRelacionadas, itensLinha, verificarProgramadas, aoApresentar, identidade, criarJornal, edicoes, publicaEstado, t, LeitorJornal };
 
-const e = (s) => J.esc(s);
+import { esc as e } from "../nucleo.js";
 const pagina = (el) => game.journal.get(el.dataset.id)?.pages.get(el.dataset.page) ?? null;
 
 export function registrarConfiguracoes() {
@@ -32,7 +32,7 @@ export function registrarConfiguracoes() {
     scope: "world", config: true, type: Boolean, default: true, onChange: () => J.atualizarTudo()
   });
 }
-export const naLinha = () => { try { return game.settings.get(J.MOD, "jornalNaLinha") !== false; } catch { return true; } };
+export const naLinha = () => game.settings.get(J.MOD, "jornalNaLinha") !== false;
 
 /** Abre a edição para LER (janela de jornal). Rascunho/programada (só o mestre chega nelas) também abrem. */
 export function lerEdicaoJanela(entryId, pageId) { return LeitorJornal.abrir(entryId, pageId); }
@@ -219,7 +219,7 @@ export function registrarGanchos() {
   J.abrirEdicaoNoJournal = abrirEdicao;
   Hooks.once("ready", () => { garantirEstilo(); garantirIdioma(); });
   // "Ler a edição" no aviso do chat
-  document.addEventListener?.("click", (ev) => {
+  document.addEventListener("click", (ev) => {
     const a = ev.target?.closest?.("[data-jornal-ler]");
     if (!a) return;
     ev.preventDefault();
@@ -242,9 +242,22 @@ export function registrarGanchos() {
   });
 }
 
-/** API pública: só o que o usuário pode ler (sem veracidade, notas ou rascunhos de quem não é mestre). */
+/** API pública (game.modules.get("journal-mesa").api.jornais): só o que o usuário pode ler — jornais com
+ *  permissão Limitado ou mais, edições publicadas ou arquivadas (o mestre vê todas). Nunca devolve
+ *  veracidade nem notas do mestre. Documentada no README ("API para macros") e em scripts/api.js. */
 export const apiJornais = {
+  /**
+   * Jornais que o usuário pode ler.
+   * @returns {Array<{id: string, uuid: string, nome: string, subtitulo: string, regiao: string, estilo: string}>}
+   * @example game.modules.get("journal-mesa").api.jornais.lista().map((j) => j.nome);
+   */
   lista: () => jornais().map((j) => ({ id: j.id, uuid: j.uuid, nome: j.name, ...(({ subtitulo, regiao, estilo }) => ({ subtitulo, regiao, estilo }))(identidade(j)) })),
+  /**
+   * Edições de um jornal: as publicadas e arquivadas para jogadores; todas (rascunho, programada...) para o mestre.
+   * @param {string} id  ID do JournalEntry do jornal (ver `lista()`).
+   * @returns {Array<{id: string, uuid: string, numero: number, estado: "rascunho"|"programado"|"publicado"|"arquivado", data: string, td: number|null, titulo: string, materias: Array<{id: string, secao: string, titulo: string, categoria: string}>}>}  Vazio se não for jornal ou o usuário não puder ler.
+   * @example const j = game.modules.get("journal-mesa").api.jornais.lista()[0]; game.modules.get("journal-mesa").api.jornais.edicoes(j.id);
+   */
   edicoes: (id) => {
     const j = game.journal.get(id);
     if (!ehJornal(j) || !(game.user.isGM || j.testUserPermission(game.user, "LIMITED"))) return [];
@@ -253,9 +266,34 @@ export const apiJornais = {
       materias: ed.materias.map((m) => ({ id: m.id, secao: m.secao, titulo: m.titulo, categoria: m.categoria }))
     }));
   },
+  /**
+   * Abre o jornal na janela do Journal da Mesa (página do jornal, com os controles do mestre), numa edição se `pageId` vier.
+   * @param {string} id  ID do JournalEntry do jornal.
+   * @param {string|null} [pageId=null]  ID da página da edição (ver `edicoes()`).
+   * @returns {JournalApp}
+   * @example game.modules.get("journal-mesa").api.jornais.abrir(idDoJornal);
+   */
   abrir: (id, pageId = null) => abrirEdicao(id, pageId),
+  /**
+   * Abre uma edição para LER, na janela de jornal (a folha impressa). Rascunho e programada só abrem para o mestre.
+   * @param {string} id  ID do JournalEntry do jornal.
+   * @param {string} pageId  ID da página da edição.
+   * @returns {LeitorJornal|null}  null (com aviso) se a edição não existir ou o usuário não puder ler.
+   * @example const [ed] = game.modules.get("journal-mesa").api.jornais.edicoes(idDoJornal); game.modules.get("journal-mesa").api.jornais.ler(idDoJornal, ed.id);
+   */
   ler: (id, pageId) => lerEdicaoJanela(id, pageId),
+  /**
+   * Publica agora as edições programadas cuja data já passou (ou só avisa, se a publicação automática
+   * da edição estiver desligada). Só faz algo no mestre principal e com um calendário ativo.
+   * @returns {Promise<number>}  Quantas edições foram publicadas.
+   * @example await game.modules.get("journal-mesa").api.jornais.verificarProgramadas();
+   */
   verificarProgramadas: () => verificarProgramadas(),
+  /**
+   * Seções das matérias com o rótulo no idioma atual ({ noticia, rumor, aviso, classificado }).
+   * @returns {Record<string, string>}
+   * @example game.modules.get("journal-mesa").api.jornais.secoes();
+   */
   secoes: () => Object.fromEntries(Object.keys(SECOES).map((k) => [k, rotSecao(k)]))
 };
 

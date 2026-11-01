@@ -149,4 +149,4 @@ Nada disso é do D&D 5e: a compatibilidade com o sistema (5.0.0 a 6.0.6) não mu
 ## Ainda pendente
 - Sigilo real dos segredos (item 3): o dono do módulo decidiu manter como está (limite documentado).
 - Dois mestres simultâneos (item 13): o dono do módulo decidiu manter como está.
-- Divisão do `journal.js` (item 14): feita na 4.10.0 (núcleo + 8 partes). A `JournalApp` (`partes/janela.js`, cerca de 3.000 linhas) continua uma classe só.
+- Divisão do `journal.js` (item 14): feita na 4.10.0 (núcleo + 8 partes). A `JournalApp` (`partes/janela.js`, cerca de 3.000 linhas) foi dividida na 5.3.0: a janela ficou com ~890 linhas e cada tipo de página tem seu arquivo em `scripts/paginas/`.

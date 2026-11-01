@@ -1,5 +1,5 @@
 /* Journal — integração com o Calendário da Mesa, datas pelo calendário nativo e horário das lojas.
- * Parte do journal.js (dividido na 4.10); depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
+ * Parte do journal.js; depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
 import { T, TF } from "../idioma.js";
 import { MOD, analisar, avisoUmaVez } from "../nucleo.js";
 
@@ -7,7 +7,7 @@ import { MOD, analisar, avisoUmaVez } from "../nucleo.js";
 
 const CAL = "calendario-mesa";
 /* mesmos valores que o calendário aceita (ele ignora o que não conhece) */
-/* formato de repetição do Calendário da Mesa 2.4+ (o antigo anual/mensal/semanal/ndias é convertido) */
+/* formato de repetição das notas; notas gravadas no formato antigo (anual/mensal/semanal/ndias) são convertidas ao ler */
 const CAL_REPETIR = { nao: "Não repete", dias: "Dias", semanas: "Semanas", meses: "Meses", anos: "Anos" };
 const CAL_ANTIGOS = { anual: ["anos", 1], mensal: ["meses", 1], semanal: ["semanas", 1], ndias: ["dias", null] };
 const CAL_MODOS_MES = { dia: "No mesmo dia do mês", semana: "No mesmo dia da semana (ex.: 2ª terça)", ultima: "No último desse dia da semana" };
@@ -45,22 +45,16 @@ const CAL_AVISOS = { nenhum: "Sem aviso", mestre: "Avisar só o mestre", todos: 
 const calApi = () => (game.modules.get(CAL)?.active ? game.modules.get(CAL).api ?? null : null);
 /** Ícone Font Awesome só com letras, números e hífen (o que vem de outro módulo não entra cru no HTML). */
 const iconeSeguro = (i, padrao) => (/^fa-[a-z0-9-]+$/.test(String(i ?? "")) ? i : padrao);
-/** Histórico da campanha do Calendário: pela API (2.6+) ou, em versões antigas, pelo setting. */
+/** Histórico da campanha do Calendário (pela API dele). */
 function historicoCal() {
   const api = calApi();
-  if (!api) return [];
-  try {
-    if (typeof api.historico === "function") return api.historico() ?? [];
-    return game.settings.get(CAL, "historico")?.itens ?? [];
-  } catch (err) { avisoUmaVez(T("Comum.HistoricoDoCalendario"), err); return []; }
+  if (typeof api?.historico !== "function") return [];
+  try { return api.historico() ?? []; } catch (err) { avisoUmaVez(T("Comum.HistoricoDoCalendario"), err); return []; }
 }
 function historicoCalVisivel() {
   const api = calApi();
-  if (!api) return false;
-  try {
-    if (typeof api.historicoVisivel === "function") return !!api.historicoVisivel();
-    return !!game.settings.get(CAL, "historicoJogadores");
-  } catch (err) { avisoUmaVez(T("Comum.HistoricoDoCalendario"), err); return false; }
+  if (typeof api?.historicoVisivel !== "function") return false;
+  try { return !!api.historicoVisivel(); } catch (err) { avisoUmaVez(T("Comum.HistoricoDoCalendario"), err); return false; }
 }
 /** A nota é do calendário em uso agora? (com vários calendários, cada civilização vê só as dela, como na grade do Calendário) */
 function doCalendarioAtual(entry) {
@@ -85,7 +79,7 @@ const calNota = (entry) => {
  * Calendário da Mesa grava nas notas).
  */
 const Tempo = {
-  /** API de datas do Calendário da Mesa (2.5+), que conhece meses que somem, eras etc. */
+  /** API de datas do Calendário da Mesa, que conhece meses que somem, eras etc. */
   d() { const api = calApi(); return api?.datas?.tdDe ? api.datas : null; },
   cal() { return game.time?.calendar ?? null; },
   ok() { if (this.d()) return true; const c = this.cal(); return !!(c?.timeToComponents && c?.months?.values?.length); },

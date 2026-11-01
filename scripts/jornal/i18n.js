@@ -15,9 +15,9 @@ export function t(chave, dados) {
 
 let carregando = null;
 export function garantirIdioma() {
-  if (game.i18n?.has?.(`${PREFIXO}.Jornal.Titulo`)) return Promise.resolve();
+  if (game.i18n.has(`${PREFIXO}.Jornal.Titulo`)) return Promise.resolve();
   carregando ??= (async () => {
-    const lang = String(game.i18n?.lang ?? "pt-BR");
+    const lang = String(game.i18n.lang);
     const arquivo = lang.startsWith("pt") ? "pt-BR" : "en";
     for (const a of [...new Set([arquivo, "en"])]) {
       try {

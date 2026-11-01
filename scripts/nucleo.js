@@ -34,6 +34,7 @@ import { JournalApp, renovarEstoques } from "./partes/janela.js";
 import { NEXUS_ICONES, Nexus, Rastreador, Sessao, souGMPrincipal } from "./partes/sessao.js";
 import { abreNoJournal, cliqueEmLink, lembrarEstadoInicial, sessaoMudou } from "./partes/tempo.js";
 import "./partes/barra.js";
+import { montarApi } from "./api.js";
 
 const MOD = "journal-mesa";
 const MEJ = "monks-enhanced-journal";
@@ -178,8 +179,8 @@ const REGRAS_MODELOS = [
 ];
 const LIMITES_REGRAS = { titulo: 200, texto: 5000, comentario: 2000, itens: 300, comentarios: 200 };
 const regrasMesa = () => {
-  try { const r = game.settings.get(MOD, "regrasMesa"); return { itens: Array.isArray(r?.itens) ? r.itens : [], sessao0: r?.sessao0 ?? {} }; }
-  catch { return { itens: [], sessao0: {} }; }
+  const r = game.settings.get(MOD, "regrasMesa");
+  return { itens: Array.isArray(r?.itens) ? r.itens : [], sessao0: r?.sessao0 ?? {} };
 };
 const TIPOS_SAQUE = ["weapon", "equipment", "consumable", "loot", "container", "tool"];
 
@@ -222,7 +223,7 @@ function avisoUmaVez(onde, err) {
 /** Erro numa ação: console sempre; notificação para quem clicou. */
 function relatarErro(onde, err) {
   console.error(`${T("Comum.JournalDaMesa")} | ${onde}`, err);
-  ui.notifications?.error(`${T("Nucleo.JournalDaMesaFalhaEm")} "${onde}" (${err?.message ?? err}${T("Nucleo.DetalhesNoConsoleF12")}`);
+  ui.notifications.error(`${T("Nucleo.JournalDaMesaFalhaEm")} "${onde}" (${err?.message ?? err}${T("Nucleo.DetalhesNoConsoleF12")}`);
 }
 
 function extrasPadrao() {
@@ -427,8 +428,7 @@ function mostrarRelatorioMonks(rel) {
 
 /** Conversão automática ao abrir o mundo (uma vez; só o mestre principal). */
 async function migrarFormato() {
-  let v = 0;
-  try { v = Number(game.settings.get(MOD, "formatoDados")) || 0; } catch { v = 0; }
+  const v = Number(game.settings.get(MOD, "formatoDados")) || 0;
   if (v >= 5) return;
   const pendentes = game.journal.contents.filter((e) => e.pages.contents.some(paginaPendenteDoMonks));
   if (!pendentes.length) { await game.settings.set(MOD, "formatoDados", 5); return; }
@@ -445,13 +445,9 @@ async function migrarFormato() {
   if (!rel.falhas.length) await game.settings.set(MOD, "formatoDados", 5);
 }
 
-/** Apaga uma chave com o ForcedDeletion do v14; se ele faltar ou falhar, com o "-=" (aceito no v14, obsoleto). */
-async function apagarChave(doc, base, chave) {
-  const Apagar = foundry.data?.operators?.ForcedDeletion;
-  if (Apagar) {
-    try { return await doc.update({ [`${base}.${chave}`]: new Apagar() }); } catch (err) { console.warn("Journal da Mesa | ForcedDeletion falhou, usando -=", err); }
-  }
-  return doc.update({ [`${base}.-=${chave}`]: null });
+/** Apaga uma chave de um documento (operador ForcedDeletion do Foundry). */
+function apagarChave(doc, base, chave) {
+  return doc.update(chaveApagar({}, base, chave));
 }
 
 /** Listas antigas do Monk's podem ser arrays; o formato atual é objeto indexado por id. */
@@ -468,11 +464,9 @@ async function garantirObjeto(page, chave) {
   await dadosSet(page, chave, obj);
 }
 
-/** Chave de exclusão de um campo: ForcedDeletion (v14); "-=" só se o operador não existir. */
+/** Põe em `upd` a exclusão de um campo (ForcedDeletion). */
 function chaveApagar(upd, base, chave) {
-  const Apagar = foundry.data?.operators?.ForcedDeletion;
-  if (Apagar) upd[`${base}.${chave}`] = new Apagar();
-  else upd[`${base}.-=${chave}`] = null;
+  upd[`${base}.${chave}`] = new foundry.data.operators.ForcedDeletion();
   return upd;
 }
 
@@ -486,18 +480,7 @@ async function substituirMapa(doc, base, novo, extras = {}) {
     for (const k of Object.keys(atual)) if (!(k in novo)) chaveApagar(upd, base, k);
     for (const [k, v] of Object.entries(novo)) upd[`${base}.${k}`] = v;
   }
-  try { return await doc.update(upd); }
-  catch (err) {
-    // v14 recusou o operador: repete com o "-=" antigo (mesma gravação única)
-    if (!Object.values(upd).some((v) => v?.constructor?.name === "ForcedDeletion")) throw err;
-    console.warn("Journal da Mesa | ForcedDeletion falhou, usando -=", err);
-    const upd2 = {};
-    for (const [k, v] of Object.entries(upd)) {
-      if (v?.constructor?.name === "ForcedDeletion") { const i = k.lastIndexOf("."); upd2[`${k.slice(0, i)}.-=${k.slice(i + 1)}`] = null; }
-      else upd2[k] = v;
-    }
-    return doc.update(upd2);
-  }
+  return doc.update(upd);
 }
 
 /** Grava várias mudanças (e exclusões) numa página de uma vez. sets: { chave: valor }, apagar: [chaves] (caminhos completos). */
@@ -505,14 +488,7 @@ async function gravarJunto(doc, sets = {}, apagar = []) {
   const upd = { ...sets };
   for (const caminho of apagar) { const i = caminho.lastIndexOf("."); chaveApagar(upd, caminho.slice(0, i), caminho.slice(i + 1)); }
   if (!Object.keys(upd).length) return;
-  try { return await doc.update(upd); }
-  catch (err) {
-    if (!apagar.length || !foundry.data?.operators?.ForcedDeletion) throw err;
-    console.warn("Journal da Mesa | ForcedDeletion falhou, usando -=", err);
-    const upd2 = { ...sets };
-    for (const caminho of apagar) { const i = caminho.lastIndexOf("."); upd2[`${caminho.slice(0, i)}.-=${caminho.slice(i + 1)}`] = null; }
-    return doc.update(upd2);
-  }
+  return doc.update(upd);
 }
 
 function podeVer(entry) { return ehGM() || entry.testUserPermission(game.user, "LIMITED"); }
@@ -520,7 +496,8 @@ function podeVer(entry) { return ehGM() || entry.testUserPermission(game.user, "
 /* ---------- páginas fixadas (por usuário) ----------
  * Fixar = a página fica no topo da lista e sempre aberta como a primeira aba (sem o X). */
 function fixados() {
-  try { const l = game.settings.get(MOD, "fixados"); return new Set(Array.isArray(l) ? l : []); } catch { return new Set(); }
+  const l = game.settings.get(MOD, "fixados");
+  return new Set(Array.isArray(l) ? l : []);
 }
 async function alternarFixado(id) {
   const f = fixados();
@@ -872,7 +849,7 @@ function chat(conteudo, { whisper, ator } = {}) {
 
 /* tipos de aviso aceitos (o tipo também chega pelo socket: nunca chamar um método qualquer de ui.notifications) */
 const TIPOS_AVISO = new Set(["info", "warn", "error", "success"]);
-const tipoAviso = (t) => (TIPOS_AVISO.has(t) && typeof ui.notifications?.[t] === "function" ? t : "info");
+const tipoAviso = (t) => (TIPOS_AVISO.has(t) && typeof ui.notifications[t] === "function" ? t : "info");
 function aviso(userId, texto, tipo = "info") {
   if (userId === game.user.id) return ui.notifications[tipoAviso(tipo)](texto);
   game.socket.emit(CANAL, { acao: "aviso", userId, texto, tipo });
@@ -889,6 +866,8 @@ function opcoes(lista, atual, vazio = TF("Nucleo.Nenhum")) {
   return `<option value="">${esc(vazio)}</option>` + lista
     .map(([v, r]) => `<option value="${esc(v)}" ${v === atual ? "selected" : ""}>${esc(r)}</option>`).join("");
 }
+/** <option> de um objeto { valor: rótulo }, sem a opção vazia. */
+const op = (obj, sel) => Object.entries(obj).map(([k, v]) => `<option value="${esc(k)}" ${k === sel ? "selected" : ""}>${esc(v)}</option>`).join("");
 
 function corDaPasta(f) {
   const c = f.color;
@@ -1284,7 +1263,7 @@ async function criarTipo(tipo, pastaId = null) {
 function ordemNova(pastaId) {
   const irmaos = game.journal.filter((j) => (j.folder?.id ?? null) === (pastaId ?? null));
   if (!irmaos.length) return 0;
-  const passo = CONST.SORT_INTEGER_DENSITY ?? 100000;
+  const passo = CONST.SORT_INTEGER_DENSITY;
   const ordens = irmaos.map((j) => Number(j.sort) || 0);
   return game.settings.get(MOD, "posicaoNova") === "inicio" ? Math.min(...ordens) - passo : Math.max(...ordens) + passo;
 }
@@ -1305,8 +1284,7 @@ async function escolherTipoECriar(pastaId = null) {
   if (!tipo) return;
   const r = await criarTipo(tipo, pastaId);
   if (!r) return;
-  janela ??= new JournalApp();
-  janela.abrirPagina(r.entry.id, { editar: r.editar });
+  obterJanela().abrirPagina(r.entry.id, { editar: r.editar });
   if (r.abrirFicha) r.entry.pages.contents[0]?.sheet.render(true);
   if (r.jornal) Jornal.EditorJornal.abrir(r.entry.id);
 }
@@ -1335,9 +1313,9 @@ async function mostrarAosJogadores(e) {
 
 /** Abre a ficha padrão do Foundry, mesmo que a ficha "Journal" esteja como padrão. */
 function abrirFichaPadrao(e) {
-  const Base = foundry.applications?.sheets?.journal?.JournalEntrySheet;
-  if (Base) { const f = new Base({ document: e }); f._jmNativo = true; f.render(true); }
-  else { const f = e.sheet; f._jmNativo = true; f.render(true); }
+  const f = new foundry.applications.sheets.journal.JournalEntrySheet({ document: e });
+  f._jmNativo = true;
+  f.render(true);
 }
 
 async function apagarEntrada(e) {
@@ -1431,10 +1409,10 @@ let FichaJournalClasse = null;
 function obterJanela() { janela ??= new JournalApp(); return janela; }
 
 function abrirJournal(id) {
-  janela ??= new JournalApp();
-  if (id && game.journal.get(id)) janela.abrirPagina(id);
-  else janela.render({ force: true });
-  return janela;
+  const j = obterJanela();
+  if (id && game.journal.get(id)) j.abrirPagina(id);
+  else j.render({ force: true });
+  return j;
 }
 
 const atualizarTudo = foundry.utils.debounce(() => {
@@ -1515,8 +1493,8 @@ Hooks.once("init", () => {
   });
   game.settings.register(MOD, "sessaoNumero", { scope: "world", config: false, type: Number, default: 0 });
   game.settings.register(MOD, "regrasMesa", { scope: "world", config: false, type: Object, default: { itens: [], sessao0: {} }, onChange: () => { if (janela?.ativa === "__regras") atualizarTudo(); } });
-  // fixados: por usuário (acompanha a pessoa em qualquer computador); onde não houver esse escopo, por navegador
-  game.settings.register(MOD, "fixados", { scope: CONST.SETTING_SCOPES?.USER ?? "client", config: false, type: Array, default: [], onChange: () => atualizarTudo() });
+  // fixados: por usuário (acompanha a pessoa em qualquer computador)
+  game.settings.register(MOD, "fixados", { scope: CONST.SETTING_SCOPES.USER, config: false, type: Array, default: [], onChange: () => atualizarTudo() });
   game.settings.register(MOD, "posRastreador", { scope: "client", config: false, type: Object, default: {} });
   game.settings.register(MOD, "pastasAbertas", { scope: "client", config: false, type: Array, default: [] });
   game.settings.register(MOD, "dia", { scope: "world", config: false, type: Number, default: 1, onChange: atualizarTudo });
@@ -1524,68 +1502,54 @@ Hooks.once("init", () => {
   game.settings.register(MOD, "formatoDados", { scope: "world", config: false, type: Number, default: 0 });
 
   /* ficha "Journal" na lista de fichas de Diário (Configurar Ficha) */
-  const Base = foundry.applications?.sheets?.journal?.JournalEntrySheet;
-  const Config = foundry.applications?.apps?.DocumentSheetConfig;
-  if (Base && Config?.registerSheet) {
-    /** Abre o diário da ficha na janela do Journal da Mesa, na página/âncora pedidas (pageId, page, anchor). */
-    const abrirPelaFicha = (ficha, opcoes, resto) => {
-      const extra = typeof opcoes === "object" && opcoes ? opcoes : (resto[0] ?? {});
-      janela ??= new JournalApp();
-      janela.abrirPagina(ficha.document.id, { pagina: extra.pageId ?? extra.page?.id ?? null, ancora: extra.anchor ?? null });
-    };
-    /* ficha "Journal da Mesa": renderizar = abrir o diário na janela do módulo (a ficha nativa não aparece).
-     * Um diário que não está no mundo (compêndio) não tem como abrir na janela: fica com a ficha nativa. */
-    class FichaJournal extends Base {
-      async render(opcoes, ...resto) {
-        if (!this.document || !game.journal.get(this.document.id)) return super.render(opcoes, ...resto);
-        abrirPelaFicha(this, opcoes, resto);
-        return this;
-      }
+  const Base = foundry.applications.sheets.journal.JournalEntrySheet;
+  const Config = foundry.applications.apps.DocumentSheetConfig;
+  /** Abre o diário da ficha na janela do Journal da Mesa, na página/âncora pedidas (pageId, page, anchor). */
+  const abrirPelaFicha = (ficha, opcoes, resto) => {
+    const extra = typeof opcoes === "object" && opcoes ? opcoes : (resto[0] ?? {});
+    obterJanela().abrirPagina(ficha.document.id, { pagina: extra.pageId ?? extra.page?.id ?? null, ancora: extra.anchor ?? null });
+  };
+  /* ficha "Journal da Mesa": renderizar = abrir o diário na janela do módulo (a ficha nativa não aparece).
+   * Um diário que não está no mundo (compêndio) não tem como abrir na janela: fica com a ficha nativa. */
+  class FichaJournal extends Base {
+    async render(opcoes, ...resto) {
+      if (!this.document || !game.journal.get(this.document.id)) return super.render(opcoes, ...resto);
+      abrirPelaFicha(this, opcoes, resto);
+      return this;
     }
-    FichaJournalClasse = FichaJournal;
-    Config.registerSheet(JournalEntry, MOD, FichaJournal, { label: "JMESA.Nucleo.JournalDaMesaJanelaUnica", makeDefault: false });
-
-    /* A opção "Abrir diários sempre no Journal da Mesa" vale também para diários que usam a ficha padrão do
-     * Foundry ou do sistema (a ficha do módulo registrada acima só vale para quem a escolheu em Configurar
-     * Ficha). Por isso a abertura da ficha padrão é interceptada aqui: só a ABERTURA (render forçado de
-     * uma ficha fechada) de um diário do mundo que o usuário pode ver e que abreNoJournal aceita (ficha do
-     * núcleo, do sistema ou deste módulo). Fichas de outros módulos (Monk's, Heavy Lore...) e as marcadas
-     * com _jmNativo ("Abrir na ficha padrão") seguem para o render original, com o resultado dele. */
-    const renderOriginal = Base.prototype.render;
-    Base.prototype.render = function (opcoes, ...resto) {
-      let interceptar = false;
-      try {
-        const forcar = opcoes === true || opcoes?.force === true;
-        const doc = this.document;
-        interceptar = forcar && !this.rendered && !this._jmNativo && game.ready && game.settings.get(MOD, "abrirAqui")
-          && doc?.documentName === "JournalEntry" && !doc.pack && !!game.journal.get(doc.id) && podeVer(doc) && abreNoJournal(doc);
-      } catch (err) { avisoUmaVez(T("Nucleo.AbrirNoJournalDaMesa"), err); interceptar = false; }
-      if (interceptar) {
-        try { abrirPelaFicha(this, opcoes, resto); return Promise.resolve(this); }   // mesma forma do original (Promise da ficha); a nativa fica fechada
-        catch (err) { avisoUmaVez(T("Nucleo.AbrirNoJournalDaMesa"), err); }
-      }
-      return renderOriginal.call(this, opcoes, ...resto);
-    };
   }
+  FichaJournalClasse = FichaJournal;
+  Config.registerSheet(JournalEntry, MOD, FichaJournal, { label: "JMESA.Nucleo.JournalDaMesaJanelaUnica", makeDefault: false });
+
+  /* A opção "Abrir diários sempre no Journal da Mesa" vale também para diários que usam a ficha padrão do
+   * Foundry ou do sistema (a ficha do módulo registrada acima só vale para quem a escolheu em Configurar
+   * Ficha). Por isso a abertura da ficha padrão é interceptada aqui: só a ABERTURA (render forçado de
+   * uma ficha fechada) de um diário do mundo que o usuário pode ver e que abreNoJournal aceita (ficha do
+   * núcleo, do sistema ou deste módulo). Fichas de outros módulos (Monk's, Heavy Lore...) e as marcadas
+   * com _jmNativo ("Abrir na ficha padrão") seguem para o render original, com o resultado dele. */
+  const renderOriginal = Base.prototype.render;
+  Base.prototype.render = function (opcoes, ...resto) {
+    let interceptar = false;
+    try {
+      const forcar = opcoes === true || opcoes?.force === true;
+      const doc = this.document;
+      interceptar = forcar && !this.rendered && !this._jmNativo && game.ready && game.settings.get(MOD, "abrirAqui")
+        && doc?.documentName === "JournalEntry" && !doc.pack && !!game.journal.get(doc.id) && podeVer(doc) && abreNoJournal(doc);
+    } catch (err) { avisoUmaVez(T("Nucleo.AbrirNoJournalDaMesa"), err); interceptar = false; }
+    if (interceptar) {
+      try { abrirPelaFicha(this, opcoes, resto); return Promise.resolve(this); }   // mesma forma do original (Promise da ficha); a nativa fica fechada
+      catch (err) { avisoUmaVez(T("Nucleo.AbrirNoJournalDaMesa"), err); }
+    }
+    return renderOriginal.call(this, opcoes, ...resto);
+  };
 });
 
 Hooks.once("ready", () => {
-  game.modules.get(MOD).api = {
-    abrir: abrirJournal, bauDoCombate: criarBauDoCombate, importarJson, importarDoMonks, criarPagina: criarTipo,
-    /** Dia do mundo das ofertas diárias (usado pelo Calendário da Mesa na virada do dia). */
-    dia: {
-      get: () => diaAtual(),
-      somar: async (n) => { if (!ehGM()) return diaAtual(); const v = Math.max(1, diaAtual() + Math.trunc(Number(n) || 0)); await game.settings.set(MOD, "dia", v); return v; }
-    },
-    renovarEstoques,
-    fixados: () => [...fixados()],
-    /** Jornal de Notícias: só o que o usuário pode ler (sem veracidade, notas do mestre ou rascunhos de outros). */
-    jornais: Jornal.apiJornais,
-    /** Abre a Linha do tempo, no dia td se vier (o Calendário da Mesa 4.2+ usa no painel do dia). */
-    linhaDoTempo: (td = null) => { janela ??= new JournalApp(); janela.abrirLinha(td); return janela; },
-    /** Medidores dos Nexus (cópia) e mudar o valor de um (só o mestre). */
-    nexus: { lista: () => (Nexus.ligado() ? Nexus.lista() : []), definir: (id, valor) => Nexus.definir(id, valor) }
-  };
+  /* API pública (macros, Calendário da Mesa): organizada e documentada em scripts/api.js */
+  game.modules.get(MOD).api = montarApi({
+    MOD, ehGM, diaAtual, abrirJournal, criarBauDoCombate, importarJson, importarDoMonks, criarTipo,
+    renovarEstoques, fixados, obterJanela, Nexus, apiJornais: Jornal.apiJornais
+  });
 
   game.socket.on(CANAL, (msg) => {
     if (msg.acao === "abrir") {
@@ -1637,13 +1601,13 @@ Hooks.once("ready", () => {
 Jornal.instalarContexto({
   MOD, CAL, CANAL, TIPOS, esc, TE, FP, Dialogo, LV, Tempo, Sessao, analisar, chat, idsGM, dup, naFila,
   relatarErro, avisoUmaVez, textoParaHtml, ordemNova, souGMPrincipal,
-  abrirJournal: () => { janela ??= new JournalApp(); return janela; },
+  abrirJournal: () => obterJanela(),
   atualizarTudo: () => atualizarTudo()
 });
 Jornal.registrarGanchos();
-configurarTabelasLojas({ MOD, T: (s) => T(s), esc, atualizar: () => atualizarTudo() });
+configurarTabelasLojas({ MOD, T: (s) => T(s), atualizar: () => atualizarTudo() });
 /* "Copiar o registro da sessão" na janela de encerrar a sessão (texto simples, para o Transcritor da Mesa) */
-document.addEventListener?.("click", async (ev) => {
+document.addEventListener("click", async (ev) => {
   const b = ev.target?.closest?.("[data-jm-copiar-registro]");
   if (!b || !ehGM()) return;
   ev.preventDefault();
@@ -1651,7 +1615,7 @@ document.addEventListener?.("click", async (ev) => {
   const linhas = (s?.registros ?? []).map((r) => `- ${String(r.html ?? "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim()}`).filter((l) => l.length > 2);
   const texto = `${T("Nucleo.RegistroAutomaticoDoJournalDa")} — ${T("Comum.Sessao")} ${s?.n ?? ""}\n${linhas.join("\n") || T("Nucleo.NadaAnotado")}`;
   try {
-    if (game.clipboard?.copyPlainText) await game.clipboard.copyPlainText(texto); else await navigator.clipboard.writeText(texto);
+    await game.clipboard.copyPlainText(texto);
     ui.notifications.info(T("Nucleo.RegistroCopiado"));
   } catch { ui.notifications.warn(T("Nucleo.NaoConseguiCopiarAutomaticamente")); }
 });
@@ -1664,4 +1628,4 @@ Hooks.once("i18nInit", () => {
   // completa ("JMESA.Nucleo...") em nome, dica e opções: o próprio Foundry traduz ao mostrar
 });
 
-export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };
+export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, op, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };

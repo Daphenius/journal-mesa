@@ -80,7 +80,7 @@ export class Colecao extends Map {
 }
 
 const NIVEIS = { NONE: 0, LIMITED: 1, OBSERVER: 2, OWNER: 3 };
-export const CONST = { DOCUMENT_OWNERSHIP_LEVELS: NIVEIS, SETTING_SCOPES: { USER: "user", CLIENT: "client", WORLD: "world" } };
+export const CONST = { DOCUMENT_OWNERSHIP_LEVELS: NIVEIS, SETTING_SCOPES: { USER: "user", CLIENT: "client", WORLD: "world" }, SORT_INTEGER_DENSITY: 100000 };
 
 export const mundo = { journal: new Colecao(), folders: new Colecao(), items: new Colecao(), actors: new Colecao(), users: new Colecao(), tables: new Colecao(), messages: [] };
 const colecaoDe = { JournalEntry: "journal", Folder: "folders", Item: "items", Actor: "actors", User: "users", RollTable: "tables" };

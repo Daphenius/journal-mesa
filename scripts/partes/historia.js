@@ -1,5 +1,5 @@
 /* Journal — História: diário de acontecimentos com data, ligado à Linha do tempo.
- * Parte do journal.js (dividido na 4.10); depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
+ * Parte do journal.js; depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
 import { T, TF } from "../idioma.js";
 import { CAL, CAL_ANTIGOS, CAL_AVISOS, CAL_FIM, CAL_ICONES, CAL_MODOS_MES, CAL_REPETIR, Tempo, calApi, calNota } from "./calendario.js";
 import { Dialogo, LV, MOD, analisar, apagarChave, avisoUmaVez, ehGM, esc, ordemNova, podeVerSecao, textoParaHtml } from "../nucleo.js";

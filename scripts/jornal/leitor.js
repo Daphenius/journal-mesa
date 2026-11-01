@@ -8,7 +8,7 @@ import { paginasEdicao, ouvirVinculos } from "./leitura.js";
 
 const ApplicationV2 = foundry.applications.api.ApplicationV2;
 const ABERTOS = new Map();
-const e = (s) => J.esc(s);
+import { esc as e } from "../nucleo.js";
 
 export class LeitorJornal extends ApplicationV2 {
   static DEFAULT_OPTIONS = {

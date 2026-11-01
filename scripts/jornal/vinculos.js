@@ -7,7 +7,7 @@ import { t } from "./i18n.js";
 import { ehJornal, uuidValido, docDe } from "./dados.js";
 
 const ApplicationV2 = foundry.applications.api.ApplicationV2;
-const e = (s) => J.esc(s);
+import { esc as e } from "../nucleo.js";
 
 /** Grupos de documentos que podem ser citados. */
 export function documentosCitaveis() {
@@ -75,7 +75,7 @@ export class SeletorVinculo extends ApplicationV2 {
 
   _replaceHTML(html, content) {
     content.innerHTML = html;
-    try { this.element.dataset.tema = game.settings.get(J.MOD, "tema"); } catch { /* padrão */ }
+    this.element.dataset.tema = game.settings.get(J.MOD, "tema");
     const busca = content.querySelector("[data-sel-busca]");
     const conta = content.querySelector("[data-sel-conta]");
     const atualizarConta = () => { const n = content.querySelectorAll(".jmj-sel-item input:checked:not(:disabled)").length; conta.textContent = n ? t("Jornal.Marcados", { n }) : ""; };

@@ -10,7 +10,7 @@ import {
 import { segredosDe } from "./redacao.js";
 import { paginasEdicao } from "./leitura.js";
 
-const e = (s) => J.esc(s);
+import { esc as e } from "../nucleo.js";
 
 /** Todas as páginas da edição, uma embaixo da outra (mestre: com a veracidade, salvo "ver como jogador"). */
 export async function folhaHTML(entry, p, { mestre = false } = {}) {

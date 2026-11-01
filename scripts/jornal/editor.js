@@ -15,7 +15,7 @@ import { SeletorVinculo, descreverVinculo } from "./vinculos.js";
 import { abrirVinculo, imagemDe, fotoAutomatica, paginasEdicao, ouvirVinculos } from "./leitura.js";
 import { exportarEdicao, dialogoImportar, lerJson, converterEdicao, mostrarRelatorio } from "./json.js";
 
-const e = (s) => J.esc(s);
+import { esc as e } from "../nucleo.js";
 const ApplicationV2 = foundry.applications.api.ApplicationV2;
 const ABERTOS = new Map();
 
@@ -85,7 +85,7 @@ export class EditorJornal extends ApplicationV2 {
     this._textos = [];
     content.innerHTML = html;
     content.scrollTop = rolagem;
-    try { this.element.dataset.tema = game.settings.get(J.MOD, "tema"); } catch { /* tema padrão */ }
+    this.element.dataset.tema = game.settings.get(J.MOD, "tema");
     this._ouvintes(content);
   }
 
@@ -331,8 +331,8 @@ export class EditorJornal extends ApplicationV2 {
 
     try {
       if (game.settings.get(J.MOD, "editor") === "simples") return alternativo(alvo);
-      const PM = foundry.applications?.elements?.HTMLProseMirrorElement;
-      if (!PM?.create) throw new Error("Editor ProseMirror indisponível");
+      const PM = foundry.applications.elements.HTMLProseMirrorElement;
+      if (!PM.create) throw new Error("Editor ProseMirror indisponível");
       // Usar a mesma API e o mesmo contexto de documento do editor de
       // descrições que já funciona em partes/janela.js. O valor continua
       // numa cópia local: nenhuma edição é gravada até clicar em Salvar.

@@ -1,5 +1,5 @@
 /* Journal — passagem do tempo: prazos de missão, dias no diário de sessão, lojas abrindo e fechando; ganchos de atualização.
- * Parte do journal.js (dividido na 4.10); depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
+ * Parte do journal.js; depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
 import { T, TF } from "../idioma.js";
 import * as Jornal from "../jornal/index.js";
 import { CAL, Tempo, calApi, horarioLoja, lojaFechadaPor } from "./calendario.js";
@@ -113,7 +113,7 @@ function abreNoJournal(entry) {
   const tipo = entry.type ?? CONST.BASE_DOCUMENT_TYPE ?? "base";
   const registro = CONFIG.JournalEntry?.sheetClasses?.[tipo] ?? CONFIG.JournalEntry?.sheetClasses?.base ?? {};
   const chave = Object.entries(registro).find(([, r]) => r?.cls === Cls)?.[0];
-  if (!chave) return Cls === foundry.applications?.sheets?.journal?.JournalEntrySheet;
+  if (!chave) return Cls === foundry.applications.sheets.journal.JournalEntrySheet;
   const escopo = chave.split(".")[0];
   return escopo === "core" || escopo === game.system.id || escopo === MOD;
 }

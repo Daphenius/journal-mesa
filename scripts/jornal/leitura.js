@@ -8,7 +8,7 @@ import { t } from "./i18n.js";
 import { ESTILOS, VERACIDADE, identidade, lerEdicao, normalizarEdicao, dataDaEdicao, rotVerdade, rotSecao, docDe } from "./dados.js";
 import { segredosDe } from "./redacao.js";
 
-const e = (s) => J.esc(s);
+import { esc as e } from "../nucleo.js";
 /* quantos itens cabem em cada caixa da primeira página */
 const CAIXAS = { destaques: 2, outras: 2, rumores: 4, anuncios: 4 };
 const POR_PAGINA = 8;
@@ -154,7 +154,7 @@ export async function paginasEdicao(entry, p, { mestre = false, dados = null, se
   const numero = (n) => `<div class="jl-num-pagina">${e(t("Jornal.PaginaDe", { n, total }))}</div>`;
   const rodape = ed.rodape ? `<footer class="jl-rodape">${e(ed.rodape)}</footer>` : "";
 
-  const lang = e(game.i18n?.lang ?? "pt-BR");   // hifenização certa no texto justificado
+  const lang = e(game.i18n.lang);   // hifenização certa no texto justificado
   const paginas = [`<div class="jl-folha estilo-${est}" lang="${lang}" style="--jl-cor:${e(id.cor)}" data-jl-pagina="1">
     ${cabecalho}
     <div class="jl-topo ${lateral ? "" : "sem-lateral"}">${manchete}${lateral}</div>

@@ -5,7 +5,8 @@
  *   partes/calendario.js integração com o Calendário da Mesa, datas e horário das lojas
  *   partes/historia.js   História e Linha do tempo
  *   partes/pechincha.js  negociação e pechincha com o dono da loja
- *   partes/janela.js     janela principal (JournalApp)
+ *   partes/janela.js     janela principal (JournalApp): abas, lista, busca, cabeçalho, barra, menus
+ *   paginas/             um arquivo por tipo de página (npc, loja, missão…) e painéis; index.js registra
  *   partes/sessao.js     diário de sessão, Nexus, anomalias e rastreador de missões
  *   partes/tempo.js      passagem do tempo e ganchos de atualização
  *   partes/barra.js      barra lateral nativa (donos, menus, botões)

@@ -1,5 +1,5 @@
 /* Journal — sessão de jogo (diário automático), medidor dos Nexus, anomalias e rastreador de missões.
- * Parte do journal.js (dividido na 4.10); depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
+ * Parte do journal.js; depende do núcleo (nucleo.js) e das outras partes só pelas importações abaixo. */
 import { T } from "../idioma.js";
 import { Tempo, calApi, historicoCal, listaCal, textoPrazo } from "./calendario.js";
 import { criarHistoria, historias, novoAcontecimento } from "./historia.js";
@@ -10,7 +10,7 @@ import { CHAVE_DADOS, Dialogo, LV, MOD, abrirJournal, analisar, avisoUmaVez, cha
 const souGMPrincipal = () => game.user.isGM && (game.users.activeGM?.id ?? game.user.id) === game.user.id;
 
 const Sessao = {
-  atual() { try { return game.settings.get(MOD, "sessaoAtual") || null; } catch { return null; } },
+  atual() { return game.settings.get(MOD, "sessaoAtual") || null; },
   ativa() { return !!this.atual()?.inicio; },
   /** Anota algo na sessão aberta (só o mestre principal grava). As anotações entram em fila: várias ao
    *  mesmo tempo (compras de dois jogadores, prazos vencendo na virada do dia) não se apagam mais. */
@@ -107,9 +107,9 @@ const Sessao = {
 const NEXUS_ICONES = { "fa-droplet": "Água", "fa-fire": "Fogo", "fa-mountain": "Terra", "fa-wind": "Ar", "fa-bolt": "Raio", "fa-snowflake": "Gelo", "fa-sun": "Luz", "fa-moon": "Sombra", "fa-gem": "Cristal", "fa-star": "Outro" };
 
 const Nexus = {
-  ligado() { try { return !!game.settings.get(MOD, "nexusAtivo"); } catch { return false; } },
-  lista() { try { const l = game.settings.get(MOD, "nexusLista"); return Array.isArray(l) ? dup(l) : []; } catch { return []; } },
-  jogadoresVeem() { try { return !!game.settings.get(MOD, "nexusJogadores"); } catch { return false; } },
+  ligado() { return !!game.settings.get(MOD, "nexusAtivo"); },
+  lista() { const l = game.settings.get(MOD, "nexusLista"); return Array.isArray(l) ? dup(l) : []; },
+  jogadoresVeem() { return !!game.settings.get(MOD, "nexusJogadores"); },
   async salvar(l) { if (ehGM()) await game.settings.set(MOD, "nexusLista", l); },
   async novo() {
     const l = this.lista();
@@ -167,15 +167,15 @@ const NEXUS_HIST_MAX = 60;
  *   "regiao" — liga o "Usar como região" da anomalia (Calendário 4.2+): as Regiões do mapa e as cenas
  *              marcadas com a região dela passam a ter o clima drenado. Funciona com a opção padrão do Calendário.
  *   "zona"   — a anomalia cobre uma região inteira (Temperada, Reino da Água...). Precisa da opção
- *              "Anomalia cobrindo uma região inteira" ligada no Calendário (o jeito antigo, até o Journal 4.5).
- * Nexus antigos com região escolhida continuam no jeito "zona". */
+ *              "Anomalia cobrindo uma região inteira" ligada no Calendário.
+ * Nexus já salvos com região escolhida continuam no jeito "zona". */
 const NexusClima = {
   api() { const a = calApi(); return typeof a?.anomalia === "function" ? a : null; },
   porRegiao() { return typeof calApi()?.anomaliaRegiao === "function"; },
   modo() {
     try { const m = calApi()?.modoAnomalias?.(); if (m) return { ligadas: m.ligadas !== false, regiaoInteira: !!m.regiaoInteira }; }
     catch (err) { avisoUmaVez(T("Sessao.ModoDasAnomaliasDoCalendario"), err); }
-    return { ligadas: true, regiaoInteira: true };   // Calendário antigo: só existe o jeito "zona"
+    return { ligadas: true, regiaoInteira: true };   // sem essa função na API: só existe o jeito "zona"
   },
   onde(nx) {
     if (!this.porRegiao()) return "zona";

@@ -538,7 +538,6 @@ export const MAPA_PT = {
   "já estavam no formato do Journal da Mesa e não foram tocadas.": "Nucleo.JaEstavamNoFormatoDo",
   "já existiam": "Tabelas.JaExistiam",
   "Já negociado hoje": "Janela.JaNegociadoHoje",
-  "janela de nova pasta": "Janela.JanelaDeNovaPasta",
   "jogador": "Janela.Jogador",
   "Jogador": "Pechincha.Jogador",
   "Jogador vence": "Pechincha.JogadorVence",
