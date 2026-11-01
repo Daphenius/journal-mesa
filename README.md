@@ -10,7 +10,7 @@ Se encontrar bugs ou tiver sugestões, abra uma [issue](https://github.com/Daphe
 
 ---
 
-**Versão 5.4.5** · Foundry VTT 14 (mínimo; verificado no 14.369) · D&D 5e 5.0 a 6.0.6 · Português e English · Licença MIT · ✅ Testado no Foundry VTT e D&D 5e
+**Versão 5.4.6** · Foundry VTT 14 (mínimo; verificado no 14.369) · D&D 5e 5.0 a 6.0.6 · Português e English · Licença MIT · ✅ Testado no Foundry VTT e D&D 5e
 
 Toda versão é testada pelo autor dentro do Foundry VTT, com o D&D 5e, antes de ser publicada. Mesmo assim, faça backup do mundo antes de atualizar.
 

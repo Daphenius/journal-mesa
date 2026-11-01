@@ -227,6 +227,23 @@ await teste("compra semanal: se a baixa do estoque E o desfazer falharem, o mest
   igual(ator.system.currency.gp, 100, "as moedas foram devolvidas (esse desfazer funcionou)");
   igual(ator.items.size, 1, "o item ficou na ficha (esse desfazer falhou) — é o que o aviso diz");
   ok(erros.some(([t, m]) => t === "error" && String(m).includes("não consegui desfazer")), "o erro também foi para o console");
+  ok(ultimoAviso().includes("Confira com o mestre") && !ultimoAviso().includes("nada foi cobrado"), `o jogador NÃO ouviu "nada foi cobrado": ${ultimoAviso()}`);
+});
+
+await teste("compra semanal: se a cobrança falhar E a devolução das moedas também, o jogador é mandado conferir com o mestre", async () => {
+  await iniciar();
+  const loja = await lojaComEstoque();
+  const ator = await heroi(100);
+  const page = loja.pages.contents[0];
+  const r1 = falhar(page, "update", mexeNoEstoque);
+  let chamadas = 0;
+  const r2 = falhar(ator, "update", () => ++chamadas >= 2); // a cobrança passa; devolver as moedas falha
+  await N.pedir("comprar", { entryId: loja.id, origem: "semanal", itemId: "it1", actorUuid: ator.uuid, userId: JOG, quantidade: 1 });
+  r1(); r2();
+  ok(ultimoAviso().includes("Confira com o mestre"), `aviso neutro ao jogador: ${ultimoAviso()}`);
+  ok(!!errosDoMestre().find((m) => m.includes("não consegui desfazer")), "o mestre recebeu o aviso de inconsistência");
+  igual(ator.system.currency.gp, 90, "as moedas ficaram descontadas (é o cenário reproduzido pela revisão)");
+  igual(ator.items.size, 0, "o item foi retirado da ficha");
 });
 
 await teste("compra diária: falha ao marcar a oferta desfaz entrega e cobrança; sem falha, a oferta fica comprada", async () => {

@@ -43,6 +43,7 @@ export const MAPA_PT = {
   "A loja está fechada.": "Janela.ALojaEstaFechada",
   "a loja paga": "Pechincha.ALojaPaga",
   "A loja paga": "Janela.ALojaPaga",
+  "A operação falhou e nem tudo pôde ser desfeito. Confira com o mestre antes de tentar de novo.": "Nucleo.AOperacaoFalhouConfira",
   "A origem desta data, o que se conta sobre ela, como o povo lembra...": "Janela.AOrigemDestaDataO",
   "A partir da 5.0, o Journal da Mesa guarda os dados das páginas no formato próprio. Encontrei": "Nucleo.APartirDa50",
   "A rolagem está aberta na tela do Dados em Cena": "Pechincha.ARolagemEstaAbertaNa",

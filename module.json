@@ -2,7 +2,7 @@
   "id": "journal-mesa",
   "title": "Journal da Mesa",
   "description": "Diário em janela única com abas e pastas nativas do Foundry: NPCs, locais, organizações, lojas, missões, divindades, baús de saque, História (acontecimentos ligados à linha do tempo), Regras da Mesa (sessão 0), Jornais e Notícias (imprensa do mundo, com edições programadas), páginas fixadas, páginas nativas (texto, imagem, PDF, vídeo, regras, listas de magias). Formato nativo próprio, com importador do Monk's Enhanced Journal (converte sem apagar nada); integra com Item Piles, Translate All e Calendário da Mesa (prazos, dias sagrados, horário das lojas, linha do tempo, diário de sessão e medidor dos Nexus).",
-  "version": "5.4.5",
+  "version": "5.4.6",
   "authors": [
     {
       "name": "Daphenius",
@@ -11,7 +11,7 @@
   ],
   "url": "https://github.com/Daphenius/journal-mesa",
   "manifest": "https://github.com/Daphenius/journal-mesa/releases/latest/download/module.json",
-  "download": "https://github.com/Daphenius/journal-mesa/releases/download/v5.4.5/journal-mesa.zip",
+  "download": "https://github.com/Daphenius/journal-mesa/releases/download/v5.4.6/journal-mesa.zip",
   "license": "https://github.com/Daphenius/journal-mesa/blob/main/LICENSE",
   "readme": "https://github.com/Daphenius/journal-mesa/blob/main/README.md",
   "changelog": "https://github.com/Daphenius/journal-mesa/blob/main/CHANGELOG.md",

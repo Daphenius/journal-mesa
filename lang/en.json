@@ -1027,6 +1027,7 @@
       "AoCriarUmaPaginaDentro": "When creating a page inside a folder (the clicked folder or the open page's folder), it goes to the end or the start of the folder. Alphabetically sorted folders ignore this.",
       "AoEncerrarUmCombateOferece": "When a combat ends, offers to create a Chest with the defeated enemies' items and coins.",
       "AoEntrarNoMundoO": "When entering the world, the GM starts logging the session automatically (purchases, sales, loot, quests, deadlines, days passed, Nexus). Off: use the journal button in Journal da Mesa footer.",
+      "AOperacaoFalhouConfira": "The operation failed and not everything could be undone. Check with the GM before trying again.",
       "AparenciaEManifestacoes": "Appearance and manifestations",
       "APartirDa50": "Starting with 5.0, Journal da Mesa stores page data in its own format. I found",
       "Apresentacao": "Slideshow",

@@ -1,5 +1,10 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.4.6
+
+### Corrigido
+- **Mensagem errada ao jogador quando a compra falha e o estorno também falha.** Se a loja não conseguia gravar a baixa do estoque e, na sequência, a devolução das moedas também falhava, o mestre recebia o alerta certo para acertar à mão, mas o jogador ainda lia "nada foi cobrado. Tente de novo" — mesmo com as moedas descontadas. Agora, nesse caso, o jogador lê: "A operação falhou e nem tudo pôde ser desfeito. Confira com o mestre antes de tentar de novo." Quando o estorno funciona, a mensagem continua a de antes. Achado da mesma revisão externa da 5.4.5; coberto por teste de regressão.
+
 ## 5.4.5
 
 Correções vindas de uma **revisão externa** do código (feita por outra IA, a pedido do autor), que apontou quatro problemas reproduzidos num Foundry simulado e três pontos de documentação. Nada muda no uso normal da mesa; o que muda é o que acontece quando alguém tenta burlar um pedido ou quando uma gravação falha no meio.

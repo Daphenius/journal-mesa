@@ -1027,6 +1027,7 @@
       "AoCriarUmaPaginaDentro": "Ao criar uma página dentro de uma pasta (a pasta clicada ou a da página aberta), ela vai para o fim ou para o início da pasta. Pastas em ordem alfabética ignoram isso.",
       "AoEncerrarUmCombateOferece": "Ao encerrar um combate, oferece criar um Baú com os itens e moedas dos inimigos derrotados.",
       "AoEntrarNoMundoO": "Ao entrar no mundo, o mestre começa a anotar a sessão sozinho (compras, vendas, saques, missões, prazos, dias que passaram, Nexus). Desligado: use o botão do diário no rodapé do Journal da Mesa.",
+      "AOperacaoFalhouConfira": "A operação falhou e nem tudo pôde ser desfeito. Confira com o mestre antes de tentar de novo.",
       "AparenciaEManifestacoes": "Aparência e manifestações",
       "APartirDa50": "A partir da 5.0, o Journal da Mesa guarda os dados das páginas no formato próprio. Encontrei",
       "Apresentacao": "Apresentação",

@@ -232,6 +232,13 @@ function relatarErro(onde, err) {
  * em `passos` como se desfaz ([rótulo, função]); se um passo seguinte falhar, os anteriores são desfeitos na
  * ordem inversa. Limite real: se a própria compensação falhar, não há mais o que fazer sozinho — o mestre
  * recebe um aviso dizendo exatamente o que ficou inconsistente (e o console tem o erro) para acertar à mão. */
+/** Devolve o erro original marcado com o que a compensação não conseguiu desfazer (para a mensagem ao jogador). */
+function marcarDesfeito(err, ficaram) {
+  const e = err instanceof Error ? err : new Error(String(err));
+  if (ficaram?.length) e.ficaram = ficaram;
+  return e;
+}
+
 async function desfazerPassos(passos, onde) {
   const ficaram = [];
   for (const [rotulo, desfaz] of [...passos].reverse()) {
@@ -1105,8 +1112,7 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
       await page.setFlag(MOD, `diaria.ofertas.${userId}.comprado`, true);
     }
   } catch (err) {
-    await desfazerPassos(passos, TF("Nucleo.CompraEmLoja", { loja: e.name }));
-    throw err;
+    throw marcarDesfeito(err, await desfazerPassos(passos, TF("Nucleo.CompraEmLoja", { loja: e.name })));
   }
 
   const linha = TF("Nucleo.QuemComprouNItemPor", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(nome)}</b>`, preco: formatarPreco(preco), loja: `<b>${esc(e.name)}</b>` });
@@ -1130,8 +1136,7 @@ async function executarPegar({ entryId, itemId, actorUuid, userId }) {
     await garantirObjeto(page, "items");
     await dadosUnset(page, `items.${itemId}`);
   } catch (err) {
-    await desfazerPassos([[T("Nucleo.OItemEntregueNaFicha"), () => ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id))]], TF("Nucleo.SaqueEmBau", { bau: e.name }));
-    throw err;
+    throw marcarDesfeito(err, await desfazerPassos([[T("Nucleo.OItemEntregueNaFicha"), () => ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id))]], TF("Nucleo.SaqueEmBau", { bau: e.name })));
   }
   const linha = TF("Nucleo.QuemPegouItemDeBau", { quem: `<b>${esc(ator.name)}</b>`, item: `<b>${esc(item.name)}</b>`, bau: `<b>${esc(e.name)}</b>` });
   await chat(`<i class="fa-solid fa-hand"></i> ${linha}`, { ator });
@@ -1163,8 +1168,7 @@ async function executarPegarRecompensa({ entryId, grupo, itemId, actorUuid, user
     await garantirObjeto(page, "items");
     await gravarJunto(page, { [`flags.${MOD}.${CHAVE_DADOS}.rewards.${grupo}.itemIds`]: (r.itemIds ?? []).filter((i) => i !== itemId) }, [`flags.${MOD}.${CHAVE_DADOS}.items.${itemId}`]);
   } catch (err) {
-    await desfazerPassos([[T("Nucleo.OItemEntregueNaFicha"), () => ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id))]], TF("Nucleo.RecompensaDeMissao", { missao: e.name }));
-    throw err;
+    throw marcarDesfeito(err, await desfazerPassos([[T("Nucleo.OItemEntregueNaFicha"), () => ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id))]], TF("Nucleo.RecompensaDeMissao", { missao: e.name })));
   }
   const linha = `<b>${esc(ator.name)}</b> ${T("Nucleo.Pegou")} <b>${esc(item.name)}</b> ${T("Nucleo.DaRecompensaDe")} <b>${esc(e.name)}</b>.`;
   await chat(`<i class="fa-solid fa-gift"></i> ${linha}`, { ator });
@@ -1225,7 +1229,7 @@ function executarPedido(acao, msg) {
   }
   return naFila("gm", () => ACOES_GM[acao](msg)).catch((err) => {
     console.error(`${T("Nucleo.JournalDaMesaPedido")} "${acao}" falhou`, err, msg);
-    aviso(msg.userId, T("Nucleo.AlgoDeuErradoDoLado"), "error");
+    aviso(msg.userId, err?.ficaram?.length ? T("Nucleo.AOperacaoFalhouConfira") : T("Nucleo.AlgoDeuErradoDoLado"), "error");
     if (msg.userId !== game.user.id) ui.notifications.error(`${T("Nucleo.JournalDaMesaFalhaAo")} "${acao}" (${err?.message ?? err}).`);
   });
 }
