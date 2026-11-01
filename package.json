@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Journal da Mesa — módulo para Foundry VTT. Este arquivo só serve para rodar os testes (npm test); o módulo não tem dependências.",
   "scripts": {
-    "test": "node tests/formato.test.mjs && node tests/i18n.test.mjs",
+    "test": "node tests/formato.test.mjs && node tests/pedidos.test.mjs && node tests/i18n.test.mjs",
     "idioma": "node tools/i18n-migrar.mjs"
   }
 }

@@ -116,6 +116,8 @@ export class Documento {
   }
   static _registrar = [];
   async delete() {
+    // um item dentro de uma ficha sai da ficha; um documento do mundo sai da coleção dele
+    if (this.parent?.items?.has(this.id)) this.parent.items.delete(this.id);
     const col = mundo[colecaoDe[this.documentName]];
     col?.delete(this.id);
     Hooks.callAll(`delete${this.documentName}`, this, {}, game.user.id);
@@ -170,6 +172,15 @@ export class Actor extends Documento {
   }
   async createEmbeddedDocuments(nome, lista) {
     return lista.map((d) => { const it = new Item(d, { parent: this }); this.items.set(it.id, it); return it; });
+  }
+  async deleteEmbeddedDocuments(nome, ids) {
+    return ids.map((id) => { const it = this.items.get(id); if (it) this.items.delete(id); return it; }).filter(Boolean);
+  }
+  /** Mínimo do Actor.updateDocuments do Foundry: cada { _id, ...mudanças } atualiza a ficha com esse id. */
+  static async updateDocuments(lista) {
+    const out = [];
+    for (const { _id, ...mud } of lista) { const a = mundo.actors.get(_id); if (!a) throw new Error(`Actor ${_id} não existe`); out.push(await a.update(mud)); }
+    return out;
   }
 }
 export class User extends Documento { static documentName = "User"; get isGM() { return !!this._source.role && this._source.role >= 4; } }

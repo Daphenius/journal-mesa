@@ -4,7 +4,7 @@ import { T } from "../idioma.js";
 import { Tempo, textoPrazo } from "../partes/calendario.js";
 import { campoData } from "../partes/historia.js";
 import { Sessao } from "../partes/sessao.js";
-import { CHAVE_DADOS, Dialogo, MOD, STATUS, TE, analisar, camposMoedas, chat, chavesMoedas, comoLista, dadosGet, dadosSet, dadosUnset, ehGM, esc, formatarMoedas, garantirObjeto, gravarJunto, itemLimpo, itemParaLoja, mostrarMoedas, novoId, opcoes, pedir } from "../nucleo.js";
+import { CHAVE_DADOS, Dialogo, MOD, STATUS, TE, analisar, camposMoedas, chat, chavesMoedas, comoLista, dadosGet, dadosSet, dadosUnset, ehGM, esc, formatarMoedas, garantirObjeto, gravarJunto, itemLimpo, itemParaLoja, mostrarMoedas, novoId, opcoes, pedir, desfazerPassos } from "../nucleo.js";
 import { precisaAtor } from "./loja.js";
 
 /** Recompensas no formato do Monk's: grupos com XP, moedas e itens (itens, talentos ou magias). */
@@ -41,7 +41,9 @@ async function secaoRecompensas(ctx) {
         ${ed ? `<input class="jm-premio-nome" data-campo="m:rewards.${gid}.name" value="${esc(r.name ?? T("Comum.Recompensas"))}">` : `<b>${esc(r.name ?? T("Comum.Recompensas"))}</b>`}
         ${r.awarded ? `<span class="jm-tag achado">${T("Janela.Entregue")}</span>` : ""}
         <a class="jm-mini-btn jm-olho ${r.visible ? "aberto" : "fechado"}" data-action="recompensaVisivel" data-grupo="${gid}" data-tooltip="${r.visible ? T("Janela.JogadoresVeemEstaRecompensa") : T("Janela.OcultaDosJogadores")}"><i class="fa-solid ${r.visible ? "fa-eye" : "fa-eye-slash"}"></i></a>
-        <button type="button" class="primario" data-action="entregarRecompensa" data-grupo="${gid}" data-tooltip="${T("Janela.XPParaCadaPersonagemMoedas")}"><i class="fa-solid fa-gift"></i> ${T("Janela.Entregar")}</button>
+        ${r.awarded
+          ? `<button type="button" class="sec" data-action="reabrirRecompensa" data-grupo="${gid}" data-tooltip="${T("Janela.JaEntregueReabrirPermite")}"><i class="fa-solid fa-rotate-left"></i> ${T("Janela.ReabrirEntrega")}</button>`
+          : `<button type="button" class="primario" data-action="entregarRecompensa" data-grupo="${gid}" data-tooltip="${T("Janela.XPParaCadaPersonagemMoedas")}"><i class="fa-solid fa-gift"></i> ${T("Janela.Entregar")}</button>`}
         ${ed ? `<a class="jm-mini-btn" data-action="apagarRecompensa" data-grupo="${gid}" data-tooltip="${T("Janela.ApagarEsteGrupo")}"><i class="fa-solid fa-trash"></i></a>` : ""}
       </div>` : (grupos.length > 1 ? `<div class="jm-premio-topo"><b>${esc(r.name ?? T("Comum.Recompensas"))}</b></div>` : "");
     partes.push(`<div class="jm-premio-grupo">
@@ -201,120 +203,29 @@ export default {
       if (dadosGet(page, `items.${el.dataset.id}`)) await dadosUnset(page, `items.${el.dataset.id}`);
     },
 
+    /* Entrega: itens → XP e moedas → página marcada como entregue. Uma recompensa já entregue não é entregue
+     * de novo (XP e moedas dobrariam); para repetir de propósito, o mestre usa "Reabrir entrega". Enquanto uma
+     * entrega está em andamento, um segundo clique é ignorado (app._entregando). Se um passo falhar, os
+     * anteriores são desfeitos (desfazerPassos) e a recompensa NÃO fica marcada como entregue. */
     async entregarRecompensa(app, ev, el) {
-      const e = app._entry(); const { page, m } = analisar(e);
-      const gid = el.dataset.grupo;
-      const r = Object.fromEntries(comoLista(m.rewards))[gid];
-      if (!r) return;
-      const herois = [...new Set(game.users.filter((u) => !u.isGM && u.character).map((u) => u.character))];
-      if (!herois.length) return ui.notifications.warn(T("Janela.NenhumJogadorTemPersonagemDefinido"));
-      const itensMapa = Object.fromEntries(comoLista(m.items));
-      const itens = (r.itemIds ?? []).map((iid) => [iid, itensMapa[iid]]).filter(([, it]) => it);
-      const moedas = r.currency ?? {};
-      const temMoedas = chavesMoedas().some((k) => Number(moedas[k]) > 0);
+      if (app._entregando) return;
+      app._entregando = true;
+      try { await entregarRecompensa(app, el.dataset.grupo); }
+      finally { app._entregando = false; }
+    },
 
-      const content = `<div class="jm-entrega">
-        <h4><i class="fa-solid fa-users"></i> ${T("Janela.QuemRecebe")}</h4>
-        <div class="jm-entrega-herois">${herois.map((h) => `<label class="jm-entrega-heroi">
-          <input type="checkbox" name="h-${h.id}" checked>
-          <img src="${esc(h.img)}" alt=""><b>${esc(h.name)}</b>
-          <span class="jm-xp-ed"><i class="fa-solid fa-star"></i><input type="number" min="0" name="xp-${h.id}" value="${Number(r.xp) || 0}"><span>XP</span></span>
-        </label>`).join("")}</div>
-        ${temMoedas ? `<h4><i class="fa-solid fa-coins"></i> ${T("Janela.Moedas")}: ${mostrarMoedas(moedas)}</h4>
-          <div class="jm-entrega-opcoes">
-            <label><input type="radio" name="moedas" value="dividir" checked> ${T("Janela.DividirEntreOsMarcadosO")}</label>
-            <label><input type="radio" name="moedas" value="cada"> ${T("Janela.CadaUmRecebeOValor")}</label>
-            <label><input type="radio" name="moedas" value="nada"> ${T("Janela.NaoEntregarMoedasAgora")}</label>
-          </div>` : ""}
-        ${itens.length ? `<h4><i class="fa-solid fa-gem"></i> ${T("Janela.ItensTalentosEMagias")}</h4>
-          <div class="jm-entrega-itens">${itens.map(([iid, it]) => `<label class="jm-entrega-item">
-            <img src="${esc(it.img)}" alt=""><b>${esc(it.name)}</b>
-            <select name="i-${iid}">
-              <option value="">${T("Janela.DeixarNaMissaoQuemQuiser")}</option>
-              ${herois.map((h) => `<option value="${h.id}">${T("Janela.DarPara")} ${esc(h.name)}</option>`).join("")}
-              <option value="todos">${T("Janela.UmParaCadaMarcado")}</option>
-            </select></label>`).join("")}</div>` : ""}
-        <label class="jm-entrega-check"><input type="checkbox" name="anunciar" checked> ${T("Janela.AnunciarNoChat")}</label>
-      </div>`;
-
-      const dados = await Dialogo().prompt({
-        window: { title: `${T("Janela.Entregar")}: ${r.name ?? T("Comum.Recompensas")}`, icon: "fa-solid fa-gift" },
-        position: { width: 560 },
-        content,
-        ok: {
-          label: T("Janela.Entregar"), icon: "fa-solid fa-gift",
-          callback: (ev2, botao) => {
-            const f = botao.form;
-            const val = (n) => f.querySelector(`[name="${n}"]`);
-            return {
-              herois: herois.filter((h) => val(`h-${h.id}`)?.checked).map((h) => ({ id: h.id, xp: Number(val(`xp-${h.id}`)?.value) || 0 })),
-              moedas: f.querySelector("[name=moedas]:checked")?.value ?? "nada",
-              itens: Object.fromEntries(itens.map(([iid]) => [iid, val(`i-${iid}`)?.value ?? ""])),
-              anunciar: !!val("anunciar")?.checked
-            };
-          }
-        }
-      }).catch(() => null);
-      if (!dados) return;
-      const escolhidos = dados.herois.map((h) => ({ ...h, ator: game.actors.get(h.id) })).filter((h) => h.ator);
-      if (!escolhidos.length) return ui.notifications.warn(T("Janela.NenhumPersonagemMarcado"));
-
-      /* moedas */
-      const parte = {};
-      for (const k of chavesMoedas()) {
-        const total = Number(moedas[k]) || 0;
-        parte[k] = dados.moedas === "cada" ? total : (dados.moedas === "dividir" ? Math.floor(total / escolhidos.length) : 0);
-      }
-      const linhasChat = [];
-      const updsFichas = [];
-      for (const h of escolhidos) {
-        const upd = { _id: h.ator.id };
-        if (h.xp && h.ator.system?.details?.xp) upd["system.details.xp.value"] = (Number(h.ator.system.details.xp.value) || 0) + h.xp;
-        if (chavesMoedas().some((k) => parte[k])) {
-          const atual = h.ator.system?.currency ?? {};
-          upd["system.currency"] = Object.fromEntries(chavesMoedas().map((k) => [k, (Number(atual[k]) || 0) + parte[k]]));
-        }
-        if (Object.keys(upd).length > 1) updsFichas.push(upd);
-        const recebeu = [h.xp ? `${h.xp} XP` : "", chavesMoedas().some((k) => parte[k]) ? formatarMoedas(parte) : ""].filter(Boolean);
-        if (recebeu.length) linhasChat.push(`<b>${esc(h.ator.name)}</b>: ${esc(recebeu.join(" · "))}`);
-      }
-      // XP e moedas de todos numa gravação só
-      if (updsFichas.length) await (CONFIG.Actor?.documentClass ?? globalThis.Actor).updateDocuments(updsFichas);
-
-      /* itens: junta tudo o que cada ficha recebe e cria de uma vez por ficha */
+    /** Mestre: zera "entregue" de um grupo para poder entregá-lo de novo (ação explícita, com confirmação). */
+    async reabrirRecompensa(app, ev, el) {
+      const { page, m } = analisar(app._entry());
+      const r = Object.fromEntries(comoLista(m.rewards))[el.dataset.grupo];
+      if (!r?.awarded) return;
+      const ok = await Dialogo().confirm({
+        window: { title: T("Janela.ReabrirEntrega") },
+        content: `<p>${T("Janela.ReabrirAEntregaDe")} <b>${esc(r.name ?? T("Comum.Recompensas"))}</b>? ${T("Janela.OQueJaFoiEntregue")}</p>`
+      });
+      if (!ok) return;
       await garantirObjeto(page, "rewards");
-      await garantirObjeto(page, "items");
-      let restantes = [...(r.itemIds ?? [])];
-      const porFicha = new Map();
-      const saem = [];
-      for (const [iid, destino] of Object.entries(dados.itens)) {
-        if (!destino) continue;
-        const it = itensMapa[iid];
-        if (!it) continue;
-        const alvos = destino === "todos" ? escolhidos.map((h) => h.ator) : [game.actors.get(destino)].filter(Boolean);
-        for (const alvo of alvos) {
-          if (!porFicha.has(alvo)) porFicha.set(alvo, []);
-          porFicha.get(alvo).push(itemLimpo(it));
-          linhasChat.push(`<b>${esc(alvo.name)}</b> ${T("Janela.Recebeu")} <b>${esc(it.name)}</b>`);
-        }
-        restantes = restantes.filter((i) => i !== iid);
-        saem.push(`flags.${MOD}.${CHAVE_DADOS}.items.${iid}`);
-      }
-      // fichas diferentes são independentes: criadas em paralelo; uma falha é relatada, não escondida
-      const criados = await Promise.allSettled([...porFicha].map(([alvo, itens2]) => alvo.createEmbeddedDocuments("Item", itens2)));
-      const falhou = criados.find((x) => x.status === "rejected");
-      if (falhou) throw falhou.reason;
-
-      const resto = Object.fromEntries(chavesMoedas().map((k) => [k, Math.max(0, (Number(moedas[k]) || 0) - (dados.moedas === "dividir" ? parte[k] * escolhidos.length : (dados.moedas === "cada" ? Number(moedas[k]) || 0 : 0)))]));
-      // a página da missão numa gravação só: itens que saíram + estado do grupo
-      await gravarJunto(page, {
-        [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.currency`]: resto,
-        [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.itemIds`]: restantes,
-        [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.awarded`]: true,
-        [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.visible`]: true
-      }, saem);
-      Sessao.registrar("missao", `${T("Janela.RecompensaDe")} <b>${esc(e.name)}</b> entregue.${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}`);
-      if (dados.anunciar) await chat(`<i class="fa-solid fa-gift"></i> ${T("Janela.RecompensaDe")} <b>${esc(e.name)}</b> entregue!${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}${restantes.length ? `<p>${T("Janela.AindaHaItensNaMissao")}</p>` : ""}`);
+      await dadosSet(page, `rewards.${el.dataset.grupo}.awarded`, false);
     },
 
     pegarRecompensa(app, ev, el) {
@@ -356,3 +267,148 @@ export default {
     }));
   }
 };
+
+/** Entrega de um grupo de recompensa (ver a ação entregarRecompensa). */
+async function entregarRecompensa(app, gid) {
+  const e = app._entry(); const { page, m } = analisar(e);
+  const r = Object.fromEntries(comoLista(m.rewards))[gid];
+  if (!r) return;
+  if (r.awarded) return ui.notifications.warn(T("Janela.EssaRecompensaJaFoiEntregue"));
+  const herois = [...new Set(game.users.filter((u) => !u.isGM && u.character).map((u) => u.character))];
+  if (!herois.length) return ui.notifications.warn(T("Janela.NenhumJogadorTemPersonagemDefinido"));
+  const itensMapa = Object.fromEntries(comoLista(m.items));
+  const itens = (r.itemIds ?? []).map((iid) => [iid, itensMapa[iid]]).filter(([, it]) => it);
+  const moedas = r.currency ?? {};
+  const temMoedas = chavesMoedas().some((k) => Number(moedas[k]) > 0);
+
+  const content = `<div class="jm-entrega">
+    <h4><i class="fa-solid fa-users"></i> ${T("Janela.QuemRecebe")}</h4>
+    <div class="jm-entrega-herois">${herois.map((h) => `<label class="jm-entrega-heroi">
+      <input type="checkbox" name="h-${h.id}" checked>
+      <img src="${esc(h.img)}" alt=""><b>${esc(h.name)}</b>
+      <span class="jm-xp-ed"><i class="fa-solid fa-star"></i><input type="number" min="0" name="xp-${h.id}" value="${Number(r.xp) || 0}"><span>XP</span></span>
+    </label>`).join("")}</div>
+    ${temMoedas ? `<h4><i class="fa-solid fa-coins"></i> ${T("Janela.Moedas")}: ${mostrarMoedas(moedas)}</h4>
+      <div class="jm-entrega-opcoes">
+        <label><input type="radio" name="moedas" value="dividir" checked> ${T("Janela.DividirEntreOsMarcadosO")}</label>
+        <label><input type="radio" name="moedas" value="cada"> ${T("Janela.CadaUmRecebeOValor")}</label>
+        <label><input type="radio" name="moedas" value="nada"> ${T("Janela.NaoEntregarMoedasAgora")}</label>
+      </div>` : ""}
+    ${itens.length ? `<h4><i class="fa-solid fa-gem"></i> ${T("Janela.ItensTalentosEMagias")}</h4>
+      <div class="jm-entrega-itens">${itens.map(([iid, it]) => `<label class="jm-entrega-item">
+        <img src="${esc(it.img)}" alt=""><b>${esc(it.name)}</b>
+        <select name="i-${iid}">
+          <option value="">${T("Janela.DeixarNaMissaoQuemQuiser")}</option>
+          ${herois.map((h) => `<option value="${h.id}">${T("Janela.DarPara")} ${esc(h.name)}</option>`).join("")}
+          <option value="todos">${T("Janela.UmParaCadaMarcado")}</option>
+        </select></label>`).join("")}</div>` : ""}
+    <label class="jm-entrega-check"><input type="checkbox" name="anunciar" checked> ${T("Janela.AnunciarNoChat")}</label>
+  </div>`;
+
+  const dados = await Dialogo().prompt({
+    window: { title: `${T("Janela.Entregar")}: ${r.name ?? T("Comum.Recompensas")}`, icon: "fa-solid fa-gift" },
+    position: { width: 560 },
+    content,
+    ok: {
+      label: T("Janela.Entregar"), icon: "fa-solid fa-gift",
+      callback: (ev2, botao) => {
+        const f = botao.form;
+        const val = (n) => f.querySelector(`[name="${n}"]`);
+        return {
+          herois: herois.filter((h) => val(`h-${h.id}`)?.checked).map((h) => ({ id: h.id, xp: Number(val(`xp-${h.id}`)?.value) || 0 })),
+          moedas: f.querySelector("[name=moedas]:checked")?.value ?? "nada",
+          itens: Object.fromEntries(itens.map(([iid]) => [iid, val(`i-${iid}`)?.value ?? ""])),
+          anunciar: !!val("anunciar")?.checked
+        };
+      }
+    }
+  }).catch(() => null);
+  if (!dados) return;
+  const escolhidos = dados.herois.map((h) => ({ ...h, ator: game.actors.get(h.id) })).filter((h) => h.ator);
+  if (!escolhidos.length) return ui.notifications.warn(T("Janela.NenhumPersonagemMarcado"));
+
+  /* a página pode ter mudado enquanto o diálogo estava aberto (outro clique, outro mestre): relê antes de gravar */
+  if (dadosGet(page, `rewards.${gid}.awarded`)) return ui.notifications.warn(T("Janela.EssaRecompensaJaFoiEntregue"));
+
+  /* moedas */
+  const parte = {};
+  for (const k of chavesMoedas()) {
+    const total = Number(moedas[k]) || 0;
+    parte[k] = dados.moedas === "cada" ? total : (dados.moedas === "dividir" ? Math.floor(total / escolhidos.length) : 0);
+  }
+  const linhasChat = [];
+  const updsFichas = [];
+  const antesFichas = [];   // para devolver XP e moedas se um passo seguinte falhar
+  for (const h of escolhidos) {
+    const upd = { _id: h.ator.id };
+    const antes = { _id: h.ator.id };
+    if (h.xp && h.ator.system?.details?.xp) {
+      upd["system.details.xp.value"] = (Number(h.ator.system.details.xp.value) || 0) + h.xp;
+      antes["system.details.xp.value"] = Number(h.ator.system.details.xp.value) || 0;
+    }
+    if (chavesMoedas().some((k) => parte[k])) {
+      const atual = h.ator.system?.currency ?? {};
+      upd["system.currency"] = Object.fromEntries(chavesMoedas().map((k) => [k, (Number(atual[k]) || 0) + parte[k]]));
+      antes["system.currency"] = Object.fromEntries(chavesMoedas().map((k) => [k, Number(atual[k]) || 0]));
+    }
+    if (Object.keys(upd).length > 1) { updsFichas.push(upd); antesFichas.push(antes); }
+    const recebeu = [h.xp ? `${h.xp} XP` : "", chavesMoedas().some((k) => parte[k]) ? formatarMoedas(parte) : ""].filter(Boolean);
+    if (recebeu.length) linhasChat.push(`<b>${esc(h.ator.name)}</b>: ${esc(recebeu.join(" · "))}`);
+  }
+
+  /* itens: junta tudo o que cada ficha recebe e cria de uma vez por ficha */
+  await garantirObjeto(page, "rewards");
+  await garantirObjeto(page, "items");
+  let restantes = [...(r.itemIds ?? [])];
+  const porFicha = new Map();
+  const saem = [];
+  for (const [iid, destino] of Object.entries(dados.itens)) {
+    if (!destino) continue;
+    const it = itensMapa[iid];
+    if (!it) continue;
+    const alvos = destino === "todos" ? escolhidos.map((h) => h.ator) : [game.actors.get(destino)].filter(Boolean);
+    for (const alvo of alvos) {
+      if (!porFicha.has(alvo)) porFicha.set(alvo, []);
+      porFicha.get(alvo).push(itemLimpo(it));
+      linhasChat.push(`<b>${esc(alvo.name)}</b> ${T("Janela.Recebeu")} <b>${esc(it.name)}</b>`);
+    }
+    restantes = restantes.filter((i) => i !== iid);
+    saem.push(`flags.${MOD}.${CHAVE_DADOS}.items.${iid}`);
+  }
+  const resto = Object.fromEntries(chavesMoedas().map((k) => [k, Math.max(0, (Number(moedas[k]) || 0) - (dados.moedas === "dividir" ? parte[k] * escolhidos.length : (dados.moedas === "cada" ? Number(moedas[k]) || 0 : 0)))]));
+
+  /* ordem: itens nas fichas → XP e moedas → página da missão. Cada passo concluído entra em `passos`;
+   * se um passo seguinte falhar, os anteriores são desfeitos (itens criados apagados, XP e moedas devolvidos)
+   * e a recompensa não fica marcada como entregue. Se o próprio desfazer falhar, o mestre é avisado do que ficou. */
+  const Ator = CONFIG.Actor?.documentClass ?? globalThis.Actor;
+  const passos = [];
+  try {
+    // fichas diferentes são independentes: criadas em paralelo; o que deu certo é guardado para poder ser desfeito
+    const criados = await Promise.allSettled([...porFicha].map(([alvo, itens2]) => alvo.createEmbeddedDocuments("Item", itens2)));
+    criados.forEach((c, i) => {
+      if (c.status !== "fulfilled" || !c.value?.length) return;
+      const alvo = [...porFicha.keys()][i];
+      passos.push([`${T("Janela.ItensEntreguesA")} ${alvo.name}`, () => alvo.deleteEmbeddedDocuments("Item", c.value.map((d) => d.id))]);
+    });
+    const falhou = criados.find((c) => c.status === "rejected");
+    if (falhou) throw falhou.reason;
+    // XP e moedas de todos numa gravação só
+    if (updsFichas.length) {
+      await Ator.updateDocuments(updsFichas);
+      passos.push([T("Janela.XPEMoedas"), () => Ator.updateDocuments(antesFichas)]);
+    }
+    // a página da missão numa gravação só: itens que saíram + estado do grupo
+    await gravarJunto(page, {
+      [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.currency`]: resto,
+      [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.itemIds`]: restantes,
+      [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.awarded`]: true,
+      [`flags.${MOD}.${CHAVE_DADOS}.rewards.${gid}.visible`]: true
+    }, saem);
+  } catch (err) {
+    const ficaram = await desfazerPassos(passos, `${T("Janela.RecompensaDe")} ${e.name}`);
+    if (!ficaram.length) ui.notifications.warn(T("Janela.AEntregaFalhouENada"));
+    throw err;
+  }
+  Sessao.registrar("missao", `${T("Janela.RecompensaDe")} <b>${esc(e.name)}</b> entregue.${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}`);
+  if (dados.anunciar) await chat(`<i class="fa-solid fa-gift"></i> ${T("Janela.RecompensaDe")} <b>${esc(e.name)}</b> entregue!${linhasChat.length ? `<ul>${linhasChat.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}${restantes.length ? `<p>${T("Janela.AindaHaItensNaMissao")}</p>` : ""}`);
+}

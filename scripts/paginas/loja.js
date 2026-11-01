@@ -5,7 +5,7 @@ import { tabelasDasLojas, tabelaDaLoja, nomeTabela } from "../lojas/tabelas.js";
 import { Tempo, horaParaMin, horarioLoja, minParaHora, textoHorarioLoja } from "../partes/calendario.js";
 import { PERICIAS_VENDEDOR, RESULTADOS, atorDoDono, bonusPericia, multVendaPadrao, negociacaoDeHoje, tabelaNegocio } from "../partes/pechincha.js";
 import { souGMPrincipal } from "../partes/sessao.js";
-import { CHAVE_DADOS, Dialogo, MOD, OFERTAS, TE, TIPOS_SAQUE, analisar, apagarChave, atorDoJogador, chat, diaAtual, ehGM, esc, estaVisivel, formatarPreco, idsGM, itemParaLoja, dadosSet, opcoes, pedir, precoEmPo, resultadoParaItem, substituirMapa } from "../nucleo.js";
+import { CHAVE_DADOS, Dialogo, MOD, OFERTAS, TE, TIPOS_SAQUE, analisar, apagarChave, atorDoJogador, chat, diaAtual, ehGM, esc, estaVisivel, formatarPreco, idsGM, itemParaLoja, dadosSet, opcoes, pedir, precoEmPo, qtdDaFicha, resultadoParaItem, substituirMapa } from "../nucleo.js";
 import { listaItens } from "./estoque.js";
 
 async function cartaOferta(o, visaoGM, linkItem, userId = "") {
@@ -94,7 +94,7 @@ async function secaoLoja(ctx) {
     const ator = atorDoJogador();
     if (!ator) corpo = `<p class="jm-vazio">${T("Janela.SelecioneSeuTokenOuDefina2")}</p>`;
     else {
-      const vendiveis = ator.items.filter((i) => TIPOS_SAQUE.includes(i.type) && precoEmPo(i) > 0)
+      const vendiveis = ator.items.filter((i) => TIPOS_SAQUE.includes(i.type) && precoEmPo(i) > 0 && qtdDaFicha(i) >= 1)
         .sort((a2, b2) => a2.name.localeCompare(b2.name, game.i18n.lang));
       const padrao = multVendaPadrao(x);
       const linhas = vendiveis.map((it) => {
@@ -102,7 +102,7 @@ async function secaoLoja(ctx) {
         const neg = negociacaoDeHoje(x, game.user.id, `v_${it.id}`);
         const mult = neg?.mult ?? padrao;
         const oferta = Math.round(base * mult * 100) / 100;
-        const qtd = Number(it.system?.quantity) || 1;
+        const qtd = qtdDaFicha(it);
         const pendente = neg && neg.mult == null;
         return `<div class="jm-produto venda">
           <img src="${esc(it.img)}" alt="">

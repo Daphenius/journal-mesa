@@ -226,6 +226,22 @@ function relatarErro(onde, err) {
   ui.notifications.error(`${T("Nucleo.JournalDaMesaFalhaEm")} "${onde}" (${err?.message ?? err}${T("Nucleo.DetalhesNoConsoleF12")}`);
 }
 
+/* ---------- compensação de uma ação em vários passos ----------
+ * Compra, saque e entrega de recompensa gravam em mais de um documento (ficha do personagem e página da loja,
+ * do baú ou da missão), e o Foundry não tem transação entre documentos. Então cada passo concluído registra
+ * em `passos` como se desfaz ([rótulo, função]); se um passo seguinte falhar, os anteriores são desfeitos na
+ * ordem inversa. Limite real: se a própria compensação falhar, não há mais o que fazer sozinho — o mestre
+ * recebe um aviso dizendo exatamente o que ficou inconsistente (e o console tem o erro) para acertar à mão. */
+async function desfazerPassos(passos, onde) {
+  const ficaram = [];
+  for (const [rotulo, desfaz] of [...passos].reverse()) {
+    try { await desfaz(); }
+    catch (err2) { ficaram.push(rotulo); console.error(`${T("Comum.JournalDaMesa")} | ${onde}: ${T("Nucleo.NaoConseguiDesfazer")} ${rotulo}`, err2); }
+  }
+  if (ficaram.length) ui.notifications.error(TF("Nucleo.OndeFalhouEOQueFicou", { onde, lista: ficaram.join(", ") }), { permanent: true });
+  return ficaram;
+}
+
 function extrasPadrao() {
   return {
     tipo: "", segredo: "", dono: "", doador: "", rastrear: true, recompensas: "",
@@ -719,6 +735,14 @@ function qtdDoItem(it) {
   const q = it?.flags?.[MOD]?.qtd;
   return typeof q === "number" ? q : undefined;
 }
+/** Quantidade de um item na ficha (system.quantity): sem o campo = 1 unidade (talentos, magias, itens sem
+ *  quantidade); número finito maior ou igual a zero = ele mesmo; qualquer outra coisa (texto, NaN, negativo) = 0.
+ *  Zero é zero — não vira uma unidade. */
+function qtdDaFicha(item) {
+  const q = item?.system?.quantity;
+  if (q === undefined) return 1;
+  return typeof q === "number" && Number.isFinite(q) && q >= 0 ? Math.floor(q) : 0;
+}
 const arredondarPo = (po) => Math.round((Number(po) || 0) * 100) / 100;
 
 /** Quebra um valor em po nas moedas de até 1 po (sem electrum), da maior para a menor. */
@@ -1062,21 +1086,27 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
   const moedas = pagar(ator, preco);
   if (!moedas) return aviso(userId, `${ator.name} ${T("Nucleo.NaoTemDinheiroSuficiente")} (${formatarPreco(preco)}).`, "warn");
 
-  // entrega primeiro e cobra depois: se a cobrança falhar, o item entregue é apagado (mesma reversão do estoque)
-  const criados = await ator.createEmbeddedDocuments("Item", [itemData]);
-  try { await ator.update({ "system.currency": moedas }); }
-  catch (err) {
-    try { await ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id)); }
-    catch (err2) { console.error(`${T("Comum.JournalDaMesa")} | ${T("Nucleo.NaoConseguiDesfazerAEntrega")}`, err2); }
+  /* entrega → cobra → baixa o estoque (ou marca a oferta do dia como comprada). Cada passo concluído entra
+   * em `passos`; se um passo seguinte falhar, os anteriores são desfeitos na ordem inversa (o item sai da
+   * ficha, as moedas voltam) e o jogador recebe "nada foi cobrado". O que a reversão NÃO cobre: se o próprio
+   * desfazer falhar (ver desfazerPassos), o mestre é avisado do que ficou pela metade para acertar à mão. */
+  const moedasAntes = dup(ator.system.currency);
+  const passos = [];
+  try {
+    const criados = await ator.createEmbeddedDocuments("Item", [itemData]);
+    passos.push([T("Nucleo.OItemEntregueNaFicha"), () => ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id))]);
+    await ator.update({ "system.currency": moedas });
+    passos.push([T("Nucleo.AsMoedasCobradas"), () => ator.update({ "system.currency": moedasAntes })]);
+    if (origem === "semanal") {
+      await garantirObjeto(page, "items");
+      const estoque = dadosGet(page, `items.${itemId}.flags.${MOD}.qtd`);
+      if (typeof estoque === "number") await dadosSet(page, `items.${itemId}.flags.${MOD}.qtd`, Math.max(0, estoque - n));
+    } else {
+      await page.setFlag(MOD, `diaria.ofertas.${userId}.comprado`, true);
+    }
+  } catch (err) {
+    await desfazerPassos(passos, TF("Nucleo.CompraEmLoja", { loja: e.name }));
     throw err;
-  }
-
-  if (origem === "semanal") {
-    await garantirObjeto(page, "items");
-    const estoque = dadosGet(page, `items.${itemId}.flags.${MOD}.qtd`);
-    if (typeof estoque === "number") await dadosSet(page, `items.${itemId}.flags.${MOD}.qtd`, Math.max(0, estoque - n));
-  } else {
-    await page.setFlag(MOD, `diaria.ofertas.${userId}.comprado`, true);
   }
 
   const linha = TF("Nucleo.QuemComprouNItemPor", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(nome)}</b>`, preco: formatarPreco(preco), loja: `<b>${esc(e.name)}</b>` });
@@ -1094,9 +1124,15 @@ async function executarPegar({ entryId, itemId, actorUuid, userId }) {
   if (!page || !ator) return aviso(userId, T("Comum.PersonagemNaoEncontrado"), "warn");
   const item = Object.fromEntries(comoLista(m.items))[itemId];
   if (!item || item.hidden || item.lock) return aviso(userId, T("Nucleo.AlguemJaPegouEsseItem"), "warn");
-  await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
-  await garantirObjeto(page, "items");
-  await dadosUnset(page, `items.${itemId}`);
+  // o item entra na ficha e depois sai do baú; se não conseguir sair do baú, o item criado na ficha é apagado
+  const criados = await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
+  try {
+    await garantirObjeto(page, "items");
+    await dadosUnset(page, `items.${itemId}`);
+  } catch (err) {
+    await desfazerPassos([[T("Nucleo.OItemEntregueNaFicha"), () => ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id))]], TF("Nucleo.SaqueEmBau", { bau: e.name }));
+    throw err;
+  }
   const linha = TF("Nucleo.QuemPegouItemDeBau", { quem: `<b>${esc(ator.name)}</b>`, item: `<b>${esc(item.name)}</b>`, bau: `<b>${esc(e.name)}</b>` });
   await chat(`<i class="fa-solid fa-hand"></i> ${linha}`, { ator });
   Sessao.registrar("saque", linha);
@@ -1120,9 +1156,16 @@ async function executarPegarRecompensa({ entryId, grupo, itemId, actorUuid, user
   const item = Object.fromEntries(comoLista(m.items))[itemId];
   if (!r?.awarded) return aviso(userId, T("Nucleo.EssaRecompensaAindaNaoFoi"), "warn");
   if (!item || !(r.itemIds ?? []).includes(itemId)) return aviso(userId, T("Nucleo.AlguemJaPegouEsseItem"), "warn");
-  await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
-  await dadosSet(page, `rewards.${grupo}.itemIds`, (r.itemIds ?? []).filter((i) => i !== itemId));
-  await dadosUnset(page, `items.${itemId}`);
+  // o item entra na ficha e depois sai da missão (lista do grupo e item, numa gravação só); se não sair, o item criado é apagado
+  const criados = await ator.createEmbeddedDocuments("Item", [itemLimpo(item)]);
+  try {
+    await garantirObjeto(page, "rewards");
+    await garantirObjeto(page, "items");
+    await gravarJunto(page, { [`flags.${MOD}.${CHAVE_DADOS}.rewards.${grupo}.itemIds`]: (r.itemIds ?? []).filter((i) => i !== itemId) }, [`flags.${MOD}.${CHAVE_DADOS}.items.${itemId}`]);
+  } catch (err) {
+    await desfazerPassos([[T("Nucleo.OItemEntregueNaFicha"), () => ator.deleteEmbeddedDocuments("Item", criados.map((d) => d.id))]], TF("Nucleo.RecompensaDeMissao", { missao: e.name }));
+    throw err;
+  }
   const linha = `<b>${esc(ator.name)}</b> ${T("Nucleo.Pegou")} <b>${esc(item.name)}</b> ${T("Nucleo.DaRecompensaDe")} <b>${esc(e.name)}</b>.`;
   await chat(`<i class="fa-solid fa-gift"></i> ${linha}`, { ator });
   Sessao.registrar("missao", linha);
@@ -1135,20 +1178,32 @@ async function executarPegarRecompensa({ entryId, grupo, itemId, actorUuid, user
  * Limitação: o Foundry não informa quem enviou a mensagem; um jogador que forje o id de outro usuário
  * E use uma ficha desse outro ainda passaria. Isso exige acesso ao console e fica registrado no chat. */
 const ID_VALIDO = /^[a-zA-Z0-9]{16}$/;
+/* Tipo de página que cada ação exige, conferido pelo tipo REAL da página (analisar), nunca pelos botões da
+ * interface: um pedido "pegar" apontando para uma loja (feito à mão pelo console) levaria o item de graça. */
+const TIPO_POR_ACAO = { pegar: "loot", comprar: "shop", vender: "shop", rolarDiaria: "shop", negociar: "shop", pegarRecompensa: "quest" };
+/* ações que mexem numa ficha: o pedido precisa dizer qual */
+const PRECISA_FICHA = ["pegar", "comprar", "vender", "negociar", "pegarRecompensa"];
+const textoCurto = (v) => typeof v === "string" && v.length > 0 && v.length <= 200;
 function motivoRecusa(acao, msg) {
   if (!msg || typeof msg !== "object" || !ACOES_GM[acao]) return T("Nucleo.PedidoDesconhecido");
   const u = typeof msg.userId === "string" && ID_VALIDO.test(msg.userId) ? game.users.get(msg.userId) : null;
   if (!u) return T("Nucleo.UsuarioInvalido");
-  if (msg.actorUuid != null) {
+  if (msg.actorUuid != null || PRECISA_FICHA.includes(acao)) {
     const ator = typeof msg.actorUuid === "string" ? fromUuidSync(msg.actorUuid) : null;
     if (!ator || ator.documentName !== "Actor") return T("Nucleo.FichaInvalida");
     if (!u.isGM && !ator.testUserPermission(u, "OWNER")) return T("Nucleo.AFichaNaoPertenceA");
   }
-  if (msg.entryId != null) {
-    const e = game.journal.get(msg.entryId);
+  if (msg.entryId != null || TIPO_POR_ACAO[acao]) {
+    const e = typeof msg.entryId === "string" ? game.journal.get(msg.entryId) : null;
     if (!e) return T("Nucleo.PaginaInexistente");
     if (!u.isGM && !e.testUserPermission(u, "LIMITED")) return T("Nucleo.SemAcessoAPagina");
+    if (TIPO_POR_ACAO[acao] && analisar(e).tipo !== TIPO_POR_ACAO[acao]) return T("Nucleo.EssaAcaoNaoValePara");
   }
+  /* dados obrigatórios de cada ação */
+  if (acao === "comprar" && !["semanal", "diaria"].includes(msg.origem)) return T("Nucleo.OrigemDaCompraInvalida");
+  if ((["pegar", "vender", "pegarRecompensa"].includes(acao) || (acao === "comprar" && msg.origem === "semanal")) && !textoCurto(msg.itemId)) return T("Nucleo.ItemInvalido");
+  if (acao === "pegarRecompensa" && !textoCurto(msg.grupo)) return T("Nucleo.RecompensaInvalida");
+  if (acao === "negociar" && (!["compra", "venda"].includes(msg.modo) || !textoCurto(msg.alvoId) || (msg.nome != null && typeof msg.nome !== "string"))) return T("Nucleo.NegociacaoInvalida");
   if (acao === "nota") {
     const page = typeof msg.pageUuid === "string" ? fromUuidSync(msg.pageUuid) : null;
     if (page?.documentName !== "JournalEntryPage") return T("Nucleo.PaginaInexistente");
@@ -1628,4 +1683,4 @@ Hooks.once("i18nInit", () => {
   // completa ("JMESA.Nucleo...") em nome, dica e opções: o próprio Foundry traduz ao mostrar
 });
 
-export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, op, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };
+export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, op, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDaFicha, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, desfazerPassos, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };

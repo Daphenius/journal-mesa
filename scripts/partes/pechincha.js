@@ -3,7 +3,7 @@
 import { T, TF } from "../idioma.js";
 import { lojaBloqueada } from "./calendario.js";
 import { Sessao } from "./sessao.js";
-import { CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, analisar, aviso, avisoUmaVez, chat, comoLista, diaAtual, dup, ehGM, esc, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, formatarPreco, garantirObjeto, itemParaLoja, dadosPadrao, dadosSet, naFila, novoId, pedir, precoEmPo, receber, regrasMesa, relatarErro } from "../nucleo.js";
+import { CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, analisar, aviso, avisoUmaVez, chat, comoLista, diaAtual, dup, ehGM, esc, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, formatarPreco, garantirObjeto, itemParaLoja, dadosPadrao, dadosSet, naFila, novoId, pedir, precoEmPo, qtdDaFicha, receber, regrasMesa, relatarErro } from "../nucleo.js";
 
 /* ---------- negociação com o dono da loja ---------- */
 
@@ -267,7 +267,9 @@ async function executarVender({ entryId, userId, actorUuid, itemId, quantidade =
   const ator = await fromUuid(actorUuid);
   const item = ator?.items.get(itemId);
   if (!page || !item) return aviso(userId, T("Pechincha.ItemNaoEncontrado"), "warn");
-  const tem = Number(item.system?.quantity) || 1;
+  // quantidade real na ficha: sem o campo = 1; zero, negativa ou inválida = nada para vender (zero não vira uma unidade)
+  const tem = qtdDaFicha(item);
+  if (tem < 1) return aviso(userId, T("Pechincha.VoceNaoTemNenhumaUnidade"), "warn");
   const n = Math.min(tem, Math.max(1, Math.floor(Number(quantidade) || 1)));
   const base = precoEmPo(item);
   const neg = negociacaoDeHoje(x, userId, `v_${itemId}`);

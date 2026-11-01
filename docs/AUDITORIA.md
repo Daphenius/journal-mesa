@@ -87,7 +87,7 @@ Os testes daqui rodam num **Foundry simulado** (node) e, para HTML e download, n
   - diário de sessão (cerca de 100);
   - Regras da Mesa.
 - **Fora disso:** a `JournalApp` (cerca de 3.000 linhas) é uma classe só e não convém dividir de uma vez.
-- **Atenção:** o `journal.js` é **gerado**. Edite `journal-antes-i18n.js` e rode `aplicar.py`.
+- **Atenção (histórico):** na época deste relatório o `journal.js` era **gerado** a partir de `journal-antes-i18n.js` por `aplicar.py`. Esses dois arquivos não existem mais: desde a 5.1 os textos têm chaves legíveis em `lang/` e a ferramenta é `tools/i18n-migrar.mjs` (veja "Traduzir o módulo" no README). Edite os `.js` de `scripts/` diretamente.
 
 ### Erros silenciosos (catch)
 Revisei os 110 blocos `catch`.
