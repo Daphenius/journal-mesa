@@ -12,7 +12,7 @@ import { cabecalho, contexto, descricao, montarEditor, notas, segredos, seloMonk
 import { secaoCalendario } from "../paginas/calendario.js";
 import { secaoConexoes } from "../paginas/conexoes.js";
 import { renovarEstoques } from "../paginas/loja.js";
-import { Dialogo, FP, LV, MOD, Menu, NOVOS, STATUS, TEMAS, TIPOS, abrirFichaPadrao, abrirImagem, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarEntrada, avatar, chat, baixarJson, bolinhasDono, corDaPasta, criarBauDoCombate, criarTipo, diaAtual, dicaNota, editarNotaMestre, ehGM, entradaOculta, entradas, esc, estaVisivel, estadoSecao, exportarPasta, fixados, garantirObjeto, importarJson, importarDoMonks, dadosSet, mostrarAosJogadores, mostrarImagem, nomeDoTipoDePagina, nomeTema, notaMestre, pastaMarcadaOculta, pastaOculta, pedir, revelarPara, temModulo, tiposDePagina, visibilidade } from "../nucleo.js";
+import { Dialogo, FP, LV, MOD, Menu, NOVOS, STATUS, TEMAS, TIPOS, abrirFichaPadrao, abrirImagem, abrirPermissoes, alternarFixado, alternarPastaOculta, enquadre, estiloEnquadre, analisar, apagarEntrada, avatar, chat, baixarJson, bolinhasDono, corDaPasta, criarBauDoCombate, criarTipo, diaAtual, dicaNota, editarNotaMestre, ehGM, entradaOculta, entradas, esc, estaVisivel, estadoSecao, exportarPasta, fixados, garantirObjeto, importarJson, importarDoMonks, dadosSet, mostrarAosJogadores, mostrarImagem, nomeDoTipoDePagina, nomeTema, notaMestre, pastaMarcadaOculta, pastaOculta, pedir, revelarPara, temModulo, tiposDePagina, visibilidade } from "../nucleo.js";
 
 /* ---------------- janela principal ---------------- */
 
@@ -103,6 +103,7 @@ class JournalApp extends ApplicationV2 {
       fichaNativa: JournalApp._fichaNativa,
       traduzir: JournalApp._traduzir,
       imagem: JournalApp._imagem,
+      enquadrar: JournalApp._enquadrar,
       apagar: JournalApp._apagar,
       revelarSecao: JournalApp._revelarSecao,
       notaMestre: JournalApp._notaMestre,
@@ -228,7 +229,7 @@ class JournalApp extends ApplicationV2 {
       ${nota ? `data-tooltip="<b>${esc(j.name)}</b><br>${dicaNota(nota)}" data-tooltip-direction="RIGHT"` : ""}
       data-uuid="${j.uuid}" data-tipo="${a.tipo}" data-busca="${esc((j.name + " " + sub).toLowerCase())}"
       data-drop="pasta" data-pasta="${j.folder?.id ?? ""}">
-      ${avatar(img, a.tipo, "mini")}
+      ${avatar(img, a.tipo, "mini", enquadre(j))}
       <div class="jm-item-txt"><b>${esc(j.name)}${nota ? ` <i class="fa-solid fa-note-sticky jm-nota-ico"></i>` : ""}</b><small>${esc(sub)}</small></div>${oculto}</div>`;
   }
 
@@ -839,6 +840,70 @@ class JournalApp extends ApplicationV2 {
     new (FP())({ type: "image", current: page.src, callback: (path) => page.update({ src: path }) }).render(true);
   }
 
+  /** Ajustar enquadramento: arrastar escolhe o foco, a rolagem e o controle mudam o zoom. Só o mestre. */
+  static async _enquadrar(ev) {
+    ev?.stopPropagation?.();
+    const entry = this._entry();
+    if (!entry || !ehGM()) return;
+    const a = analisar(entry);
+    const P = PAGINAS[a.tipo];
+    const img = P?.imagemCabecalho ? P.imagemCabecalho({ entry, a }) : a.page?.src ?? null;
+    if (!img) return;
+    const e = enquadre(entry) ?? { x: 50, y: 50, z: 1 };
+    const prender = (n, min, max) => Math.min(max, Math.max(min, n));
+    const desenhar = (raiz) => {
+      const im = raiz?.querySelector(".jm-enq-quadro img");
+      if (im) im.setAttribute("style", estiloEnquadre(e) || "object-position:50% 50%;");
+      const z = raiz?.querySelector(".jm-enq-zoom");
+      if (z && Number(z.value) !== e.z) z.value = e.z;
+    };
+    const ligar = (raiz) => {
+      const quadro = raiz?.querySelector(".jm-enq-quadro");
+      if (!quadro) return;
+      desenhar(raiz);
+      quadro.addEventListener("pointerdown", (pe) => {
+        pe.preventDefault();
+        quadro.setPointerCapture(pe.pointerId);
+        const lado = quadro.getBoundingClientRect().width || 1;
+        let ux = pe.clientX, uy = pe.clientY;
+        const mover = (me) => {
+          /* puxar a imagem para baixo mostra a parte de cima: o foco sobe */
+          e.x = prender(e.x - ((me.clientX - ux) / lado) * 100 / e.z, 0, 100);
+          e.y = prender(e.y - ((me.clientY - uy) / lado) * 100 / e.z, 0, 100);
+          ux = me.clientX; uy = me.clientY;
+          desenhar(raiz);
+        };
+        const soltar = () => { quadro.removeEventListener("pointermove", mover); quadro.removeEventListener("pointerup", soltar); quadro.classList.remove("arrastando"); };
+        quadro.classList.add("arrastando");
+        quadro.addEventListener("pointermove", mover);
+        quadro.addEventListener("pointerup", soltar);
+      });
+      quadro.addEventListener("wheel", (we) => { we.preventDefault(); e.z = prender(Math.round((e.z - Math.sign(we.deltaY) * 0.1) * 100) / 100, 1, 4); desenhar(raiz); }, { passive: false });
+      raiz.querySelector(".jm-enq-zoom")?.addEventListener("input", (ie) => { e.z = prender(Number(ie.target.value) || 1, 1, 4); desenhar(raiz); });
+      raiz.querySelector(".jm-enq-centro")?.addEventListener("click", () => { e.x = 50; e.y = 50; e.z = 1; desenhar(raiz); });
+    };
+    const ok = await Dialogo().wait({
+      window: { title: T("Janela.AjustarEnquadramento"), icon: "fa-solid fa-crop-simple" },
+      classes: ["jm-dialogo-enq"],
+      position: { width: 360 },
+      content: `<div class="jm-enq" data-tema="${esc(game.settings.get(MOD, "tema"))}">
+        <div class="jm-enq-quadro"><img src="${esc(img)}" alt="" draggable="false"></div>
+        <label class="jm-enq-linha"><i class="fa-solid fa-magnifying-glass-minus"></i><input class="jm-enq-zoom" type="range" min="1" max="4" step="0.05" value="${e.z}"><i class="fa-solid fa-magnifying-glass-plus"></i></label>
+        <p class="jm-dica">${T("Janela.ArrasteAImagemParaEscolher")}</p>
+        <button type="button" class="jm-enq-centro"><i class="fa-solid fa-arrows-to-dot"></i> ${T("Janela.Centralizar")}</button>
+      </div>`,
+      render: (_ev, dlg) => ligar(dlg?.element ?? dlg),
+      buttons: [
+        { action: "salvar", label: T("Comum.Salvar"), icon: "fa-solid fa-check", default: true, callback: () => true },
+        { action: "cancelar", label: T("Janela.Cancelar"), callback: () => false }
+      ],
+      rejectClose: false
+    }).catch(() => false);
+    if (ok !== true) return;
+    if (e.x === 50 && e.y === 50 && e.z === 1) await entry.unsetFlag(MOD, "enquadre");
+    else await entry.setFlag(MOD, "enquadre", { x: Math.round(e.x * 10) / 10, y: Math.round(e.y * 10) / 10, z: Math.round(e.z * 100) / 100 });
+  }
+
   /** Menu de revelação de uma caixa de texto: padrão, todos, ninguém ou jogador por jogador. */
   static _revelarSecao(ev, el) {
     const e = this._entry();
@@ -911,7 +976,8 @@ class JournalApp extends ApplicationV2 {
     await criarBauDoCombate(game.combat);
   }
 
-  static _importar() { importarJson(this.pastaAlvo); }
+  /* importa na mesma pasta que aparece em "Nova página em …" (a clicada ou a da página aberta); sem pasta, na raiz */
+  static _importar() { importarJson(this.pastaDestino); }
   static async _importarMonks() {
     if (!ehGM()) return;
     const ok = await Dialogo().confirm({

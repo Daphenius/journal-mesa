@@ -1,5 +1,19 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.6.0
+
+### Novidade: enquadramento da imagem
+- **Ajustar o que aparece no quadrado.** No modo de edição, o retrato da página ganhou um botãozinho no canto (*Ajustar enquadramento*). Ele abre uma janela com a imagem: **arraste** para escolher o foco (o rosto, por exemplo) e use a **rolagem do mouse** ou o controle para **aproximar** (até 4×). *Centralizar* volta ao padrão.
+- Vale para o retrato do cabeçalho, para a miniatura na lista lateral e para os links das Conexões. Os jogadores veem igual.
+- Só muda como a imagem aparece: o arquivo da imagem não é alterado. O ajuste fica guardado na própria página (e vai junto quando ela é exportada).
+
+### Importar JSON
+- **Vai para a pasta selecionada.** O botão *Importar JSON* (no menu "+ Nova página") agora usa a mesma pasta que aparece em "Nova página em …": a pasta que você clicou ou, se não clicou em nenhuma, a pasta da página aberta. Sem pasta (depois do ✕), a importação vai para a raiz.
+- **Entra no fim da lista.** As páginas importadas vão para o final da pasta (ou da raiz), na ordem do arquivo. Antes, a ordem que vinha do mundo de origem era mantida e as páginas apareciam espalhadas ou no topo. Segue a configuração "Onde colocar páginas novas" (padrão: no fim). Pastas criadas pela importação também entram no fim.
+
+### Configuração nova
+- **Caminhos e Sequências nas Divindades** (Configurações do módulo, vale para o mundo todo). Liga ou desliga a seção "Caminhos e Sequências" da aba *Poder e relíquias* das Divindades. **Vem desligada.** Desligada, o que já foi escrito ali continua guardado na página, só não aparece; ao ligar de novo, volta como estava.
+
 ## 5.5.0
 
 ### Interface

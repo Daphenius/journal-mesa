@@ -2,7 +2,7 @@
  * descrição, segredos, notas pessoais, páginas nativas do Foundry).
  * Cada tipo de página fica em scripts/paginas/<tipo>.js e recebe o "ctx" montado aqui por contexto(). */
 import { T } from "../idioma.js";
-import { CHAVE_DADOS, DETALHES, ICONES_PAGINA, MOD, NOMES_MEJ, TE, TIPOS, analisar, avatar, avisoUmaVez, caminhoDaPasta, dicaNota, ehGM, esc, fixados, nomeDoTipoDePagina, notaMestre, podeVerSecao, relatarErro, rotuloEstadoSecao, temModulo, textoParaHtml, tiposDePagina, visibilidade } from "../nucleo.js";
+import { CHAVE_DADOS, DETALHES, ICONES_PAGINA, MOD, NOMES_MEJ, TE, TIPOS, analisar, avatar, enquadre, avisoUmaVez, caminhoDaPasta, dicaNota, ehGM, esc, fixados, nomeDoTipoDePagina, notaMestre, podeVerSecao, relatarErro, rotuloEstadoSecao, temModulo, textoParaHtml, tiposDePagina, visibilidade } from "../nucleo.js";
 import { calApi, calNota, deusDaFesta } from "../partes/calendario.js";
 
 /** Tudo o que os tipos de página precisam para montar o HTML: a página analisada, quem vê, modo de edição,
@@ -27,10 +27,10 @@ function contexto(app, entry, visiveis, P) {
     if (!visivelIds.has(id)) {
       if (!trancado) return "";
       /* conexão revelada para uma página que o jogador ainda não pode abrir: mostra, mas sem link */
-      return `<span class="jm-ref trancada" data-con-tipo="${aj.tipo}" data-con-busca="${esc(`${j.name} ${extra}`.toLowerCase())}" data-tooltip="${T("Janela.VoceAindaNaoTemAcesso")}">${avatar(aj.page?.src, aj.tipo, "mini")}
+      return `<span class="jm-ref trancada" data-con-tipo="${aj.tipo}" data-con-busca="${esc(`${j.name} ${extra}`.toLowerCase())}" data-tooltip="${T("Janela.VoceAindaNaoTemAcesso")}">${avatar(aj.page?.src, aj.tipo, "mini", enquadre(j))}
         <span><b>${esc(j.name)}</b>${extra ? `<small>${esc(extra)}</small>` : ""}</span><i class="fa-solid fa-lock"></i></span>`;
     }
-    return `<a class="jm-ref ${oculto ? "oculta" : ""}" data-action="abrir" data-id="${id}" data-con-tipo="${aj.tipo}" data-con-busca="${esc(`${j.name} ${extra}`.toLowerCase())}">${avatar(aj.page?.src, aj.tipo, "mini")}
+    return `<a class="jm-ref ${oculto ? "oculta" : ""}" data-action="abrir" data-id="${id}" data-con-tipo="${aj.tipo}" data-con-busca="${esc(`${j.name} ${extra}`.toLowerCase())}">${avatar(aj.page?.src, aj.tipo, "mini", enquadre(j))}
       <span><b>${esc(j.name)}</b>${extra ? `<small>${esc(extra)}</small>` : ""}</span></a>`;
   };
   ctx.secao = (titulo, icone, corpo, extra = "", attrs = "", controles = "", chave = null) => {
@@ -80,7 +80,7 @@ function cabecalho(ctx) {
   const caminho = entry.folder ? `<span class="jm-caminho"><i class="fa-solid fa-folder"></i> ${esc(caminhoDaPasta(entry.folder).join(" / "))}</span>` : "";
   const imgCab = P.imagemCabecalho ? P.imagemCabecalho(ctx) : page?.src ?? null;
   return `<header class="jm-cabecalho">
-      <div class="jm-retrato ${ed ? "editavel" : ""}" ${ed ? `data-action="imagem" data-tooltip="${T("Janela.TrocarImagem")}"` : ""}>${avatar(imgCab, tipo, "grande")}</div>
+      <div class="jm-retrato ${ed ? "editavel" : ""}" ${ed ? `data-action="imagem" data-tooltip="${T("Janela.TrocarImagem")}"` : ""}>${avatar(imgCab, tipo, "grande", enquadre(entry))}${ed && imgCab ? `<a class="jm-retrato-enq" data-action="enquadrar" data-tooltip="${T("Janela.AjustarEnquadramento")}"><i class="fa-solid fa-crop-simple"></i></a>` : ""}</div>
       <div class="jm-cab-texto">
         <div class="jm-selos"><span class="jm-selo tipo-${tipo}"><i class="${t.icone}"></i> ${esc(selo)}</span>${caminho}</div>
         ${ed ? `<input class="jm-titulo" data-campo="__nome" value="${esc(entry.name)}">` : `<h1 class="jm-titulo">${esc(entry.name)}</h1>`}

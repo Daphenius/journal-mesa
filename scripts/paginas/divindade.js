@@ -5,10 +5,17 @@ import { CAL, CAL_AVISOS, CAL_ICONES, Tempo, calNota, deusDaFesta, festasDe } fr
 import { calProxima, calResumoRepeticao, calSalvar, calTextoDia, campoData, notaPadrao } from "../partes/historia.js";
 import { ABAS_DEUS, CAMPOS_DEUS, CHAVE_DADOS, Dialogo, FP, LV, MOD, SECOES_DEUS, SIMBOLOS_DEUS, STATUS_DEUS, TE, analisar, dadosPadrao, ehGM, esc, op, ordemNova, podeVer, podeVerSecao, textoParaHtml } from "../nucleo.js";
 
+/* Seções de uma aba da Divindade. "Caminhos e Sequências" só aparece com a opção ligada nas configurações
+ * (desligada, o texto continua guardado na página; só não é mostrado). */
+function secoesDeus(aba) {
+  const lista = SECOES_DEUS[aba] ?? [];
+  return game.settings.get(MOD, "caminhosDeus") ? lista : lista.filter(([k]) => k !== "caminhos");
+}
+
 function deusTemConteudo(x, aba, entry = null) {
   if (aba === "geral") return true;
   const ve = (k) => !entry || podeVerSecao(entry, k);
-  if ((SECOES_DEUS[aba] ?? []).some(([k]) => x.deus[k] && ve(k))) return true;
+  if (secoesDeus(aba).some(([k]) => x.deus[k] && ve(k))) return true;
   return aba === "poder" && (x.deus.reliquias ?? []).length > 0 && ve("reliquias");
 }
 
@@ -125,7 +132,7 @@ export default {
   async html(entry, app, ctx) {
     const { x, gm, ed, secao, enr } = ctx;
     const blocos = [];
-    for (const [k, r, i, dica] of SECOES_DEUS[app.subDeus] ?? []) {
+    for (const [k, r, i, dica] of secoesDeus(app.subDeus)) {
       if (!x.deus[k] && !ed) continue;
       blocos.push(secao(r, i, ed
         ? `<textarea data-campo="x:deus.${k}" rows="4" placeholder="${esc(dica)}">${esc(x.deus[k])}</textarea>`

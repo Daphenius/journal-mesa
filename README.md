@@ -10,7 +10,7 @@ Se encontrar bugs ou tiver sugestões, abra uma [issue](https://github.com/Daphe
 
 ---
 
-**Versão 5.5.0** · Foundry VTT 14 (mínimo; verificado no 14.369) · D&D 5e 5.0 a 6.0.6 · Português e English · Licença MIT · ✅ Testado no Foundry VTT e D&D 5e
+**Versão 5.6.0** · Foundry VTT 14 (mínimo; verificado no 14.369) · D&D 5e 5.0 a 6.0.6 · Português e English · Licença MIT · ✅ Testado no Foundry VTT e D&D 5e
 
 Toda versão é testada pelo autor dentro do Foundry VTT, com o D&D 5e, antes de ser publicada. Mesmo assim, faça backup do mundo antes de atualizar.
 
@@ -36,9 +36,11 @@ Uma **janela única com abas** para tudo o que o mestre anota sobre o mundo: NPC
 
 **Quem vê.** O olho abre a janela *Quem vê* (nível para todos e por jogador). **Limitado** mostra a página sem as caixas de texto, e cada caixa tem o próprio olho para **revelar por partes**. **Bolinhas** com a inicial de quem tem acesso aparecem no Journal e na barra lateral. O **megafone** abre a página na tela dos jogadores que podem vê-la; o botão direito numa imagem mostra só a imagem.
 
+**Enquadramento.** No modo de edição, o botão no canto do retrato abre *Ajustar enquadramento*: arraste a imagem para escolher o foco (o rosto, por exemplo) e aproxime com a rolagem do mouse. Vale para o retrato, a miniatura da lista e os links das Conexões; o arquivo da imagem não muda.
+
 **Links e fichas.** Links `@UUID[...]` abrem no Journal da Mesa, na aba certa. Com "Abrir diários sempre no Journal da Mesa" ligado, qualquer abertura (barra lateral, notas no mapa, macros, outros módulos) vai para o Journal, se o diário usar a ficha padrão ou a ficha "Journal da Mesa"; diários com ficha de outro módulo (Heavy Lore, Monk's...) abrem nela. Páginas PDF abrem no leitor do Foundry com barra de busca.
 
-**Importar.** *Importar JSON* aceita diários exportados pelo Foundry, pelo Monk's ou pelo Journal da Mesa (pasta inteira) e itens. O botão de **quebra-cabeça** converte os diários do Monk's Enhanced Journal para o formato próprio: só copia (flags do Monk's intactas, mesmos IDs, vínculos mantidos) e mostra um relatório no fim. Páginas *Imagem* do Monk's não são convertidas: crie uma página de Imagem apontando para o mesmo arquivo.
+**Importar.** *Importar JSON* aceita diários exportados pelo Foundry, pelo Monk's ou pelo Journal da Mesa (pasta inteira) e itens. As páginas entram na pasta mostrada em "Nova página em …" (ou na pasta do botão direito), no fim da lista. O botão de **quebra-cabeça** converte os diários do Monk's Enhanced Journal para o formato próprio: só copia (flags do Monk's intactas, mesmos IDs, vínculos mantidos) e mostra um relatório no fim. Páginas *Imagem* do Monk's não são convertidas: crie uma página de Imagem apontando para o mesmo arquivo.
 
 ## Tipos de página
 
@@ -49,7 +51,7 @@ Criados pelo botão **Nova página** (ou pela API). NPC, Local, Organização, L
 - **Organização** — guildas, igrejas, facções e seus membros.
 - **Loja** — **estoque da semana** (rolado de uma tabela) e **oferta do dia** por jogador (Achado, Raridade ou Escambo, com preço sorteado). Compra com quantidade; a aba **Vender** mostra o inventário do jogador e a loja paga 65% do valor (o item entra no estoque). **Pechincha** (aperto de mão): Persuasão do jogador contra Persuasão, Intuição ou Enganação do vendedor (ficha do NPC dono ou bônus fixo), uma tentativa por item por dia; as porcentagens de cada resultado ficam em *Configurar* (padrão compra −35/−10/0/+10/+35%; venda 100/75/65/55/40%). **Horário** de abertura, fechamento e folgas: fechada, ninguém compra nem vende. O mestre muda o estoque direto na lista. Compra e venda são desfeitas se algo falhar no meio (o item volta, as moedas voltam, o estoque fica como estava); se nem o desfazer der certo, o mestre recebe um aviso dizendo o que ficou pela metade para acertar à mão. Vender só vale com pelo menos uma unidade na ficha (quantidade zero não conta como uma).
 - **Missão** — objetivos, status, **prazo** em dias (vencido, o mestre pode marcar como falha) e **recompensas** (XP, moedas, itens, talentos ou magias arrastados); **Entregar** escolhe quem recebe o quê; um grupo já entregue não é entregue de novo (o XP e as moedas não dobram) — para repetir de propósito, **Reabrir entrega**. Itens deixados na missão continuam com o botão **Pegar** para os jogadores. As missões em andamento aparecem no **rastreador** flutuante.
-- **Divindade** — abas *Visão geral* (panteão, domínios, símbolos, mitos), *Fé e clero* (dogmas, tabus, ritos, **dias sagrados** repetidos no calendário) e *Poder e relíquias* (dádivas, castigos, Caminhos e Sequências, relíquias arrastáveis).
+- **Divindade** — abas *Visão geral* (panteão, domínios, símbolos, mitos), *Fé e clero* (dogmas, tabus, ritos, **dias sagrados** repetidos no calendário) e *Poder e relíquias* (dádivas, castigos, relíquias arrastáveis e, se ligada nas configurações, a seção Caminhos e Sequências).
 - **Baú** — itens e moedas para os jogadores **pegarem**; o mestre pode **dividir as moedas**. Ao encerrar um combate, o módulo oferece criar o baú com o saque dos derrotados (pasta *Saques*, oculto).
 - **Anotação** — página livre com os mesmos recursos.
 - **História** — acontecimentos do mundo em ordem cronológica, separados por ano (botão para inverter), cada um com data, ícone e cor; todos aparecem na Linha do tempo. Pode haver mais de uma História.

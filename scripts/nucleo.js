@@ -886,8 +886,29 @@ function aviso(userId, texto, tipo = "info") {
   game.socket.emit(CANAL, { acao: "aviso", userId, texto, tipo });
 }
 
-function avatar(img, tipo, classe = "") {
+/**
+ * Enquadramento da imagem da página (5.6): qual ponto fica em foco (x e y, 0 a 100%) e o zoom (1 a 4).
+ * Fica nas flags da entrada; só muda como a imagem aparece no quadrado, nunca a imagem em si.
+ * Devolve null quando é o padrão (centro, sem zoom).
+ */
+function enquadre(entry) {
+  const e = entry?.getFlag?.(MOD, "enquadre");
+  if (!e || typeof e !== "object") return null;
+  const num = (v, min, max, pad) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : pad; };
+  const r = { x: num(e.x, 0, 100, 50), y: num(e.y, 0, 100, 50), z: num(e.z, 1, 4, 1) };
+  return r.x === 50 && r.y === 50 && r.z === 1 ? null : r;
+}
+/** Estilo do <img> para um enquadramento (o zoom gira em torno do ponto de foco, que fica parado). */
+function estiloEnquadre(e) {
+  if (!e) return "";
+  const r = (n) => Math.round(n * 100) / 100;
+  return `object-position:${r(e.x)}% ${r(e.y)}%;` + (e.z > 1 ? `transform:scale(${r(e.z)});transform-origin:${r(e.x)}% ${r(e.y)}%;` : "");
+}
+
+function avatar(img, tipo, classe = "", enq = null) {
   const t = TIPOS[tipo] ?? TIPOS.diario;
+  /* com enquadramento, o quadro é uma moldura que corta a imagem (o zoom não vaza para fora) */
+  if (img && enq) return `<span class="jm-av jm-av-enq ${classe}"><img src="${esc(img)}" alt="" style="${estiloEnquadre(enq)}"></span>`;
   return img
     ? `<img class="jm-av ${classe}" src="${esc(img)}" alt="">`
     : `<div class="jm-av jm-av-icone ${classe} tipo-${tipo}"><i class="${t.icone}"></i></div>`;
@@ -1412,7 +1433,12 @@ function exportarPasta(f) {
 async function importarJson(pastaId) {
   const dados = await lerArquivoJson();
   if (!dados) return;
-  const limpar = (d) => { const c = dup(d); delete c._id; delete c.folder; delete c._stats; return c; };
+  /* a ordem que veio no arquivo (sort) é do mundo de origem: aqui cada página entra no fim da pasta de destino */
+  const limpar = (d) => { const c = dup(d); delete c._id; delete c.folder; delete c._stats; delete c.sort; return c; };
+  const ordemPastaNova = (pai) => {
+    const irmas = game.folders.filter((ff) => ff.type === "JournalEntry" && (ff.folder?.id ?? null) === pai);
+    return irmas.length ? Math.max(...irmas.map((ff) => Number(ff.sort) || 0)) + CONST.SORT_INTEGER_DENSITY : 0;
+  };
   let criados = 0, itens = 0, convertidas = 0;
 
   if (dados.formato === "journal-mesa" && Array.isArray(dados.entradas)) {
@@ -1424,7 +1450,7 @@ async function importarJson(pastaId) {
         chave += `/${parte.nome}`;
         if (!cache.has(chave)) {
           const existe = game.folders.find((ff) => ff.type === "JournalEntry" && ff.name === parte.nome && (ff.folder?.id ?? null) === pai);
-          cache.set(chave, existe ?? await Folder.create({ name: parte.nome, type: "JournalEntry", folder: pai, color: parte.cor || null }));
+          cache.set(chave, existe ?? await Folder.create({ name: parte.nome, type: "JournalEntry", folder: pai, color: parte.cor || null, sort: ordemPastaNova(pai) }));
         }
         pai = cache.get(chave).id;
       }
@@ -1433,7 +1459,8 @@ async function importarJson(pastaId) {
     for (const { caminho, data } of dados.entradas) {
       const d = limpar(data);
       convertidas += converterDadosDeEntrada(d);
-      await JournalEntry.create({ ...d, folder: await pastaPara(caminho ?? []) });
+      const pasta = await pastaPara(caminho ?? []);
+      await JournalEntry.create({ ...d, folder: pasta, sort: ordemNova(pasta) });
       criados++;
     }
   } else {
@@ -1443,7 +1470,7 @@ async function importarJson(pastaId) {
       if (Array.isArray(d.pages)) {
         const dd = limpar(d);
         convertidas += converterDadosDeEntrada(dd);
-        await JournalEntry.create({ ...dd, folder: pastaId ?? null });
+        await JournalEntry.create({ ...dd, folder: pastaId ?? null, sort: ordemNova(pastaId ?? null) });
         criados++;
       } else if (d.type && d.system && d.name) {
         const raiz = await obterPasta("Item", T("Comum.Journal"), "itens");
@@ -1532,6 +1559,11 @@ Hooks.once("init", () => {
   game.settings.register(MOD, "nexusJogadores", {
     name: "JMESA.Nucleo.JogadoresVeemOsNexus",
     hint: "JMESA.Nucleo.MostraAosJogadoresOsMedidores",
+    scope: "world", config: true, type: Boolean, default: false, onChange: () => atualizarTudo()
+  });
+  game.settings.register(MOD, "caminhosDeus", {
+    name: "JMESA.Nucleo.CaminhosESequenciasNasDivindades",
+    hint: "JMESA.Nucleo.MostraNasDivindadesASecao",
     scope: "world", config: true, type: Boolean, default: false, onChange: () => atualizarTudo()
   });
   game.settings.register(MOD, "renovarAuto", {
@@ -1687,4 +1719,4 @@ Hooks.once("i18nInit", () => {
   // completa ("JMESA.Nucleo...") em nome, dica e opções: o próprio Foundry traduz ao mostrar
 });
 
-export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, op, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDaFicha, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, desfazerPassos, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };
+export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, enquadre, estiloEnquadre, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, op, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDaFicha, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, desfazerPassos, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };
