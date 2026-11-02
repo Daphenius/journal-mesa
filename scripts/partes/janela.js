@@ -28,6 +28,17 @@ function seletorDe(el) {
   return null;
 }
 
+/* largura da lateral (5.5): preferência visual deste navegador, sem configuração no mundo */
+const LATERAL_PADRAO = 300;
+const CHAVE_LATERAL = "journal-mesa.larguraLateral";
+const limitarLateral = (px) => Math.round(Math.min(560, Math.max(230, Number(px) || LATERAL_PADRAO)));
+function larguraLateral() {
+  try { return limitarLateral(localStorage.getItem(CHAVE_LATERAL) ?? LATERAL_PADRAO); } catch { return LATERAL_PADRAO; }
+}
+function guardarLateral(px) {
+  try { localStorage.setItem(CHAVE_LATERAL, String(limitarLateral(px))); } catch { /* sem armazenamento: só não lembra */ }
+}
+
 class JournalApp extends ApplicationV2 {
   abas = [];
   ativa = null;
@@ -45,6 +56,14 @@ class JournalApp extends ApplicationV2 {
   verOcultas = false;
   editorAtivo = false;
   _ultima = null;
+
+  /** Tamanho inicial proporcional à tela (5.5): grande em monitores grandes, sem passar da tela nos pequenos. */
+  constructor(options = {}) {
+    const W = window.innerWidth || 1280, H = window.innerHeight || 800;
+    const width = Math.min(1480, Math.max(Math.min(1060, W - 20), Math.round(W * 0.78)));
+    const height = Math.min(1000, Math.max(Math.min(760, H - 20), Math.round(H * 0.88)));
+    super(foundry.utils.mergeObject({ position: { width, height } }, options, { inplace: false }));
+  }
 
   static DEFAULT_OPTIONS = {
     id: "journal-mesa",
@@ -235,21 +254,33 @@ class JournalApp extends ApplicationV2 {
     for (const j of naLista) { const t = analisar(j).tipo; contagem[t] = (contagem[t] ?? 0) + 1; }
     const chips = [["todos", T("Janela.Tudo"), "fa-solid fa-layer-group", naLista.length],
       ...Object.entries(TIPOS).filter(([k]) => contagem[k]).map(([k, t]) => [k, t.plural, t.icone, contagem[k]])]
-      .map(([k, r, i, n]) => `<button type="button" class="jm-chip ${this.grupo === k ? "ativo" : ""}" data-action="grupo" data-grupo="${k}" data-tooltip="${r}"><i class="${i}"></i><span>${n}</span></button>`).join("");
+      .map(([k, r, i, n]) => `<button type="button" class="jm-chip ${this.grupo === k ? "ativo" : ""}" data-action="grupo" data-grupo="${k}"><i class="${i}"></i><span class="jm-chip-nome">${r}</span><span class="jm-chip-n">${n}</span></button>`).join("");
+    /* 5.5: os filtros moram num botão dentro da busca; com um filtro ligado, o botão mostra o ícone e a contagem dele */
+    const grupoAtual = this.grupo !== "todos" ? TIPOS[this.grupo] : null;
+    const filtroBtn = `<details class="jm-lat-menu jm-filtro-menu">
+        <summary class="jm-filtro-btn ${grupoAtual ? "ativo" : ""}" data-tooltip="${grupoAtual ? esc(grupoAtual.plural) : T("Janela.FiltrarPorTipo")}">
+          <i class="${grupoAtual ? grupoAtual.icone : "fa-solid fa-sliders"}"></i>${grupoAtual ? `<span>${contagem[this.grupo] ?? 0}</span>` : ""}</summary>
+        <div class="jm-lat-painel jm-filtro-painel"><div class="jm-lat-titulo">${T("Janela.FiltrarPorTipo")}</div><div class="jm-chips">${chips}</div></div>
+      </details>`;
 
     const alvo = this.pastaDestino ? game.folders.get(this.pastaDestino) : null;
     const temRegra = tiposDePagina().includes("rule");
     const botoesNovos = NOVOS.filter(([k]) => (k !== "regra" || temRegra) && (k !== "evento" || calApi())).map(([k, r, i]) => {
       const rot = r ?? TIPOS[k].rotulo; const ic = i ?? TIPOS[k].icone;
-      return `<button type="button" data-action="criar" data-tipo="${k}" data-tooltip="${T("Janela.NovoA")} ${rot}"><i class="${ic}"></i></button>`;
+      return `<button type="button" data-action="criar" data-tipo="${k}"><i class="${ic}"></i><span>${rot}</span></button>`;
     }).join("");
     const criar = gm ? `<div class="jm-criar">
+      <details class="jm-lat-menu jm-criar-menu">
+        <summary class="jm-criar-btn"><i class="fa-solid fa-plus"></i><span class="jm-criar-rotulo">${T("Janela.NovaPagina")}<small>${alvo ? esc(alvo.name) : T("Comum.NaRaiz")}</small></span><i class="fa-solid fa-chevron-up jm-seta"></i></summary>
+        <div class="jm-lat-painel jm-criar-painel">
       <div class="jm-criar-topo"><span>${T("Janela.NovaPagina")} ${alvo ? `${T("Comum.Em")} <b>${esc(alvo.name)}</b>${this.pastaAlvo ? "" : ` <small class="jm-da-aberta">(${T("Janela.PastaDaPaginaAberta")})</small>`} <a data-action="limparAlvo" data-tooltip="${T("Janela.CriarNaRaiz")}"><i class="fa-solid fa-xmark"></i></a>` : `<em>${T("Comum.NaRaiz")}</em>`}
         <small class="jm-posicao-nova" data-tooltip="${T("Janela.MudeNasConfiguracoesDoModulo")}">${game.settings.get(MOD, "posicaoNova") === "inicio" ? T("Janela.NoInicio") : T("Janela.NoFim")}</small></span>
         <a data-action="novaPasta" data-tooltip="${T("Janela.NovaPasta")}"><i class="fa-solid fa-folder-plus"></i></a>
         <a data-action="importar" data-tooltip="${T("Janela.ImportarJSON")}"><i class="fa-solid fa-file-import"></i></a>
         ${temModulo("monks-enhanced-journal") || game.journal.some((j) => j.pages.some((pg) => pg.flags?.["monks-enhanced-journal"]?.type)) ? `<a data-action="importarMonks" data-tooltip="${T("Janela.ImportarDoMonkSEnhanced")}"><i class="fa-solid fa-puzzle-piece"></i></a>` : ""}</div>
       <div class="jm-criar-btns">${botoesNovos}</div>
+        </div>
+      </details>
     </div>` : "";
 
     const rodape = `<div class="jm-rodape">
@@ -288,10 +319,10 @@ class JournalApp extends ApplicationV2 {
       : especial ? await especial.html(null, this, { visiveis })
       : this.ativa ? await this._pagina(this._entry(), visiveis) : this._boasVindas();
 
-    return `<div class="jm-raiz">
+    return `<div class="jm-raiz" style="--jm-lateral:${larguraLateral()}px">
       <aside class="jm-lateral">
-        <div class="jm-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="${T("Janela.Buscar")}" value="${esc(this.filtro)}"></div>
-        <div class="jm-chips">${chips}</div>
+        <div class="jm-lateral-borda" data-tooltip="${T("Janela.ArrasteParaAjustarALista")}"></div>
+        <div class="jm-busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="${T("Janela.Buscar")}" value="${esc(this.filtro)}">${filtroBtn}</div>
         ${this.verOcultas ? `<div class="jm-ocultos-titulo"><i class="fa-solid fa-eye-slash"></i> ${T("Janela.PastasOcultas")} <small>${T("Janela.NaoAparecemNoJournalDa")}</small></div>` : ""}
         ${!this.verOcultas && fix.length ? `<div class="jm-fixados"><div class="jm-fixados-titulo"><i class="fa-solid fa-thumbtack"></i> ${T("Janela.Fixados")}</div>${fix.map((id) => this._itemLista(game.journal.get(id))).join("")}</div>` : ""}
         <div class="jm-lista ${this.verOcultas ? "ocultas" : ""}" data-drop="pasta" data-pasta="">${this._arvore(naLista, !!this.verOcultas) || `<p class="jm-vazio">${T("Janela.NadaPorAquiAinda")}</p>`}</div>
@@ -351,6 +382,11 @@ class JournalApp extends ApplicationV2 {
 
   async close(options) {
     this._descarregarEditor?.();
+    if (this._fecharMenus) {
+      document.removeEventListener("pointerdown", this._fecharMenus, true);
+      document.removeEventListener("keydown", this._fecharMenus);
+      this._fecharMenus = null;
+    }
     return super.close(options);
   }
 
@@ -458,6 +494,40 @@ class JournalApp extends ApplicationV2 {
       if (page.isOwner) dadosSet(page, `notas.${game.user.id}`, texto);
       else pedir("nota", { pageUuid: page.uuid, userId: game.user.id, texto });
     });
+
+    /* menus da lateral (filtro e criar): um aberto por vez; fecham com clique fora ou Esc */
+    const menus = [...root.querySelectorAll("details.jm-lat-menu")];
+    for (const m of menus) m.addEventListener("toggle", () => { if (m.open) menus.forEach((o) => { if (o !== m) o.open = false; }); });
+    if (!this._fecharMenus) {
+      this._fecharMenus = (ev) => {
+        if (ev.type === "keydown" && ev.key !== "Escape") return;
+        this.element?.querySelectorAll("details.jm-lat-menu[open]").forEach((m) => { if (ev.type === "keydown" || !m.contains(ev.target)) m.open = false; });
+      };
+      document.addEventListener("pointerdown", this._fecharMenus, true);
+      document.addEventListener("keydown", this._fecharMenus);
+    }
+
+    /* borda da lateral: arrastar muda a largura (fica salva neste navegador); clique duplo volta ao padrão */
+    const borda = root.querySelector(".jm-lateral-borda");
+    const raiz = root.querySelector(".jm-raiz");
+    if (borda && raiz) {
+      borda.addEventListener("pointerdown", (ev) => {
+        ev.preventDefault();
+        borda.setPointerCapture(ev.pointerId);
+        borda.classList.add("arrastando");
+        const esq = raiz.getBoundingClientRect().left;
+        const mover = (e) => raiz.style.setProperty("--jm-lateral", `${limitarLateral(e.clientX - esq)}px`);
+        const soltar = (e) => {
+          borda.removeEventListener("pointermove", mover);
+          borda.removeEventListener("pointerup", soltar);
+          borda.classList.remove("arrastando");
+          guardarLateral(limitarLateral(e.clientX - esq));
+        };
+        borda.addEventListener("pointermove", mover);
+        borda.addEventListener("pointerup", soltar);
+      });
+      borda.addEventListener("dblclick", () => { guardarLateral(LATERAL_PADRAO); raiz.style.setProperty("--jm-lateral", `${LATERAL_PADRAO}px`); });
+    }
 
     const busca = root.querySelector(".jm-busca input");
     busca?.addEventListener("input", () => {

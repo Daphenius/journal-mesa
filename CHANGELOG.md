@@ -1,5 +1,20 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.5.0
+
+### Interface
+Só visual: nenhuma função, dado ou configuração mudou.
+
+- **Janela maior.** O Journal agora abre com um tamanho proporcional à tela (em Full HD, cerca de 1480 × 950, antes eram 1060 × 760 fixos). Em telas pequenas ele nunca passa da tela. Continua redimensionável.
+- **Abas mais limpas.** A aba aberta ganhou uma linha de destaque embaixo, no lugar da moldura; o título dela fica em negrito.
+- **Lateral com mais espaço para as pastas.**
+  - **Filtro dentro da busca:** os filtros por tipo saíram do meio da lateral e viraram um botão no canto da barra de busca. Ele abre a lista de tipos com nome e quantidade. Com um filtro ligado, o botão mostra o ícone e a contagem do tipo escolhido.
+  - **Nova página num botão só:** as três linhas de botões de criar viraram um único "+ Nova página", que mostra em qual pasta a página vai nascer. Ao clicar, os tipos abrem para cima, já com nome. Nova pasta e importar ficam no topo desse menu.
+  - **Largura ajustável:** arraste a borda direita da lateral para alargar ou estreitar a lista (entre 230 e 560 px). A largura fica guardada neste navegador; clique duplo na borda volta ao padrão.
+  - Os menus fecham com clique fora ou Esc. A página aberta fica marcada com uma barra na cor de destaque, e os botões do rodapé ficaram mais discretos.
+- **Mais espaço para ler.** Conteúdo mais largo, margens maiores, texto um pouco maior e com mais entrelinha; título da página e retrato maiores; botões do cabeçalho mais leves.
+- **Detalhes.** Cantos mais arredondados, bordas mais suaves, barras de rolagem finas. Funciona nos três temas (Claro, Noite e Vitoriano).
+
 ## 5.4.6
 
 ### Corrigido

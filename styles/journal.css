@@ -1317,3 +1317,243 @@ li.jm-com-nota .entry-name::after { content: " \f249"; font-family: "Font Awesom
 /* 4.7.2: dias de folga sempre clicáveis; com o horário desligado só ficam mais claros */
 .jm-folgas.inativo .jm-dia-sem:not(.marcado) { opacity: 0.6; }
 
+
+/* ===================== 5.5: interface moderna e janela maior =====================
+ * Só aparência: espaçamento, abas, botões e tamanhos. Nada aqui muda comportamento.
+ * Fica no fim do arquivo de propósito, para valer sobre as regras antigas. */
+
+.jm-janela { --jm-raio: 14px; --jm-linha: color-mix(in srgb, var(--jm-borda) 70%, transparent); }
+.jm-janela .window-header { border-bottom-color: var(--jm-linha); }
+.jm-janela .window-header .window-title { font-weight: 600; letter-spacing: 0.01em; }
+
+.jm-raiz { grid-template-columns: 300px 1fr; font-size: 14.5px; }
+
+/* barras de rolagem finas e discretas */
+.jm-raiz { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--jm-suave) 40%, transparent) transparent; }
+.jm-raiz ::-webkit-scrollbar { width: 8px; height: 8px; }
+.jm-raiz ::-webkit-scrollbar-track { background: transparent; }
+.jm-raiz ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--jm-suave) 35%, transparent); border-radius: 999px; }
+
+/* controles base: cantos mais suaves, borda mais leve */
+.jm-raiz button { border-radius: 9px; border-color: var(--jm-linha); }
+.jm-raiz button.ativo,
+.jm-raiz button.primario { border-color: var(--jm-destaque); }
+.jm-raiz input,
+.jm-raiz select,
+.jm-raiz textarea { padding: 8px 12px; border-radius: 10px; border-color: var(--jm-linha); }
+
+/* ---------- lateral ---------- */
+.jm-lateral { padding: 16px 14px 12px; gap: 12px; border-right-color: var(--jm-linha); }
+.jm-busca i { left: 13px; }
+.jm-raiz .jm-busca input { padding: 10px 12px 10px 34px; border-radius: 11px; background: var(--jm-fundo); }
+
+.jm-item { padding: 7px 9px; border-radius: 10px; }
+.jm-item.ativo {
+  background: color-mix(in srgb, var(--jm-destaque) 15%, transparent);
+  box-shadow: inset 3px 0 0 var(--jm-destaque);
+}
+.jm-pasta-linha { padding: 7px 9px; border-radius: 10px; }
+.jm-pasta-filhos { margin-left: 12px; border-left-width: 1px; }
+.jm-janela .jm-fixados { border-bottom-color: var(--jm-linha); }
+
+/* rodapé: botões sem moldura */
+.jm-criar { border-top: none; }
+.jm-raiz .jm-rodape button:not(.ativo):not(.jm-ocultos) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--jm-suave);
+}
+.jm-raiz .jm-rodape button:not(.ativo):not(.jm-ocultos):hover {
+  background: var(--jm-sup2);
+  color: var(--jm-destaque);
+}
+
+/* rodapé */
+.jm-rodape { gap: 6px 2px; border-top-color: var(--jm-linha); }
+.jm-raiz .jm-rodape button { padding: 7px 4px; }
+.jm-raiz .jm-rodape button.jm-ocultos:not(.ativo) { border-color: transparent; }
+
+/* ---------- abas: linha de destaque embaixo da aba ativa ---------- */
+.jm-abas {
+  align-items: stretch;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 14px;
+  border-bottom-color: var(--jm-linha);
+}
+.jm-abas-lista { gap: 2px; align-items: stretch; }
+.jm-aba,
+.jm-aba.ativa {
+  position: relative;
+  max-width: 230px;
+  margin: 0;
+  padding: 0 8px 0 12px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.jm-aba::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: transparent;
+  transition: background 0.15s;
+}
+.jm-aba:hover { background: transparent; color: var(--jm-texto); }
+.jm-aba:hover::after { background: var(--jm-linha); }
+.jm-aba.ativa { color: var(--jm-texto); }
+.jm-aba.ativa::after { background: var(--jm-destaque); }
+.jm-aba.ativa > i { color: var(--jm-destaque); }
+.jm-aba span { font-size: 13.5px; }
+.jm-aba.ativa span { font-weight: 600; }
+.jm-abas-vazio { align-self: center; padding: 0 4px; }
+.jm-fechar-todas { align-self: center; margin-bottom: 0; }
+
+/* ---------- conteúdo: mais respiro e mais largura ---------- */
+.jm-conteudo { padding: 30px 44px 56px; }
+.jm-pagina { max-width: 1080px; }
+
+.jm-cabecalho { gap: 24px; margin-bottom: 12px; }
+.jm-av.grande { width: 112px; height: 112px; border-radius: 22px; }
+.jm-av-icone.grande { font-size: 44px; }
+.jm-retrato.editavel::after { border-radius: 22px; }
+.jm-cab-texto { gap: 8px; }
+.jm-raiz h1.jm-titulo { font-size: 34px; letter-spacing: -0.01em; }
+.jm-raiz input.jm-titulo { font-size: 26px; }
+.jm-cab-botoes { gap: 4px; }
+.jm-raiz .jm-cab-botoes button { justify-content: center; min-width: 34px; height: 34px; padding: 0 9px; }
+.jm-raiz .jm-cab-botoes button:not(.ativo):not(.primario) { background: transparent; color: var(--jm-suave); }
+.jm-raiz .jm-cab-botoes button:not(.ativo):not(.primario):hover { background: var(--jm-sup2); color: var(--jm-texto); }
+
+.jm-detalhe { padding: 5px 12px; border-radius: 10px; }
+
+.jm-subabas { padding: 4px; border-radius: 12px; margin-bottom: 16px; }
+.jm-raiz .jm-subabas button { border-radius: 9px; padding: 7px 13px; }
+
+.jm-secao { margin-top: 18px; padding: 18px 20px; }
+.jm-raiz .jm-secao h3 { margin-bottom: 12px; }
+.jm-raiz .jm-secao h3 > i { color: var(--jm-destaque); opacity: 0.85; }
+.jm-segredo h3 > i { color: inherit !important; }
+.jm-texto { font-size: 15px; line-height: 1.6; }
+
+.jm-boas-vindas { margin-top: 120px; }
+
+/* ---------- 5.5: lateral com mais espaço para as pastas ---------- */
+.jm-raiz { grid-template-columns: var(--jm-lateral, 300px) 1fr; }
+.jm-lateral { position: relative; }
+
+/* borda arrastável da lateral */
+.jm-lateral-borda { position: absolute; top: 0; bottom: 0; right: -4px; width: 8px; cursor: col-resize; z-index: 6; }
+.jm-lateral-borda::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s;
+}
+.jm-lateral-borda:hover::after,
+.jm-lateral-borda.arrastando::after { background: var(--jm-destaque); }
+
+/* menus da lateral (filtro e criar) */
+.jm-lat-menu > summary { list-style: none; cursor: pointer; user-select: none; }
+.jm-lat-menu > summary::-webkit-details-marker { display: none; }
+.jm-lat-painel {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  padding: 8px;
+  background: var(--jm-superficie);
+  border: 1px solid var(--jm-borda);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+.jm-lat-titulo { padding: 2px 8px 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--jm-suave); }
+
+/* busca com o filtro dentro */
+.jm-raiz .jm-busca input { padding-right: 52px; }
+.jm-busca .jm-lat-menu i { position: static; transform: none; color: inherit; font-size: inherit; }
+.jm-filtro-btn {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--jm-suave);
+}
+.jm-filtro-btn:hover,
+.jm-filtro-menu[open] > .jm-filtro-btn { background: var(--jm-sup2); color: var(--jm-texto); }
+.jm-filtro-btn.ativo { background: color-mix(in srgb, var(--jm-destaque) 18%, transparent); color: var(--jm-destaque); font-weight: 600; }
+.jm-filtro-painel { top: calc(100% + 6px); }
+.jm-filtro-painel .jm-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.jm-raiz .jm-filtro-painel .jm-chip,
+.jm-raiz .jm-filtro-painel .jm-chip:not(.ativo) {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--jm-texto);
+  font-size: 13px;
+}
+.jm-raiz .jm-filtro-painel .jm-chip:hover { background: var(--jm-sup2); }
+.jm-raiz .jm-filtro-painel .jm-chip.ativo { background: color-mix(in srgb, var(--jm-destaque) 16%, transparent); color: var(--jm-destaque); font-weight: 600; }
+.jm-filtro-painel .jm-chip i { width: 16px; text-align: center; color: var(--jm-suave); }
+.jm-filtro-painel .jm-chip.ativo i { color: var(--jm-destaque); }
+.jm-filtro-painel .jm-chip span { opacity: 1; }
+.jm-chip-nome { flex: 1; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jm-chip-n { font-size: 11.5px; color: var(--jm-suave); font-variant-numeric: tabular-nums; }
+
+/* criar: um botão só, os tipos abrem num menu para cima */
+.jm-criar { position: relative; padding: 0; background: transparent; }
+.jm-criar-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--jm-destaque) 14%, transparent);
+  color: var(--jm-texto);
+  transition: background 0.15s;
+}
+.jm-criar-btn:hover,
+.jm-criar-menu[open] > .jm-criar-btn { background: color-mix(in srgb, var(--jm-destaque) 24%, transparent); }
+.jm-criar-btn > i { color: var(--jm-destaque); }
+.jm-criar-rotulo { flex: 1; min-width: 0; display: flex; flex-direction: column; font-weight: 600; font-size: 13.5px; line-height: 1.25; }
+.jm-criar-rotulo small { font-weight: 400; font-size: 11.5px; color: var(--jm-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jm-criar-btn .jm-seta { font-size: 11px; color: var(--jm-suave); transition: transform 0.15s; }
+.jm-criar-menu[open] .jm-seta { transform: rotate(180deg); }
+.jm-criar-painel { bottom: calc(100% + 8px); max-height: 62vh; overflow-y: auto; }
+.jm-criar-painel .jm-criar-topo { padding: 0 2px 8px 6px; margin-bottom: 6px; border-bottom: 1px solid var(--jm-linha); }
+.jm-criar-painel .jm-criar-btns { grid-template-columns: 1fr 1fr; gap: 2px; }
+.jm-raiz .jm-criar-painel .jm-criar-btns button,
+.jm-raiz .jm-criar-painel .jm-criar-btns button:not(.ativo) {
+  justify-content: flex-start;
+  gap: 9px;
+  min-width: 0;
+  padding: 7px 10px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--jm-texto);
+  font-size: 13px;
+}
+.jm-raiz .jm-criar-painel .jm-criar-btns button:hover { background: var(--jm-sup2); color: var(--jm-texto); }
+.jm-criar-painel .jm-criar-btns button i { width: 16px; text-align: center; color: var(--jm-destaque); }
+.jm-criar-painel .jm-criar-btns button span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
