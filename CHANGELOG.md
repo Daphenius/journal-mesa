@@ -1,5 +1,12 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.7.2
+
+### Corrigido
+- **Os 52 ícones novos do calendário não apareciam.** Na 5.7.1 eles foram colocados por engano dentro do último ícone de cada grupo (Arco-íris, Tesouro, Aniversário e Prazo) em vez de ao lado; o seletor mostrava só os antigos. Agora os 107 ícones aparecem, cada um no seu grupo.
+- Teste novo (`tests/icones.test.mjs`) confere que cada ícone está bem formado, sem repetidos e com tradução.
+- Combina com o **Calendário da Mesa 4.10.0**, que passa a mostrar os mesmos ícones na janela do calendário.
+
 ## 5.7.1
 
 ### Corrigido
