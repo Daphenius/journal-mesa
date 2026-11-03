@@ -29,7 +29,7 @@
  * @returns {object}    O objeto que vai em game.modules.get("journal-mesa").api.
  */
 export function montarApi(dep) {
-  const { MOD, ehGM, diaAtual, abrirJournal, criarBauDoCombate, importarJson, importarDoMonks, criarTipo, renovarEstoques, fixados, obterJanela, Nexus, apiJornais } = dep;
+  const { MOD, ehGM, diaAtual, abrirJournal, criarBauDoCombate, importarJson, importarPastaJson, importarDoMonks, criarTipo, renovarEstoques, fixados, obterJanela, Nexus, apiJornais } = dep;
   return {
     /**
      * Abre a janela do Journal da Mesa. Com `id`, abre o Diário nesse id numa aba (se existir no mundo).
@@ -57,6 +57,16 @@ export function montarApi(dep) {
      * @example await game.modules.get("journal-mesa").api.importarJson();
      */
     importarJson,
+
+    /**
+     * Importa uma pasta do computador cheia de JSON (abre o seletor de pasta). A pasta escolhida vira uma
+     * pasta de Diários com o mesmo nome, e cada subpasta vira subpasta; cada .json entra como no importarJson.
+     * Só para o mestre. No fim, lista os arquivos que não puderam ser importados.
+     * @param {string|null} [pastaId]  Pasta onde a pasta importada será criada (ID de Folder); null = raiz.
+     * @returns {Promise<void>}
+     * @example await game.modules.get("journal-mesa").api.importarPastaJson();
+     */
+    importarPastaJson,
 
     /**
      * Converte diários no formato do Monk's Enhanced Journal para o formato próprio (só copia; as

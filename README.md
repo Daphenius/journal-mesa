@@ -40,7 +40,7 @@ Uma **janela única com abas** para tudo o que o mestre anota sobre o mundo: NPC
 
 **Links e fichas.** Links `@UUID[...]` abrem no Journal da Mesa, na aba certa. Com "Abrir diários sempre no Journal da Mesa" ligado, qualquer abertura (barra lateral, notas no mapa, macros, outros módulos) vai para o Journal, se o diário usar a ficha padrão ou a ficha "Journal da Mesa"; diários com ficha de outro módulo (Heavy Lore, Monk's...) abrem nela. Páginas PDF abrem no leitor do Foundry com barra de busca.
 
-**Importar.** *Importar JSON* aceita diários exportados pelo Foundry, pelo Monk's ou pelo Journal da Mesa (pasta inteira) e itens. As páginas entram na pasta mostrada em "Nova página em …" (ou na pasta do botão direito), no fim da lista. O botão de **quebra-cabeça** converte os diários do Monk's Enhanced Journal para o formato próprio: só copia (flags do Monk's intactas, mesmos IDs, vínculos mantidos) e mostra um relatório no fim. Páginas *Imagem* do Monk's não são convertidas: crie uma página de Imagem apontando para o mesmo arquivo.
+**Importar.** *Importar JSON* aceita diários exportados pelo Foundry, pelo Monk's ou pelo Journal da Mesa (pasta inteira) e itens. As páginas entram na pasta mostrada em "Nova página em …" (ou na pasta do botão direito), no fim da lista. *Importar pasta de JSON* (pasta aberta) importa todos os `.json` de uma pasta do computador de uma vez: a pasta e as subpastas viram pastas de Diários com os mesmos nomes, e no fim aparece a lista do que não pôde ser importado. O botão de **quebra-cabeça** converte os diários do Monk's Enhanced Journal para o formato próprio: só copia (flags do Monk's intactas, mesmos IDs, vínculos mantidos) e mostra um relatório no fim. Páginas *Imagem* do Monk's não são convertidas: crie uma página de Imagem apontando para o mesmo arquivo.
 
 ## Tipos de página
 
@@ -90,6 +90,7 @@ Tudo fica em `game.modules.get("journal-mesa").api` (depois do `ready`). Leitura
 | `api.criarPagina(tipo, pastaId?)` | `tipo`: `person`, `place`, `organization`, `shop`, `quest`, `deus`, `loot`, `journalentry`, `historia`, `jornal`, `diario`, `evento`, `regra`, `imagem`, `pdf`; `pastaId`: ID da pasta | `Promise<{ entry, editar }>` ou `null` se cancelado. |
 | `api.bauDoCombate(combat)` | `combat`: ex. `game.combat` (mestre) | `Promise` do Baú criado. |
 | `api.importarJson(pastaId?)` | pasta de destino | `Promise<void>`; abre o seletor de arquivo. |
+| `api.importarPastaJson(pastaId?)` | pasta de destino | `Promise<void>`; abre o seletor de pasta e importa todos os `.json` (subpastas viram pastas). |
 | `api.importarDoMonks({ entradas?, silencioso? })` | `entradas`: diários (`null` = todos); `silencioso`: sem janela | `Promise` do relatório `{ convertidas, porTipo, limitadas, puladas, vinculosQuebrados, falhas }`. |
 | `api.dia.get()` | — | Dia atual das ofertas (inteiro, começa em 1). |
 | `api.dia.somar(n)` | `n`: dias (pode ser negativo; mestre) | `Promise<number>` com o dia novo. |

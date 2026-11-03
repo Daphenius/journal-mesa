@@ -12,7 +12,7 @@ import { cabecalho, contexto, descricao, montarEditor, notas, segredos, seloMonk
 import { secaoCalendario } from "../paginas/calendario.js";
 import { secaoConexoes } from "../paginas/conexoes.js";
 import { renovarEstoques } from "../paginas/loja.js";
-import { Dialogo, FP, LV, MOD, Menu, NOVOS, STATUS, TEMAS, TIPOS, abrirFichaPadrao, abrirImagem, abrirPermissoes, alternarFixado, alternarPastaOculta, enquadre, estiloEnquadre, analisar, apagarEntrada, avatar, chat, baixarJson, bolinhasDono, corDaPasta, criarBauDoCombate, criarTipo, diaAtual, dicaNota, editarNotaMestre, ehGM, entradaOculta, entradas, esc, estaVisivel, estadoSecao, exportarPasta, fixados, garantirObjeto, importarJson, importarDoMonks, dadosSet, mostrarAosJogadores, mostrarImagem, nomeDoTipoDePagina, nomeTema, notaMestre, pastaMarcadaOculta, pastaOculta, pedir, revelarPara, temModulo, tiposDePagina, visibilidade } from "../nucleo.js";
+import { Dialogo, FP, LV, MOD, Menu, NOVOS, STATUS, TEMAS, TIPOS, abrirFichaPadrao, abrirImagem, abrirPermissoes, alternarFixado, alternarPastaOculta, enquadre, estiloEnquadre, analisar, apagarEntrada, avatar, chat, baixarJson, bolinhasDono, corDaPasta, criarBauDoCombate, criarTipo, diaAtual, dicaNota, editarNotaMestre, ehGM, entradaOculta, entradas, esc, estaVisivel, estadoSecao, exportarPasta, fixados, garantirObjeto, importarJson, importarPastaJson, importarDoMonks, dadosSet, mostrarAosJogadores, mostrarImagem, nomeDoTipoDePagina, nomeTema, notaMestre, pastaMarcadaOculta, pastaOculta, pedir, revelarPara, temModulo, tiposDePagina, visibilidade } from "../nucleo.js";
 
 /* ---------------- janela principal ---------------- */
 
@@ -115,6 +115,7 @@ class JournalApp extends ApplicationV2 {
       limparAlvo: JournalApp._limparAlvo,
       expandir: JournalApp._expandir,
       importar: JournalApp._importar,
+      importarPasta: JournalApp._importarPasta,
       importarMonks: JournalApp._importarMonks,
       novoDia: JournalApp._novoDia,
       voltarDia: JournalApp._voltarDia,
@@ -308,6 +309,7 @@ class JournalApp extends ApplicationV2 {
         <small class="jm-posicao-nova" data-tooltip="${T("Janela.MudeNasConfiguracoesDoModulo")}">${game.settings.get(MOD, "posicaoNova") === "inicio" ? T("Janela.NoInicio") : T("Janela.NoFim")}</small></span>
         <a data-action="novaPasta" data-tooltip="${T("Janela.NovaPasta")}"><i class="fa-solid fa-folder-plus"></i></a>
         <a data-action="importar" data-tooltip="${T("Janela.ImportarJSON")}"><i class="fa-solid fa-file-import"></i></a>
+        <a data-action="importarPasta" data-tooltip="${T("Janela.ImportarPastaJSON")}"><i class="fa-solid fa-folder-open"></i></a>
         ${temModulo("monks-enhanced-journal") || game.journal.some((j) => j.pages.some((pg) => pg.flags?.["monks-enhanced-journal"]?.type)) ? `<a data-action="importarMonks" data-tooltip="${T("Janela.ImportarDoMonkSEnhanced")}"><i class="fa-solid fa-puzzle-piece"></i></a>` : ""}</div>
       <div class="jm-criar-btns">${botoesNovos}</div>
         </div>
@@ -687,6 +689,7 @@ class JournalApp extends ApplicationV2 {
       "-",
       { icone: "fa-solid fa-file-export", rotulo: T("Janela.ExportarPastaJSON"), acao: () => exportarPasta(f) },
       { icone: "fa-solid fa-file-import", rotulo: T("Janela.ImportarJSONAqui"), acao: () => importarJson(id) },
+      { icone: "fa-solid fa-folder-open", rotulo: T("Janela.ImportarPastaJSONAqui"), acao: () => importarPastaJson(id) },
       "-",
       { icone: "fa-solid fa-trash", rotulo: T("Janela.ApagarPasta"), perigo: true, acao: () => f.deleteDialog() }
     ]);
@@ -1008,6 +1011,7 @@ class JournalApp extends ApplicationV2 {
 
   /* importa na mesma pasta que aparece em "Nova página em …" (a clicada ou a da página aberta); sem pasta, na raiz */
   static _importar() { importarJson(this.pastaDestino); }
+  static _importarPasta() { importarPastaJson(this.pastaDestino); }
   static async _importarMonks() {
     if (!ehGM()) return;
     const ok = await Dialogo().confirm({

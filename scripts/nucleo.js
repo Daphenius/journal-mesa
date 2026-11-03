@@ -1057,6 +1057,45 @@ function lerArquivoJson() {
   });
 }
 
+/**
+ * Abre o seletor de PASTA do navegador e lê todos os .json dela (subpastas incluídas).
+ * Resolve { nome, arquivos: [{ caminho: ["sub", "sub2"], nome, dados }], invalidos: ["sub/arq.json"] } ou null (cancelou).
+ * caminho = subpastas entre a pasta escolhida e o arquivo; a ordem segue o nome (com números em ordem natural).
+ */
+function lerPastaJson() {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.webkitdirectory = true;
+    input.setAttribute("webkitdirectory", "");
+    let resolvido = false;
+    const aoVoltar = () => setTimeout(() => { if (!input.files?.length) terminar(null); }, 1000);
+    const terminar = (v) => { if (resolvido) return; resolvido = true; window.removeEventListener("focus", aoVoltar); resolve(v); };
+    input.addEventListener("change", async () => {
+      const todos = Array.from(input.files ?? []);
+      if (!todos.length) return terminar(null);
+      const partes = (f) => (f.webkitRelativePath || f.name).split("/").filter(Boolean);
+      const nome = partes(todos[0]).length > 1 ? partes(todos[0])[0] : T("Nucleo.PastaImportada");
+      const comparar = new Intl.Collator(game.i18n.lang, { numeric: true, sensitivity: "base" }).compare;
+      const jsons = todos
+        .filter((f) => /\.json$/i.test(f.name) && !partes(f).some((p) => p.startsWith(".")))
+        .sort((a, b) => comparar(partes(a).join("/"), partes(b).join("/")));
+      const arquivos = [], invalidos = [];
+      for (const f of jsons) {
+        const pp = partes(f);
+        const caminho = pp.slice(1, -1);
+        try { arquivos.push({ caminho, nome: f.name, dados: JSON.parse(await f.text()) }); }
+        catch { invalidos.push(pp.slice(1).join("/")); }
+      }
+      terminar({ nome, arquivos, invalidos });
+    });
+    input.addEventListener("cancel", () => terminar(null));
+    window.addEventListener("focus", aoVoltar);
+    input.click();
+  });
+}
+
 /* ---------------- menu de botão direito ---------------- */
 
 const Menu = {
@@ -1484,44 +1523,51 @@ function exportarPasta(f) {
   baixarJson({ formato: "journal-mesa", versao: 1, entradas: lista }, f.name);
 }
 
-/**
- * Importa JSON:
- *  - exportação de pasta do Journal (recria as subpastas);
- *  - Diário do Foundry (um ou uma lista), inclusive os exportados pelo Monk's;
- *  - Itens (um ou uma lista) — vão para a aba Itens.
- */
-async function importarJson(pastaId) {
-  const dados = await lerArquivoJson();
-  if (!dados) return;
-  /* a ordem que veio no arquivo (sort) é do mundo de origem: aqui cada página entra no fim da pasta de destino */
-  const limpar = (d) => { const c = dup(d); delete c._id; delete c.folder; delete c._stats; delete c.sort; return c; };
+/** Pastas de Diário criadas/reaproveitadas na importação (mesmo nome, mesma pasta-mãe = reaproveita). */
+function criadorDePastas() {
+  const cache = new Map();
+  const maxProf = CONST.FOLDER_MAX_DEPTH ?? 4;
   const ordemPastaNova = (pai) => {
     const irmas = game.folders.filter((ff) => ff.type === "JournalEntry" && (ff.folder?.id ?? null) === pai);
     return irmas.length ? Math.max(...irmas.map((ff) => Number(ff.sort) || 0)) + CONST.SORT_INTEGER_DENSITY : 0;
   };
-  let criados = 0, itens = 0, convertidas = 0;
-
-  if (dados.formato === "journal-mesa" && Array.isArray(dados.entradas)) {
-    const cache = new Map();
-    const pastaPara = async (caminho) => {
-      let pai = pastaId ?? null;
-      let chave = pai ?? "";
-      for (const parte of caminho) {
-        chave += `/${parte.nome}`;
-        if (!cache.has(chave)) {
-          const existe = game.folders.find((ff) => ff.type === "JournalEntry" && ff.name === parte.nome && (ff.folder?.id ?? null) === pai);
-          cache.set(chave, existe ?? await Folder.create({ name: parte.nome, type: "JournalEntry", folder: pai, color: parte.cor || null, sort: ordemPastaNova(pai) }));
-        }
-        pai = cache.get(chave).id;
+  /** Desce (criando) o caminho [{ nome, cor }] a partir de "pai"; passando do limite de profundidade do Foundry, fica na mais funda. */
+  return async (pai, caminho) => {
+    pai = pai ?? null;
+    let chave = pai ?? "";
+    for (const parte of caminho ?? []) {
+      const nome = String(parte?.nome ?? "").trim();
+      if (!nome) continue;
+      if (pai && (game.folders.get(pai)?.depth ?? 0) >= maxProf) break;
+      chave += `/${nome}`;
+      if (!cache.has(chave)) {
+        const existe = game.folders.find((ff) => ff.type === "JournalEntry" && ff.name === nome && (ff.folder?.id ?? null) === pai);
+        cache.set(chave, existe ?? await Folder.create({ name: nome, type: "JournalEntry", folder: pai, color: parte.cor || null, sort: ordemPastaNova(pai) }));
       }
-      return pai;
-    };
+      pai = cache.get(chave).id;
+    }
+    return pai;
+  };
+}
+
+/**
+ * Coloca o conteúdo de UM JSON já lido na pasta "pastaId". Soma em "cont" ({ criados, itens, convertidas }).
+ * Aceita: exportação de pasta do Journal (recria as subpastas); Diário do Foundry (um ou uma lista),
+ * inclusive os exportados pelo Monk's; Itens (um ou uma lista) — vão para a aba Itens.
+ * Devolve true se encontrou algo para importar.
+ */
+async function importarDados(dados, pastaId, cont, pastaPara = criadorDePastas()) {
+  /* a ordem que veio no arquivo (sort) é do mundo de origem: aqui cada página entra no fim da pasta de destino */
+  const limpar = (d) => { const c = dup(d); delete c._id; delete c.folder; delete c._stats; delete c.sort; return c; };
+  const antes = cont.criados + cont.itens;
+  if (dados?.formato === "journal-mesa" && Array.isArray(dados.entradas)) {
     for (const { caminho, data } of dados.entradas) {
+      if (!data || typeof data !== "object") continue;
       const d = limpar(data);
-      convertidas += converterDadosDeEntrada(d);
-      const pasta = await pastaPara(caminho ?? []);
+      cont.convertidas += converterDadosDeEntrada(d);
+      const pasta = await pastaPara(pastaId ?? null, caminho ?? []);
       await JournalEntry.create({ ...d, folder: pasta, sort: ordemNova(pasta) });
-      criados++;
+      cont.criados++;
     }
   } else {
     const lista = Array.isArray(dados) ? dados : [dados];
@@ -1529,9 +1575,9 @@ async function importarJson(pastaId) {
       if (!d || typeof d !== "object") continue;
       if (Array.isArray(d.pages)) {
         const dd = limpar(d);
-        convertidas += converterDadosDeEntrada(dd);
+        cont.convertidas += converterDadosDeEntrada(dd);
         await JournalEntry.create({ ...dd, folder: pastaId ?? null, sort: ordemNova(pastaId ?? null) });
-        criados++;
+        cont.criados++;
       } else if (d.type && d.system && d.name) {
         const raiz = await obterPasta("Item", T("Comum.Journal"), "itens");
         /* mantém o _id do arquivo (quando livre) para que relíquias e links @UUID[Item.id] continuem funcionando */
@@ -1539,12 +1585,74 @@ async function importarJson(pastaId) {
         const dadosItem = { ...limpar(d), folder: raiz?.id ?? null };
         if (manterId) dadosItem._id = d._id;
         await Item.create(dadosItem, { keepId: manterId });
-        itens++;
+        cont.itens++;
       }
     }
   }
-  if (!criados && !itens) return ui.notifications.warn(T("Nucleo.NaoEncontreiDiariosNemItens"));
-  ui.notifications.info(`${T("Nucleo.Importado")}: ${criados} ${T("Nucleo.PaginaS")}${itens ? ` ${T("Nucleo.E")} ${itens} ${T("Nucleo.ItemNsNaAbaItens")}` : ""}${convertidas ? ` (${convertidas} ${T("Nucleo.ConvertidaSDoFormatoDo")})` : ""}.`);
+  return cont.criados + cont.itens > antes;
+}
+
+function avisoImportado(cont) {
+  ui.notifications.info(`${T("Nucleo.Importado")}: ${cont.criados} ${T("Nucleo.PaginaS")}${cont.itens ? ` ${T("Nucleo.E")} ${cont.itens} ${T("Nucleo.ItemNsNaAbaItens")}` : ""}${cont.convertidas ? ` (${cont.convertidas} ${T("Nucleo.ConvertidaSDoFormatoDo")})` : ""}.`);
+}
+
+/** Importa UM arquivo JSON (seletor de arquivo) na pasta "pastaId" (null = raiz). */
+async function importarJson(pastaId) {
+  const dados = await lerArquivoJson();
+  if (!dados) return;
+  const cont = { criados: 0, itens: 0, convertidas: 0 };
+  if (!await importarDados(dados, pastaId ?? null, cont)) return ui.notifications.warn(T("Nucleo.NaoEncontreiDiariosNemItens"));
+  avisoImportado(cont);
+}
+
+/**
+ * Importa uma PASTA do computador cheia de JSON (seletor de pasta). A pasta escolhida vira uma pasta de
+ * Diários com o mesmo nome dentro de "pastaId" (null = raiz), e cada subpasta vira subpasta. Cada .json
+ * entra como no Importar JSON. Arquivos que não são JSON válido ou sem diários/itens são listados no fim.
+ */
+async function importarPastaJson(pastaId) {
+  if (!ehGM()) return;
+  const lido = await lerPastaJson();
+  if (!lido) return;
+  if (!lido.arquivos.length && !lido.invalidos.length) return ui.notifications.warn(T("Nucleo.NenhumJsonNaPasta"));
+  const cont = { criados: 0, itens: 0, convertidas: 0 };
+  const vazios = [], falhas = [];
+  const pastaPara = criadorDePastas();
+  const aviso = ui.notifications.info(TF("Nucleo.ImportandoPasta", { n: lido.arquivos.length }), { permanent: true });
+  try {
+    for (const arq of lido.arquivos) {
+      const rotulo = [...arq.caminho, arq.nome].join("/");
+      try {
+        const temAlgo = Array.isArray(arq.dados) ? arq.dados.some((d) => d && typeof d === "object" && (Array.isArray(d.pages) || (d.type && d.system && d.name)))
+          : !!(arq.dados && typeof arq.dados === "object" && ((arq.dados.formato === "journal-mesa" && Array.isArray(arq.dados.entradas) && arq.dados.entradas.length) || Array.isArray(arq.dados.pages) || (arq.dados.type && arq.dados.system && arq.dados.name)));
+        if (!temAlgo) { vazios.push(rotulo); continue; }
+        /* a pasta só é criada quando o arquivo tem algo de fato (pastas vazias não sobram) */
+        const destino = await pastaPara(pastaId ?? null, [{ nome: lido.nome }, ...arq.caminho.map((nome) => ({ nome }))]);
+        await importarDados(arq.dados, destino, cont, pastaPara);
+      } catch (err) {
+        console.error(`${MOD} | importar ${rotulo}`, err);
+        falhas.push(rotulo);
+      }
+    }
+  } finally { try { if (aviso) ui.notifications.remove(aviso); } catch { /* o aviso já sumiu */ } }
+
+  if (!cont.criados && !cont.itens) ui.notifications.warn(T("Nucleo.NaoEncontreiDiariosNemItens"));
+  else avisoImportado(cont);
+  const problemas = [
+    [T("Nucleo.ArquivosNaoSaoJson"), lido.invalidos],
+    [T("Nucleo.ArquivosSemDiariosNemItens"), vazios],
+    [T("Nucleo.ArquivosComErro"), falhas]
+  ].filter(([, l]) => l.length);
+  if (problemas.length) {
+    await Dialogo().prompt({
+      window: { title: T("Nucleo.RelatorioDaImportacao"), icon: "fa-solid fa-folder-open" },
+      position: { width: 480 },
+      content: `<p>${TF("Nucleo.ImportadosDeArquivos", { ok: lido.arquivos.length - vazios.length - falhas.length, total: lido.arquivos.length + lido.invalidos.length })}</p>`
+        + problemas.map(([t, l]) => `<p><b>${t}</b></p><ul>${l.slice(0, 30).map((x) => `<li>${esc(x)}</li>`).join("")}${l.length > 30 ? `<li>… +${l.length - 30}</li>` : ""}</ul>`).join(""),
+      ok: { label: "OK" },
+      rejectClose: false
+    }).catch(() => null);
+  }
 }
 
 /* ---------------- inicialização ---------------- */
@@ -1698,7 +1806,7 @@ Hooks.once("init", () => {
 Hooks.once("ready", () => {
   /* API pública (macros, Calendário da Mesa): organizada e documentada em scripts/api.js */
   game.modules.get(MOD).api = montarApi({
-    MOD, ehGM, diaAtual, abrirJournal, criarBauDoCombate, importarJson, importarDoMonks, criarTipo,
+    MOD, ehGM, diaAtual, abrirJournal, criarBauDoCombate, importarJson, importarPastaJson, importarDoMonks, criarTipo,
     renovarEstoques, fixados, obterJanela, Nexus, apiJornais: Jornal.apiJornais
   });
 
@@ -1779,4 +1887,4 @@ Hooks.once("i18nInit", () => {
   // completa ("JMESA.Nucleo...") em nome, dica e opções: o próprio Foundry traduz ao mostrar
 });
 
-export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, enquadre, estiloEnquadre, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, op, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDaFicha, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, desfazerPassos, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, historiaParaHtml, tiposDePagina, visibilidade };
+export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, enquadre, estiloEnquadre, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, importarPastaJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, op, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDaFicha, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, desfazerPassos, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, historiaParaHtml, tiposDePagina, visibilidade };

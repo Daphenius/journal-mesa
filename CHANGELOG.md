@@ -1,5 +1,15 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.8.0
+
+### Importar pasta de JSON
+- **Novo botão "Importar pasta de JSON"** (ícone de pasta aberta, ao lado do *Importar JSON*, em "Nova página"), e **"Importar pasta de JSON aqui"** no botão direito de uma pasta. Você escolhe uma pasta do computador e o Journal importa todos os `.json` dela de uma vez.
+- A pasta escolhida vira uma pasta de Diários com o mesmo nome (dentro da pasta de destino, ou na raiz) e **cada subpasta vira subpasta**, mantendo a organização. Se já existir uma pasta com o mesmo nome no mesmo lugar, ela é reaproveitada.
+- Cada arquivo é lido como no *Importar JSON*: diários do Foundry, do Monk's, exportações de pasta do Journal da Mesa e itens (que vão para a aba Itens). Os arquivos entram em ordem de nome (com números em ordem natural: 2 antes de 10), no fim da pasta.
+- **Relatório no fim**: lista os arquivos que não são JSON válido, os que não tinham diários nem itens e os que deram erro. Um arquivo com problema não interrompe os outros.
+- Arquivos e pastas ocultos (começando com ponto) são ignorados; pastas sem nada para importar não são criadas.
+- Macro: `game.modules.get("journal-mesa").api.importarPastaJson(pastaId?)`.
+
 ## 5.7.2
 
 ### Corrigido
