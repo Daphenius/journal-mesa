@@ -20,19 +20,19 @@ const CAL_ICONES_GRUPOS = [
   ["Céu e natureza", [
     ["fa-moon", "Lua"], ["fa-star", "Estrela"], ["fa-cloud-sun", "Céu"], ["fa-cloud-rain", "Chuva"], ["fa-bolt", "Tempestade"],
     ["fa-snowflake", "Inverno"], ["fa-seedling", "Primavera"], ["fa-leaf", "Outono"], ["fa-wheat-awn", "Colheita"],
-    ["fa-tree", "Floresta"], ["fa-water", "Mar"], ["fa-volcano", "Vulcão"], ["fa-rainbow", "Arco-íris"]]],
+    ["fa-tree", "Floresta"], ["fa-water", "Mar"], ["fa-volcano", "Vulcão"], ["fa-rainbow", "Arco-íris", ["fa-mountain-sun", "Montanha"], ["fa-smog", "Névoa"], ["fa-tornado", "Tornado"], ["fa-meteor", "Meteoro"], ["fa-icicles", "Gelo"], ["fa-temperature-high", "Calor"], ["fa-clover", "Sorte"], ["fa-paw", "Animais"], ["fa-crow", "Corvo"], ["fa-dove", "Paz"], ["fa-fish", "Pesca"], ["fa-spider", "Aranha"]]]],
   ["Fé e mistério", [
     ["fa-hands-praying", "Religioso"], ["fa-church", "Templo"], ["fa-ankh", "Sagrado"], ["fa-fire-flame-curved", "Ritual"],
     ["fa-eye", "Profecia"], ["fa-ghost", "Espíritos"], ["fa-skull", "Caveira"], ["fa-book-skull", "Proibido"],
-    ["fa-hat-wizard", "Arcano"], ["fa-flask", "Alquimia"], ["fa-dragon", "Dragão"], ["fa-gem", "Tesouro"]]],
+    ["fa-hat-wizard", "Arcano"], ["fa-flask", "Alquimia"], ["fa-dragon", "Dragão"], ["fa-gem", "Tesouro", ["fa-hand-sparkles", "Bênção"], ["fa-wand-sparkles", "Encantamento"], ["fa-hamsa", "Proteção"], ["fa-yin-yang", "Equilíbrio"], ["fa-dice-d20", "Destino"], ["fa-infinity", "Eternidade"], ["fa-ring", "Pacto"], ["fa-key", "Segredo"], ["fa-dungeon", "Masmorra"], ["fa-mask", "Disfarce"]]]],
   ["Povo e história", [
     ["fa-book-open", "História"], ["fa-feather", "Crônica"], ["fa-crown", "Coroa"], ["fa-flag", "Bandeira"], ["fa-landmark", "Cidade"],
     ["fa-scale-balanced", "Justiça"], ["fa-coins", "Comércio"], ["fa-ship", "Navegação"], ["fa-scroll", "Missão"],
     ["fa-gift", "Festa"], ["fa-champagne-glasses", "Banquete"], ["fa-music", "Música"], ["fa-masks-theater", "Teatro"],
-    ["fa-heart", "Casamento"], ["fa-baby", "Nascimento"], ["fa-cake-candles", "Aniversário"]]],
+    ["fa-heart", "Casamento"], ["fa-baby", "Nascimento"], ["fa-cake-candles", "Aniversário", ["fa-handshake", "Tratado"], ["fa-users", "Assembleia"], ["fa-graduation-cap", "Formatura"], ["fa-hammer", "Ofício"], ["fa-store", "Feira"], ["fa-beer-mug-empty", "Taverna"], ["fa-dice", "Jogos"], ["fa-trophy", "Vitória"], ["fa-anchor", "Porto"], ["fa-route", "Viagem"], ["fa-compass", "Exploração"], ["fa-map", "Mapa"], ["fa-chess-rook", "Fortaleza"], ["fa-monument", "Memorial"], ["fa-book", "Biblioteca"], ["fa-envelope", "Mensagem"]]]],
   ["Guerra e perigo", [
     ["fa-shield-halved", "Guerra"], ["fa-horse", "Torneio"], ["fa-crosshairs", "Caçada"], ["fa-skull-crossbones", "Praga"],
-    ["fa-virus", "Doença"], ["fa-bell", "Lembrete"], ["fa-hourglass-half", "Prazo"]]]
+    ["fa-virus", "Doença"], ["fa-bell", "Lembrete"], ["fa-hourglass-half", "Prazo", ["fa-chess-knight", "Batalha"], ["fa-bomb", "Ataque"], ["fa-explosion", "Explosão"], ["fa-burst", "Desastre"], ["fa-house-crack", "Terremoto"], ["fa-house-flood-water", "Enchente"], ["fa-biohazard", "Contágio"], ["fa-triangle-exclamation", "Perigo"], ["fa-gavel", "Julgamento"], ["fa-handcuffs", "Prisão"], ["fa-user-secret", "Conspiração"], ["fa-eye-slash", "Desaparecimento"], ["fa-sack-dollar", "Tributo"], ["fa-flag-checkered", "Corrida"]]]]
 ];
 const CAL_ICONES = Object.fromEntries(CAL_ICONES_GRUPOS.flatMap(([, l]) => l));
 /* cor sugerida ao escolher um elemento (só troca se a cor atual for a padrão ou de outro elemento) */

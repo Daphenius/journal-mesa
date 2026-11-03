@@ -672,9 +672,69 @@ function mostrarImagem(src, titulo, userIds = null) {
 }
 function entradas() { return game.journal.filter((j) => podeVer(j)); }
 
+/* É HTML só se tiver uma marcação de verdade: "<Nome>" ou "5 < 3" num texto comum continuam texto (5.7.1) */
+const PARECE_HTML = /<\/?(p|div|br|hr|ul|ol|li|h[1-6]|strong|em|b|i|u|s|span|a|img|table|thead|tbody|tr|td|th|blockquote|section|figure|figcaption|code|pre|sup|sub|mark)\b[^>]*>/i;
 function textoParaHtml(t) {
   t = String(t ?? "");
-  return /<[a-z][\s\S]*>/i.test(t) ? t : esc(t).replace(/\n/g, "<br>");
+  return PARECE_HTML.test(t) ? t : esc(t).replace(/\n/g, "<br>");
+}
+
+/**
+ * Texto da História do calendário para HTML com blocos de verdade (5.7.1). Cada linha vira um parágrafo
+ * (o editor trata cada parágrafo como um item de lista; linhas unidas por <br> viravam um item só) e
+ * o Markdown comum vira formatação: "- " ou "* " lista, "1. " lista numerada, "# " título, **negrito**.
+ * Aceita texto puro (o formato antigo) e HTML; blocos que já são lista, título, tabela etc. ficam como estão.
+ */
+function historiaParaHtml(bruto) {
+  const s = String(bruto ?? "").trim();
+  if (!s) return "";
+  const linhas = [];   // { html } = uma linha de texto, { bloco } = um bloco que fica como está
+  if (!PARECE_HTML.test(s)) {
+    for (const l of s.split(/\r?\n/)) linhas.push({ html: esc(l) });
+  } else {
+    const doc = new DOMParser().parseFromString(`<div>${s}</div>`, "text/html");
+    const porQuebra = (html) => { for (const l of html.split(/<br\s*\/?>/i)) linhas.push({ html: l }); };
+    for (const no of doc.body.firstChild.childNodes) {
+      if (no.nodeType === 3) { for (const l of no.textContent.split(/\r?\n/)) linhas.push({ html: esc(l) }); continue; }
+      if (no.nodeType !== 1) continue;
+      const tag = no.tagName.toLowerCase();
+      if (tag === "br") { linhas.push({ html: "" }); continue; }
+      if ((tag === "p" || tag === "div") && (!no.attributes.length || /<br\s*\/?>/i.test(no.innerHTML))) porQuebra(no.innerHTML);
+      else if ((tag === "ul" || tag === "ol") && /<br\s*\/?>/i.test(no.innerHTML)) {
+        /* lista com várias linhas presas num item só (o defeito da 5.7.0): cada linha vira um item */
+        for (const li of no.children) {
+          const dentro = li.innerHTML.replace(/<\/?p[^>]*>/gi, "<br>");
+          for (const l of dentro.split(/<br\s*\/?>/i)) {
+            if (!l.replace(/<[^>]*>/g, "").trim()) continue;
+            linhas.push({ html: /^((?:<[^>]+>)*)\s*(?:[-*•]|\d+[.)])\s+/.test(l.trim()) ? l : (tag === "ol" ? "1. " : "- ") + l, lista: tag });
+          }
+        }
+      } else linhas.push({ bloco: no.outerHTML });
+    }
+  }
+  const negrito = (h) => h.replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, "<strong>$1</strong>").replace(/__(?=\S)([\s\S]*?\S)__/g, "<strong>$1</strong>");
+  const vazio = (h) => !String(h).replace(/<[^>]*>/g, "").replace(/&nbsp;|\u00a0/g, " ").trim();
+  let out = "", lista = null;
+  const fecharLista = () => { if (lista) { out += `<${lista.tag}>${lista.itens.map((i) => `<li><p>${i}</p></li>`).join("")}</${lista.tag}>`; lista = null; } };
+  for (const l of linhas) {
+    if (l.bloco) { fecharLista(); out += l.bloco; continue; }
+    const h = l.html.trim();
+    if (vazio(h)) { fecharLista(); continue; }
+    // o marcador pode vir dentro de uma marcação (ex.: "<strong>- Item</strong>"): olha o texto do começo
+    const m = h.match(/^((?:<[^>]+>)*)\s*(?:([-*•])|(\d+)[.)])\s+([\s\S]*)$/);
+    const t = h.match(/^((?:<[^>]+>)*)\s*(#{1,4})\s+([\s\S]*)$/);
+    if (m && !(m[2] === "*" && /^\*/.test(m[4]))) {
+      const tag = m[3] ? "ol" : "ul";
+      if (lista?.tag !== tag) { fecharLista(); lista = { tag, itens: [] }; }
+      lista.itens.push(negrito(m[1] + m[4]));
+      continue;
+    }
+    fecharLista();
+    if (t) { const n = Math.min(6, t[2].length + 1); out += `<h${n}>${negrito(t[1] + t[3])}</h${n}>`; continue; }
+    out += `<p>${negrito(h)}</p>`;
+  }
+  fecharLista();
+  return out;
 }
 
 /* ---------- moedas: lidas do sistema (respeita o Custom DnD5e) ---------- */
@@ -1719,4 +1779,4 @@ Hooks.once("i18nInit", () => {
   // completa ("JMESA.Nucleo...") em nome, dica e opções: o próprio Foundry traduz ao mostrar
 });
 
-export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, enquadre, estiloEnquadre, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, op, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDaFicha, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, desfazerPassos, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, tiposDePagina, visibilidade };
+export { ABAS_DEUS, CAMPOS_DEUS, DETALHES, Dialogo, FP, FichaJournalClasse, ICONES_PAGINA, CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, Menu, NOMES_MEJ, NOVOS, OFERTAS, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, SECOES_DEUS, SIMBOLOS_DEUS, STATUS, STATUS_DEUS, TE, TEMAS, TIPOS, TIPOS_SAQUE, abrirFichaPadrao, abrirImagem, abrirJournal, abrirPermissoes, alternarFixado, enquadre, estiloEnquadre, alternarPastaOculta, analisar, apagarChave, apagarEntrada, atorDoJogador, atualizarTudo, avatar, aviso, avisoUmaVez, baixarJson, bolinhasDono, caminhoDaPasta, camposMoedas, chat, chavesMoedas, comoLista, converterDadosDeEntrada, corDaPasta, criarBauDoCombate, criarTipo, dadosDeMonks, derrotadosDo, diaAtual, dicaNota, dup, editarNotaMestre, ehGM, entradaOculta, entradas, esc, escolherTipoECriar, estaVisivel, estadoSecao, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, exportarPasta, fichasDe, fixados, formatarMoedas, formatarPreco, garantirObjeto, gravarJunto, idsGM, importarDoMonks, importarJson, infoCon, itemLimpo, itemParaLoja, janela, dadosGet, dadosPadrao, dadosSet, dadosUnset, migrarFormato, mostrarAosJogadores, mostrarImagem, mostrarMoedas, paginaPendenteDoMonks, naFila, nomeDoTipoDePagina, nomeTema, notaMestre, novoId, obterJanela, obterPasta, op, opcoes, ordemNova, pastaMarcadaOculta, pastaOculta, pedir, podeLer, podeVer, podeVerSecao, precoDoItem, precoEmPo, qtdDaFicha, qtdDoItem, arredondarPo, receber, regrasMesa, relatarErro, desfazerPassos, resultadoParaItem, revelarPara, rotuloEstadoSecao, substituirMapa, temModulo, textoParaHtml, historiaParaHtml, tiposDePagina, visibilidade };

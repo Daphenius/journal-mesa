@@ -2,7 +2,7 @@
  * descrição, segredos, notas pessoais, páginas nativas do Foundry).
  * Cada tipo de página fica em scripts/paginas/<tipo>.js e recebe o "ctx" montado aqui por contexto(). */
 import { T } from "../idioma.js";
-import { CHAVE_DADOS, DETALHES, ICONES_PAGINA, MOD, NOMES_MEJ, TE, TIPOS, analisar, avatar, enquadre, avisoUmaVez, caminhoDaPasta, dicaNota, ehGM, esc, fixados, nomeDoTipoDePagina, notaMestre, podeVerSecao, relatarErro, rotuloEstadoSecao, temModulo, textoParaHtml, tiposDePagina, visibilidade } from "../nucleo.js";
+import { CHAVE_DADOS, DETALHES, ICONES_PAGINA, MOD, NOMES_MEJ, TE, TIPOS, analisar, avatar, enquadre, historiaParaHtml, avisoUmaVez, caminhoDaPasta, dicaNota, ehGM, esc, fixados, nomeDoTipoDePagina, notaMestre, podeVerSecao, relatarErro, rotuloEstadoSecao, temModulo, textoParaHtml, tiposDePagina, visibilidade } from "../nucleo.js";
 import { calApi, calNota, deusDaFesta } from "../partes/calendario.js";
 
 /** Tudo o que os tipos de página precisam para montar o HTML: a página analisada, quem vê, modo de edição,
@@ -231,7 +231,7 @@ function montarEditor(app, alvo) {
   app._editoresPendentes ??= new Map();
   const pend = app._editoresPendentes.get(chave);
   /* a História antiga era texto puro: textoParaHtml mantém as quebras de linha e os caracteres como estavam */
-  const salvo = ehHistoria ? textoParaHtml(String(entry.getFlag(MOD, "historia") ?? "")) : (page.text?.content ?? "");
+  const salvo = ehHistoria ? historiaParaHtml(entry.getFlag(MOD, "historia")) : (page.text?.content ?? "");
   const html = pend !== undefined ? pend : salvo;
   let timer = null;
   const gravar = async (valor) => {

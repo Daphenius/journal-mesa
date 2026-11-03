@@ -1222,7 +1222,7 @@ li.jm-com-nota .entry-name::after { content: " \f249"; font-family: "Font Awesom
 .jm-cal-icones-grupo > small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--jm-suave); margin-bottom: 5px; }
 .jm-cal-icones-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
 .jm-raiz .jm-cal-icones-grade button { justify-content: center; height: 44px; padding: 0; font-size: 22px; }
-.jm-raiz .jm-cal-icones-grade button.ativo { outline: 2px solid var(--jm-destaque); outline-offset: 1px; background: var(--jm-superficie); }
+.jm-raiz .jm-cal-icones-grade button.ativo { outline: 2px solid var(--jm-destaque); outline-offset: 1px; background: color-mix(in srgb, var(--jm-destaque) 14%, var(--jm-superficie)); color: var(--jm-destaque); }
 .jm-cal-historia { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
 .jm-cal-historia > span { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--jm-suave); display: flex; gap: 6px; align-items: center; }
 .jm-raiz .jm-cal-historia textarea { width: 100%; min-height: 260px; resize: vertical; line-height: 1.55; }

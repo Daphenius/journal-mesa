@@ -1,5 +1,15 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.7.1
+
+### Corrigido
+- **Lista de marcadores na História.** Ao abrir uma História antiga no editor, todas as linhas viravam um parágrafo só (unidas por quebras de linha); por isso a lista colocava tudo num único marcador. Agora cada linha vira um parágrafo, e o Markdown comum é convertido: `- ` ou `* ` vira lista, `1. ` lista numerada, `#` título e `**texto**` negrito. Histórias que já ficaram com a lista presa num item só são consertadas ao abrir (cada linha vira um item).
+- **Caracteres especiais.** Um texto como `<Nome>` ou `5 < 3` era confundido com código e sumia ao exibir. Agora só conta como HTML o que tem marcação de verdade (`<p>`, `<strong>`, `<ul>`...). Vale para a História e para as outras caixas de texto do Journal.
+- **Ícone escolhido invisível.** No seletor de ícones do calendário, no tema claro, o ícone marcado ficava branco sobre branco. Agora aparece na cor de destaque.
+
+### Ícones do calendário
+- **52 ícones novos** nos quatro grupos: Céu e natureza (montanha, névoa, tornado, meteoro, gelo, calor, sorte, animais, corvo, paz, pesca, aranha), Fé e mistério (bênção, encantamento, proteção, equilíbrio, destino, eternidade, pacto, segredo, masmorra, disfarce), Povo e história (tratado, assembleia, formatura, ofício, feira, taverna, jogos, vitória, porto, viagem, exploração, mapa, fortaleza, memorial, biblioteca, mensagem) e Guerra e perigo (batalha, ataque, explosão, desastre, terremoto, enchente, contágio, perigo, julgamento, prisão, conspiração, desaparecimento, tributo, corrida).
+
 ## 5.7.0
 
 ### História do calendário com editor completo

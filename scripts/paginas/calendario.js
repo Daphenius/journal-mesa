@@ -3,7 +3,7 @@
 import { T } from "../idioma.js";
 import { CAL_AVISOS, CAL_CORES_ELEMENTO, CAL_FIM, CAL_ICONES, CAL_ICONES_GRUPOS, CAL_MODOS_MES, CAL_REPETIR, Tempo, calApi, calNota } from "../partes/calendario.js";
 import { calHoje, calNormalizar, calProximas, calResumoRepeticao, calSalvar, calTextoDia, calTirar, campoData } from "../partes/historia.js";
-import { Dialogo, MOD, TE, ehGM, esc, op, textoParaHtml } from "../nucleo.js";
+import { Dialogo, MOD, TE, ehGM, esc, historiaParaHtml, op } from "../nucleo.js";
 
 async function secaoCalendario(ctx) {
   const { entry, app, secao } = ctx;
@@ -20,7 +20,7 @@ async function secaoCalendario(ctx) {
       ${n.repetir !== "nao" && prox.length ? `<small>${T("Janela.Proximas")}: ${prox.map((td) => esc(Tempo.texto(td))).join(" · ")}</small>` : ""}</div>
   </div>`;
   const historia = String(entry.getFlag(MOD, "historia") ?? "");
-  const historiaHtml = historia ? await TE().enrichHTML(textoParaHtml(historia), { secrets: gm, relativeTo: entry }) : "";
+  const historiaHtml = historia ? await TE().enrichHTML(historiaParaHtml(historia), { secrets: gm, relativeTo: entry }) : "";
   /* 5.7: a História usa o mesmo editor rico da descrição (formatação, links, qualquer caractere) no modo de edição */
   const rotuloHistoria = `<span><i class="fa-solid fa-book-open"></i> ${T("Comum.Historia")}</span>`;
   const blocoHistoria = gm && ctx.ed
