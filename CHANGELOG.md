@@ -1,6 +1,6 @@
 # Histórico de versões — Journal da Mesa
 
-## 5.8.0
+## 5.8.1
 
 ### NPC com características
 - **Seção nova "Características"** na página de NPC, logo antes da descrição. Campos curtos: Raça, Idade, Gênero, Ocupação, Altura e porte, Olhos, Cabelo, Voz e jeito de falar, Hobbies e passatempos, Família, Fé e Tendência. Caixas de texto: Personalidade, Ideais, Vínculos, Defeitos, Objetivos e Maneirismos e manias.
