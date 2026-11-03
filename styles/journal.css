@@ -1602,3 +1602,13 @@ li.jm-com-nota .entry-name::after { content: " \f249"; font-family: "Font Awesom
 .jm-enq-linha input { flex: 1; }
 .jm-enq .jm-dica { margin: 0; text-align: center; font-size: 12px; }
 .jm-enq .jm-enq-centro { width: auto; }
+
+/* NPC — características */
+.jm-npc-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.jm-npc-grade .jm-sub-campo { min-width: 0; }
+.jm-npc-textos { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin-top: 10px; }
+.jm-npc-textos .jm-sub-campo { min-width: 0; }
+.jm-npc-textos textarea { resize: vertical; min-height: 48px; }
+.jm-npc-texto { padding: 6px 10px; border-radius: 8px; background: var(--jm-sup2); }
+.jm-npc-texto small { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--jm-suave); }
+.jm-npc-texto p { margin: 2px 0 0; }

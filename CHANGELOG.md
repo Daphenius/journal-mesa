@@ -2,13 +2,12 @@
 
 ## 5.8.0
 
-### Importar pasta de JSON
-- **Novo botão "Importar pasta de JSON"** (ícone de pasta aberta, ao lado do *Importar JSON*, em "Nova página"), e **"Importar pasta de JSON aqui"** no botão direito de uma pasta. Você escolhe uma pasta do computador e o Journal importa todos os `.json` dela de uma vez.
-- A pasta escolhida vira uma pasta de Diários com o mesmo nome (dentro da pasta de destino, ou na raiz) e **cada subpasta vira subpasta**, mantendo a organização. Se já existir uma pasta com o mesmo nome no mesmo lugar, ela é reaproveitada.
-- Cada arquivo é lido como no *Importar JSON*: diários do Foundry, do Monk's, exportações de pasta do Journal da Mesa e itens (que vão para a aba Itens). Os arquivos entram em ordem de nome (com números em ordem natural: 2 antes de 10), no fim da pasta.
-- **Relatório no fim**: lista os arquivos que não são JSON válido, os que não tinham diários nem itens e os que deram erro. Um arquivo com problema não interrompe os outros.
-- Arquivos e pastas ocultos (começando com ponto) são ignorados; pastas sem nada para importar não são criadas.
-- Macro: `game.modules.get("journal-mesa").api.importarPastaJson(pastaId?)`.
+### NPC com características
+- **Seção nova "Características"** na página de NPC, logo antes da descrição. Campos curtos: Raça, Idade, Gênero, Ocupação, Altura e porte, Olhos, Cabelo, Voz e jeito de falar, Hobbies e passatempos, Família, Fé e Tendência. Caixas de texto: Personalidade, Ideais, Vínculos, Defeitos, Objetivos e Maneirismos e manias.
+- Para preencher, clique no lápis da página. Fora da edição aparecem só os campos preenchidos, e um NPC sem nenhum preenchido não mostra a seção.
+- O olho da seção controla o que os jogadores veem, como nas outras seções.
+- NPCs vindos do Monk's com atributos preenchidos (raça, idade, olhos, cabelo, voz etc.) mostram esses valores enquanto o campo do Journal estiver vazio.
+- Os dados ficam em `flags["journal-mesa"].npc` e vão junto em *Exportar pasta* e *Importar JSON*.
 
 ## 5.7.2
 
