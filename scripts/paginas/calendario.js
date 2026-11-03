@@ -21,10 +21,13 @@ async function secaoCalendario(ctx) {
   </div>`;
   const historia = String(entry.getFlag(MOD, "historia") ?? "");
   const historiaHtml = historia ? await TE().enrichHTML(textoParaHtml(historia), { secrets: gm, relativeTo: entry }) : "";
-  const blocoHistoria = gm
-    ? `<label class="jm-cal-historia"><span><i class="fa-solid fa-book-open"></i> ${T("Comum.Historia")}</span>
-        <textarea data-historia rows="12" placeholder="${T("Janela.AOrigemDestaDataO")}">${esc(historia)}</textarea></label>`
-    : (historiaHtml ? `<div class="jm-cal-historia"><span><i class="fa-solid fa-book-open"></i> ${T("Comum.Historia")}</span><div class="jm-texto">${historiaHtml}</div></div>` : "");
+  /* 5.7: a História usa o mesmo editor rico da descrição (formatação, links, qualquer caractere) no modo de edição */
+  const rotuloHistoria = `<span><i class="fa-solid fa-book-open"></i> ${T("Comum.Historia")}</span>`;
+  const blocoHistoria = gm && ctx.ed
+    ? `<div class="jm-cal-historia">${rotuloHistoria}<div class="jm-editor-alvo" data-editor="historia"></div></div>`
+    : historiaHtml
+      ? `<div class="jm-cal-historia">${rotuloHistoria}<div class="jm-texto">${historiaHtml}</div></div>`
+      : gm ? `<div class="jm-cal-historia">${rotuloHistoria}<em class="jm-vazio">${T("Janela.HistoriaVaziaUseOLapis")}</em></div>` : "";
   if (!gm) return secao(T("Janela.Calendario"), "fa-solid fa-calendar-days", quando + blocoHistoria, "jm-cal", "", "", "calendario");
 
   const semana = Tempo.semana();
@@ -94,10 +97,6 @@ const data = {
 };
 
 function ouvintes(app, root) {
-  root.querySelector("[data-historia]")?.addEventListener("change", (ev) => {
-    const e = app._entry(); if (!e) return;
-    e.update({ [`flags.${MOD}.historia`]: ev.target.value });
-  });
   root.querySelector(".jm-cal-icones")?.addEventListener("toggle", (ev) => { app.iconesAbertos = ev.target.open; });
   root.querySelectorAll("[data-cal-campo]").forEach((el) => el.addEventListener("change", () => {
     const k = el.dataset.calCampo;

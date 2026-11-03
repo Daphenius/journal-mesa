@@ -216,33 +216,48 @@ function controlesPaginaNativa(ctx, p, dicaEditar, dicaApagar) {
 
 /* Editor da descrição. O texto é gravado 400 ms depois da última tecla; se a janela for redesenhada nesse
  * meio-tempo, o texto pendente é gravado na hora e o editor novo já nasce com ele (nada digitado se perde). */
+/**
+ * Editor rico num alvo [data-editor]: a descrição da página (padrão) ou, com data-editor="historia",
+ * a História da seção Calendário (guardada nas flags da entrada). Grava sozinho, 400 ms depois de parar de digitar.
+ */
 function montarEditor(app, alvo) {
-  const { page } = analisar(app._entry());
-  if (!page) return;
-  const pend = app._editorPendente;
-  const html = pend?.pageId === page.id ? pend.valor : (page.text?.content ?? "");
+  const entry = app._entry();
+  const { page } = analisar(entry);
+  const ehHistoria = alvo.dataset.editor === "historia";
+  const doc = ehHistoria ? entry : page;
+  if (!doc) return;
+  const campo = ehHistoria ? `flags.${MOD}.historia` : "text.content";
+  const chave = `${doc.uuid}|${campo}`;
+  app._editoresPendentes ??= new Map();
+  const pend = app._editoresPendentes.get(chave);
+  /* a História antiga era texto puro: textoParaHtml mantém as quebras de linha e os caracteres como estavam */
+  const salvo = ehHistoria ? textoParaHtml(String(entry.getFlag(MOD, "historia") ?? "")) : (page.text?.content ?? "");
+  const html = pend !== undefined ? pend : salvo;
   let timer = null;
   const gravar = async (valor) => {
-    try { await page.update({ "text.content": valor }); }
-    catch (err) { relatarErro(T("Janela.SalvarADescricao"), err); }
-    finally { if (app._editorPendente?.valor === valor) app._editorPendente = null; }
+    try { await doc.update({ [campo]: valor }); }
+    catch (err) { relatarErro(T(ehHistoria ? "Janela.SalvarAHistoria" : "Janela.SalvarADescricao"), err); }
+    finally { if (app._editoresPendentes.get(chave) === valor) app._editoresPendentes.delete(chave); }
   };
   const salvar = (valor) => {
-    app._editorPendente = { pageId: page.id, valor };
+    app._editoresPendentes.set(chave, valor);
     clearTimeout(timer);
     timer = setTimeout(() => { timer = null; gravar(valor); }, 400);
   };
+  /* mais de um editor na mesma página (descrição + História): o redesenho descarrega todos */
+  const anterior = app._descarregarEditor;
   app._descarregarEditor = () => {
+    anterior?.();
     if (!timer) return;
     clearTimeout(timer); timer = null;
-    if (app._editorPendente?.pageId === page.id) gravar(app._editorPendente.valor);
+    if (app._editoresPendentes.has(chave)) gravar(app._editoresPendentes.get(chave));
   };
   app.editorAtivo = true;
   try {
     if (game.settings.get(MOD, "editor") === "simples") throw new Error(T("Janela.ModoSimples"));
     const PM = foundry.applications.elements.HTMLProseMirrorElement;
     if (!PM.create) throw new Error(T("Janela.SemProseMirror"));
-    const el = PM.create({ name: "text.content", value: html, toggled: false, documentUUID: page.uuid, height: 280 });
+    const el = PM.create({ name: campo, value: html, toggled: false, documentUUID: (page ?? entry).uuid, height: ehHistoria ? 260 : 280 });
     el.classList.add("jm-editor");
     el.addEventListener("change", () => salvar(el.value));
     el.addEventListener("input", () => { if (el.value !== undefined) salvar(el.value); });

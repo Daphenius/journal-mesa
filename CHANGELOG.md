@@ -1,5 +1,13 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.7.0
+
+### História do calendário com editor completo
+- **Editar como a descrição e o Jornal.** A *História* da seção Calendário agora usa o editor rico do Foundry: negrito, itálico, títulos, listas, links para páginas e atores (@UUID) e **qualquer caractere** (sinais como `<`, `>` e `&`, travessões, símbolos). Antes era uma caixa de texto simples, e um trecho como `<Nome>` sumia ao exibir.
+- **No modo de edição.** O editor aparece quando você clica no lápis da página, como a descrição. Fora dele, a História aparece formatada (e, para o mestre, um aviso quando ainda está vazia).
+- **Grava sozinho** enquanto você escreve, sem a janela piscar nem perder o cursor.
+- Histórias já escritas continuam iguais: o texto antigo é aberto no editor com as mesmas quebras de linha.
+
 ## 5.6.1
 
 ### Ordem alfabética com números

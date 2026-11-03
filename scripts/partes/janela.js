@@ -513,9 +513,9 @@ class JournalApp extends ApplicationV2 {
   _ouvintes(root) {
     root.querySelectorAll("[data-campo]").forEach((el) => el.addEventListener("change", () => this._salvarCampo(el)));
 
-    const editor = root.querySelector("[data-editor]");
-    if (editor) montarEditor(this, editor);
-    else this.editorAtivo = false;
+    const editores = [...root.querySelectorAll("[data-editor]")];
+    for (const ed of editores) montarEditor(this, ed);
+    if (!editores.length) this.editorAtivo = false;
 
     root.querySelector("[data-nota]")?.addEventListener("change", (ev) => {
       const a = analisar(this._entry());

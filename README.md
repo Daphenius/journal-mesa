@@ -10,7 +10,7 @@ Se encontrar bugs ou tiver sugestões, abra uma [issue](https://github.com/Daphe
 
 ---
 
-**Versão 5.6.1** · Foundry VTT 14 (mínimo; verificado no 14.369) · D&D 5e 5.0 a 6.0.6 · Português e English · Licença MIT · ✅ Testado no Foundry VTT e D&D 5e
+**Versão 5.7.0** · Foundry VTT 14 (mínimo; verificado no 14.369) · D&D 5e 5.0 a 6.0.6 · Português e English · Licença MIT · ✅ Testado no Foundry VTT e D&D 5e
 
 Toda versão é testada pelo autor dentro do Foundry VTT, com o D&D 5e, antes de ser publicada. Mesmo assim, faça backup do mundo antes de atualizar.
 
@@ -44,7 +44,7 @@ Uma **janela única com abas** para tudo o que o mestre anota sobre o mundo: NPC
 
 ## Tipos de página
 
-Criados pelo botão **Nova página** (ou pela API). NPC, Local, Organização, Loja, Missão, Baú e Anotação têm descrição, imagem, **conexões** entre páginas (arraste uma sobre a outra), ator ligado, notas pessoais de cada jogador, a seção **Calendário** (data, repetição, ícone, cor, aviso no chat) e as **notícias relacionadas** dos jornais.
+Criados pelo botão **Nova página** (ou pela API). NPC, Local, Organização, Loja, Missão, Baú e Anotação têm descrição, imagem, **conexões** entre páginas (arraste uma sobre a outra), ator ligado, notas pessoais de cada jogador, a seção **Calendário** (data, repetição, ícone, cor, aviso no chat e uma **História** com editor completo) e as **notícias relacionadas** dos jornais.
 
 - **NPC** — pessoa do mundo; o ator ligado é a ficha que uma loja usa como vendedor.
 - **Local** — cidades, reinos, masmorras, com conexões para quem vive ou manda ali.

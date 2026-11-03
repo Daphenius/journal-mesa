@@ -60,7 +60,14 @@ Hooks.on("updateWorldTime", async () => {
   if (estado !== ultimoEstadoLoja) { ultimoEstadoLoja = estado; atualizarTudo(); }
 });
 
-for (const h of ["createJournalEntry", "updateJournalEntry", "deleteJournalEntry", "createJournalEntryPage", "deleteJournalEntryPage", "createCombat", "deleteCombat"]) {
+/* gravar a História do calendário enquanto se digita não redesenha a janela (o editor perderia o cursor) */
+Hooks.on("updateJournalEntry", (entry, changes) => {
+  const chaves = Object.keys(foundry.utils.flattenObject(changes ?? {}));
+  const soHistoria = chaves.length && chaves.every((k) => k === `flags.${MOD}.historia` || k === "_id" || k.startsWith("_stats"));
+  if (janela?.editorAtivo && soHistoria && entry.id === janela.ativa) return;
+  atualizarTudo();
+});
+for (const h of ["createJournalEntry", "deleteJournalEntry", "createJournalEntryPage", "deleteJournalEntryPage", "createCombat", "deleteCombat"]) {
   Hooks.on(h, () => atualizarTudo());
 }
 Hooks.on("updateJournalEntryPage", (page, changes) => {
