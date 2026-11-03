@@ -1225,7 +1225,7 @@ li.jm-com-nota .entry-name::after { content: " \f249"; font-family: "Font Awesom
 .jm-raiz .jm-cal-icones-grade button.ativo { outline: 2px solid var(--jm-destaque); outline-offset: 1px; background: var(--jm-superficie); }
 .jm-cal-historia { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
 .jm-cal-historia > span { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--jm-suave); display: flex; gap: 6px; align-items: center; }
-.jm-raiz .jm-cal-historia textarea { width: 100%; min-height: 70px; resize: vertical; }
+.jm-raiz .jm-cal-historia textarea { width: 100%; min-height: 260px; resize: vertical; line-height: 1.55; }
 .jm-festa-ligar { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-top: 10px; }
 .jm-festa-drop { margin-top: 8px; }
 .jm-dias-sagrados.sobre .jm-festa-drop { outline: 2px dashed var(--jm-destaque); }

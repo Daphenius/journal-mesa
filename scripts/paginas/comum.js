@@ -102,11 +102,16 @@ async function descricao(ctx) {
   const tituloResumo = P.tituloDescricao ? P.tituloDescricao() : T("Janela.Descricao");
   const html = page.text?.content ?? "";
   if (P.mostrarDescricao && !P.mostrarDescricao(ctx, html)) return "";
+  /* evento do calendário (Anotação com data): o texto dele é a História da seção Calendário; a caixa de
+   * Anotação só aparece se já tiver algo escrito, para nada sumir de quem já usava */
+  if (ctx.tipo === "journalentry" && calNota(ctx.entry) && !temConteudo(html)) return "";
   return secao(tituloResumo, "fa-solid fa-align-left", ed
     ? `<div class="jm-editor-alvo" data-editor></div>`
     : `<div class="jm-texto">${html ? await TE().enrichHTML(html, { secrets: gm, relativeTo: page }) : `<em class="jm-vazio">${T("Janela.SemDescricao")}</em>`}</div>`,
     "", "", gm ? `<a class="jm-mini-btn" data-action="traduzir" data-tooltip="${T("Janela.AbrirNoEditorCompletoDo")}"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></a>` : "", "descricao");
 }
+
+const temConteudo = (html) => /<(img|video|iframe|table)\b/i.test(html) || String(html).replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim() !== "";
 
 /** Segredos do mestre (só ele vê). */
 async function segredos(ctx) {

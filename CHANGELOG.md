@@ -1,5 +1,15 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.6.1
+
+### Ordem alfabética com números
+- **Números contam pelo valor, com sinal.** Em pastas com ordenação alfabética, os números no nome agora são comparados como números: *Ano -120, Ano -50, Ano 0, Ano 96, Ano 103, Ano 560* (antes ficava *Ano 103, Ano 560, Ano 96*). Também vale para *Sessão 2* antes de *Sessão 10*. O "-" só conta como negativo quando vem antes do número, separado por espaço (em "Ano-2" ele é só um hífen).
+- Vale para pastas e páginas na lista do Journal da Mesa. A ordenação manual (arrastar) continua igual.
+
+### Eventos do calendário
+- **História maior.** A caixa *História* da seção Calendário ficou bem mais alta (cerca de 12 linhas), já que é onde o texto do evento é escrito. Ainda dá para esticar pelo canto.
+- **Sem a caixa de Anotação embaixo.** Nos eventos do calendário (página de Anotação com data), a caixa *Anotação* que vinha logo abaixo não aparece mais, nem na edição. Se um evento já tinha texto nela, a caixa continua aparecendo nele, para nada sumir. Páginas de outros tipos com data no calendário (NPC, Local etc.) continuam com a descrição normal.
+
 ## 5.6.0
 
 ### Novidade: enquadramento da imagem

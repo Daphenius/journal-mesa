@@ -23,7 +23,7 @@ async function secaoCalendario(ctx) {
   const historiaHtml = historia ? await TE().enrichHTML(textoParaHtml(historia), { secrets: gm, relativeTo: entry }) : "";
   const blocoHistoria = gm
     ? `<label class="jm-cal-historia"><span><i class="fa-solid fa-book-open"></i> ${T("Comum.Historia")}</span>
-        <textarea data-historia rows="3" placeholder="${T("Janela.AOrigemDestaDataO")}">${esc(historia)}</textarea></label>`
+        <textarea data-historia rows="12" placeholder="${T("Janela.AOrigemDestaDataO")}">${esc(historia)}</textarea></label>`
     : (historiaHtml ? `<div class="jm-cal-historia"><span><i class="fa-solid fa-book-open"></i> ${T("Comum.Historia")}</span><div class="jm-texto">${historiaHtml}</div></div>` : "");
   if (!gm) return secao(T("Janela.Calendario"), "fa-solid fa-calendar-days", quando + blocoHistoria, "jm-cal", "", "", "calendario");
 

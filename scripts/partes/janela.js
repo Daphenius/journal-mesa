@@ -28,6 +28,36 @@ function seletorDe(el) {
   return null;
 }
 
+/**
+ * Ordem alfabética "natural" (5.6.1): os números do nome contam pelo valor, com sinal.
+ * Ano -50 < Ano 0 < Ano 96 < Ano 103 < Ano 560; Sessão 2 < Sessão 10.
+ * O "-" só é sinal quando vem no começo ou depois de espaço/parêntese ("Ano-2" não é negativo).
+ */
+const NUMERO_NO_NOME = /(?:(?<=^|[\s([{])-)?\d+/g;
+function partesDoNome(nome) {
+  const s = String(nome ?? ""), partes = [];
+  let fim = 0;
+  for (const m of s.matchAll(NUMERO_NO_NOME)) {
+    if (m.index > fim) partes.push(s.slice(fim, m.index));
+    partes.push(Number(m[0]));
+    fim = m.index + m[0].length;
+  }
+  if (fim < s.length) partes.push(s.slice(fim));
+  return partes;
+}
+export function compararNomes(a, b, lang = globalThis.game?.i18n?.lang) {
+  const pa = partesDoNome(a), pb = partesDoNome(b);
+  for (let i = 0; i < Math.min(pa.length, pb.length); i++) {
+    const x = pa[i], y = pb[i];
+    const nx = typeof x === "number", ny = typeof y === "number";
+    if (nx && ny) { if (x !== y) return x - y; continue; }
+    if (nx !== ny) return nx ? -1 : 1;
+    const c = x.localeCompare(y, lang, { sensitivity: "base" });
+    if (c) return c;
+  }
+  return (pa.length - pb.length) || String(a).localeCompare(String(b), lang);
+}
+
 /* largura da lateral (5.5): preferência visual deste navegador, sem configuração no mundo */
 const LATERAL_PADRAO = 300;
 const CHAVE_LATERAL = "journal-mesa.larguraLateral";
@@ -158,8 +188,8 @@ class JournalApp extends ApplicationV2 {
       porPasta.get(pid).push(j);
     }
     const ordenar = (lista, modo) => lista.sort((a, b) => (modo === "a"
-      ? a.name.localeCompare(b.name, game.i18n.lang)
-      : (a.sort - b.sort) || a.name.localeCompare(b.name, game.i18n.lang)));
+      ? compararNomes(a.name, b.name)
+      : (a.sort - b.sort) || compararNomes(a.name, b.name)));
 
     const contagem = new Map();
     const conta = (pid) => {
