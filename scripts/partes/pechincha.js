@@ -3,6 +3,7 @@
 import { T, TF } from "../idioma.js";
 import { lojaBloqueada } from "./calendario.js";
 import { Sessao } from "./sessao.js";
+import { multEco, registrarEco } from "../lojas/economia.js";
 import { CHAVE_DADOS, LIMITES_REGRAS, LV, MOD, REGRAS_CATS, REGRAS_MODELOS, REGRAS_STATUS, analisar, aviso, avisoUmaVez, chat, comoLista, diaAtual, dup, ehGM, esc, executarCompra, executarNota, executarPegar, executarPegarRecompensa, executarRolagemDiaria, formatarPreco, garantirObjeto, itemParaLoja, dadosPadrao, dadosSet, naFila, novoId, pedir, precoEmPo, qtdDaFicha, receber, regrasMesa, relatarErro } from "../nucleo.js";
 
 /* ---------- negociação com o dono da loja ---------- */
@@ -271,7 +272,7 @@ async function executarVender({ entryId, userId, actorUuid, itemId, quantidade =
   const tem = qtdDaFicha(item);
   if (tem < 1) return aviso(userId, T("Pechincha.VoceNaoTemNenhumaUnidade"), "warn");
   const n = Math.min(tem, Math.max(1, Math.floor(Number(quantidade) || 1)));
-  const base = precoEmPo(item);
+  const base = precoEmPo(item) * multEco(x, item);
   const neg = negociacaoDeHoje(x, userId, `v_${itemId}`);
   const mult = neg?.mult ?? multVendaPadrao(x);
   const valor = Math.round(base * mult * n * 100) / 100;
@@ -308,6 +309,7 @@ async function executarVender({ entryId, userId, actorUuid, itemId, quantidade =
     throw err;
   }
   if (neg) await page.unsetFlag(MOD, `negociacoes.${userId}.v_${itemId}`);
+  await registrarEco(x, copia, n, "venda");
   const linha = TF("Pechincha.QuemVendeuNItemPara", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(item.name)}</b>`, loja: `<b>${esc(e.name)}</b>`, preco: formatarPreco(valor) });
   await chat(`<i class="fa-solid fa-hand-holding-dollar"></i> ${linha}`, { ator });
   Sessao.registrar("loja", linha);

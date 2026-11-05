@@ -7,6 +7,7 @@ import { PERICIAS_VENDEDOR, RESULTADOS, atorDoDono, bonusPericia, multVendaPadra
 import { souGMPrincipal } from "../partes/sessao.js";
 import { CHAVE_DADOS, Dialogo, MOD, OFERTAS, TE, TIPOS_SAQUE, analisar, apagarChave, atorDoJogador, chat, diaAtual, ehGM, esc, estaVisivel, formatarPreco, idsGM, itemParaLoja, dadosSet, opcoes, pedir, precoEmPo, qtdDaFicha, resultadoParaItem, substituirMapa } from "../nucleo.js";
 import { listaItens } from "./estoque.js";
+import { apiEco, ecoDaLoja, escolherPorPeso, locaisEco, multEco, pesoRotacao } from "../lojas/economia.js";
 
 async function cartaOferta(o, visaoGM, linkItem, userId = "") {
   const cfg = OFERTAS[o.tipo] ?? OFERTAS.achado;
@@ -49,7 +50,8 @@ async function secaoLoja(ctx) {
   const tabs = [["semanal", T("Comum.EstoqueDaSemana"), "fa-solid fa-calendar-week"], ["diaria", T("Janela.OfertaDoDia"), "fa-solid fa-sun"], ["vender", T("Janela.Vender"), "fa-solid fa-hand-holding-dollar"]];
   if (gm) tabs.push(["config", T("Janela.Configurar"), "fa-solid fa-sliders"]);
   const nav = `<div class="jm-subabas">${tabs.map(([k, r, i]) => `<button type="button" class="${sub === k ? "ativo" : ""}" data-action="subLoja" data-sub="${k}"><i class="${i}"></i> ${r}</button>`).join("")}</div>`
-    + (gm && fechada && !fechada.aberta ? `<div class="jm-aviso-loja"><i class="fa-solid fa-door-closed"></i> ${esc(fechada.texto)}: ${T("Janela.OsJogadoresNaoConseguemComprar")}</div>` : "");
+    + (gm && fechada && !fechada.aberta ? `<div class="jm-aviso-loja"><i class="fa-solid fa-door-closed"></i> ${esc(fechada.texto)}: ${T("Janela.OsJogadoresNaoConseguemComprar")}</div>` : "")
+    + (gm ? avisoEconomia(x) : "");
   const tabelas = tabelasDasLojas([x.semanal.tabela, x.diaria.tabela]);
   /* sem tabela própria: a padrão das configurações do módulo (Tabelas de itens das lojas) */
   const vazioTabela = (tipo) => { const p = tabelaDaLoja("", tipo); return p ? `— ${T("Comum.Padrao")}: ${nomeTabela(p) || "?"} —` : T("Janela.EscolhaUmaTabela"); };
@@ -98,7 +100,7 @@ async function secaoLoja(ctx) {
         .sort((a2, b2) => a2.name.localeCompare(b2.name, game.i18n.lang));
       const padrao = multVendaPadrao(x);
       const linhas = vendiveis.map((it) => {
-        const base = precoEmPo(it);
+        const base = Math.round(precoEmPo(it) * multEco(x, it) * 100) / 100;
         const neg = negociacaoDeHoje(x, game.user.id, `v_${it.id}`);
         const mult = neg?.mult ?? padrao;
         const oferta = Math.round(base * mult * 100) / 100;
@@ -139,6 +141,7 @@ async function secaoLoja(ctx) {
         ${semana.length ? `<div class="jm-cal-semana jm-folgas ${h?.ativo ? "" : "inativo"}"><span>${T("Janela.Folga2")}:</span>${semana.map((nome, i) =>
           `<label class="jm-dia-sem ${h?.folga.includes(i) ? "marcado" : ""}"><input type="checkbox" data-folga="${i}" ${h?.folga.includes(i) ? "checked" : ""}>${esc(nome)}</label>`).join("")}</div>` : ""}
       </div>
+      ${configEconomia(x)}
       <div class="jm-config-negocio">
         <label>${T("Janela.PericiaDoVendedorNasPechinchas")} <select data-campo="x:vendedorPericia">${Object.entries(PERICIAS_VENDEDOR).map(([k, r]) => `<option value="${k}" ${k === x.vendedorPericia ? "selected" : ""}>${r}</option>`).join("")}</select></label>
         ${npc ? `<p class="jm-dica">${T("Janela.UsaAFichaDe")} <b>${esc(npc.name)}</b> (${bonusPericia(npc, x.vendedorPericia) >= 0 ? "+" : ""}${bonusPericia(npc, x.vendedorPericia)}).</p>`
@@ -179,20 +182,28 @@ async function renovarEstoqueDaLoja(e, { avisarChat = true } = {}) {
   if (!tabela) return null;
   const novos = {};
   const porChave = {};
-  for (let i = 0; i < Math.max(1, x.semanal.qtd); i++) {
+  /* Loja ligada à Monetização: rola o dobro de candidatos e fica com os que combinam com a região
+   * (o que ela produz pesa mais; o que está em falta quase nunca entra). Sem economia: como sempre. */
+  const qtdAlvo = Math.max(1, x.semanal.qtd);
+  const ponderar = !!ecoDaLoja(x)?.cfg.rotacao;
+  const candidatos = [];
+  for (let i = 0; i < (ponderar ? qtdAlvo * 2 : qtdAlvo); i++) {
     const { results } = await tabela.roll();
-    for (const r of results ?? []) {
-      const { doc, ...info } = await resultadoParaItem(r);
-      const chave = info.uuid || info.nome;
-      if (porChave[chave]) {
-        const f = novos[porChave[chave]].flags[MOD];
-        f.qtd = (f.qtd ?? 1) + 1;
-        continue;
-      }
-      const data = itemParaLoja(doc, info);
-      novos[data._id] = data;
-      porChave[chave] = data._id;
+    for (const r of results ?? []) candidatos.push(await resultadoParaItem(r));
+  }
+  const escolhidos = ponderar
+    ? escolherPorPeso(candidatos, candidatos.map((c) => pesoRotacao(x, c.doc ?? { type: "loot", system: {} })), qtdAlvo)
+    : candidatos;
+  for (const { doc, ...info } of escolhidos) {
+    const chave = info.uuid || info.nome;
+    if (porChave[chave]) {
+      const f = novos[porChave[chave]].flags[MOD];
+      f.qtd = (f.qtd ?? 1) + 1;
+      continue;
     }
+    const data = itemParaLoja(doc, info);
+    novos[data._id] = data;
+    porChave[chave] = data._id;
   }
   // troca o estoque numa gravação só, para uma falha no meio não deixar a loja vazia
   await substituirMapa(page, `flags.${MOD}.${CHAVE_DADOS}.items`, novos);
@@ -313,3 +324,39 @@ export default {
 };
 
 export { precisaAtor, renovarEstoques };
+
+/* ---------- economia (Monetização) ---------- */
+
+/** Linha do balcão (só o mestre): em que cidade a loja fica e como estão os preços lá. */
+function avisoEconomia(x) {
+  const e = ecoDaLoja(x);
+  if (!e) return "";
+  let ind = 1;
+  try { ind = Number(e.api.multiplicador(e.id, "manufaturados")) || 1; } catch { ind = 1; }
+  const pct = Math.round((ind - 1) * 100);
+  return `<div class="jm-aviso-loja jm-eco-aviso"><i class="fa-solid fa-scale-balanced"></i> ${T("Economia.LigadaA")} <b>${esc(e.nome)}</b>
+    · ${T("Economia.Precos")} ${pct === 0 ? T("Economia.Normais") : `${pct > 0 ? "+" : ""}${pct}%`}</div>`;
+}
+
+/** Bloco da aba Configurar: escolher a cidade da Monetização e o que a economia controla. */
+function configEconomia(x) {
+  if (!apiEco()) return "";
+  const eco = { local: "", precos: true, falta: true, registrar: true, rotacao: true, ...(x.economia ?? {}) };
+  const locais = locaisEco();
+  const ligada = !!ecoDaLoja(x);
+  const caixa = (k, rot) => `<label class="jm-check"><input type="checkbox" data-campo="x:economia.${k}" ${eco[k] ? "checked" : ""}> ${rot}</label>`;
+  return `<div class="jm-config-economia">
+    <h4><i class="fa-solid fa-scale-balanced"></i> ${T("Economia.Titulo")}</h4>
+    <label>${T("Economia.FicaEm")} <select data-campo="x:economia.local">
+      <option value="">${T("Economia.Nenhuma")}</option>
+      ${locais.map((l) => `<option value="${esc(l.id)}" ${l.id === eco.local ? "selected" : ""}>${esc(l.nome)} (${esc(l.status)})</option>`).join("")}
+    </select></label>
+    <div class="jm-sub-linha ${ligada ? "" : "desligado"}">
+      ${caixa("precos", T("Economia.OpPrecos"))}
+      ${caixa("falta", T("Economia.OpFalta"))}
+      ${caixa("registrar", T("Economia.OpRegistrar"))}
+      ${caixa("rotacao", T("Economia.OpRotacao"))}
+    </div>
+    <p class="jm-dica">${T("Economia.Dica")}</p>
+  </div>`;
+}

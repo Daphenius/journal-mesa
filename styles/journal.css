@@ -1612,3 +1612,11 @@ li.jm-com-nota .entry-name::after { content: " \f249"; font-family: "Font Awesom
 .jm-npc-texto { padding: 6px 10px; border-radius: 8px; background: var(--jm-sup2); }
 .jm-npc-texto small { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--jm-suave); }
 .jm-npc-texto p { margin: 2px 0 0; }
+
+/* 5.9.0 — loja ligada à Monetização */
+.jm-config-economia { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.jm-config-economia h4 { margin: 0; }
+.jm-config-economia .jm-sub-linha { flex-wrap: wrap; gap: 4px 14px; }
+.jm-config-economia .desligado, .jm-config-economia .jm-sub-linha.desligado { opacity: .5; }
+.jm-ajuste.jm-eco { margin-left: 4px; }
+.jm-eco-aviso { opacity: .9; }

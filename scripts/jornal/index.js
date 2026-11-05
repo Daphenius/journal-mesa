@@ -17,8 +17,10 @@ import { publicar, programar, voltarRascunho, arquivar, verificarProgramadas, ap
 import { corpoJornal, painelJornais, secaoRelacionadas, itensLinha } from "./visual.js";
 import { EditorJornal, fecharEditoresDe } from "./editor.js";
 import { exportarEdicao, dialogoImportar, importarNoJornal, novaAPartirDe, mostrarRelatorio } from "./json.js";
+import { gerarEdicoesAutomaticas, gerarAgora, ouvintesAuto } from "./automatico.js";
 
 export { caminhoSeguro } from "./dados.js";
+export { gerarEdicoesAutomaticas };
 export { instalarContexto, ehJornal, corpoJornal, painelJornais, secaoRelacionadas, itensLinha, verificarProgramadas, aoApresentar, identidade, criarJornal, edicoes, publicaEstado, t, LeitorJornal };
 
 import { esc as e } from "../nucleo.js";
@@ -126,6 +128,12 @@ export async function acao(app, op, el) {
         abrirEdicao(en.id, p.id);
         return EditorJornal.abrir(en.id, p.id);
       }
+      case "gerarAuto": {
+        const en = game.journal.get(el.dataset.id);
+        const p = await gerarAgora(en);
+        if (p) { ui.notifications.info(t("Jornal.Auto.Gerada")); abrirEdicao(en.id, p.id); }
+        return;
+      }
       case "editarEdicao": { const p = pagina(el); if (p) EditorJornal.abrir(p.parent.id, p.id); return; }
       case "publicar": {
         const p = pagina(el); if (!p) return;
@@ -187,6 +195,7 @@ export async function acao(app, op, el) {
 
 /** Busca da aba Jornais e Notícias (filtra sem redesenhar). */
 export function ouvintes(app, root) {
+  if (game.user.isGM) ouvintesAuto(root);
   const busca = root.querySelector("[data-jornal-busca]");
   if (!busca) return;
   const filtrar = () => {

@@ -2,6 +2,7 @@
  * quantidade, ocultar/remover, exportar para a aba Itens e soltar itens arrastados. */
 import { T } from "../idioma.js";
 import { negociacaoDeHoje } from "../partes/pechincha.js";
+import { emFalta, multEco } from "../lojas/economia.js";
 import { MOD, TE, analisar, arredondarPo, comoLista, dadosGet, dadosSet, dadosUnset, ehGM, esc, formatarPreco, garantirObjeto, itemLimpo, itemParaLoja, obterPasta, precoDoItem, qtdDoItem } from "../nucleo.js";
 
 /** Lista de itens de estoque usada pela loja e pelo baú. */
@@ -12,8 +13,12 @@ async function listaItens(m, ed, modo, x = null) {
     if (!gm && it.hidden) continue;
     const f = it.flags?.[MOD] ?? {};
     const qtd = qtdDoItem(it);
-    const preco = precoDoItem(it);
-    const esgotado = modo === "loja" && (qtd === 0 || it.lock);
+    const precoLoja = precoDoItem(it);
+    // loja ligada à Monetização: o preço segue a economia da cidade e o que está em falta não se compra
+    const eco = modo === "loja" && x ? multEco(x, it) : 1;
+    const preco = Math.round(precoLoja * eco * 100) / 100;
+    const falta = modo === "loja" && x ? emFalta(x, it) : false;
+    const esgotado = modo === "loja" && (qtd === 0 || it.lock || falta);
     const origem = it.flags?.[MOD]?.origem;
     const nome = origem ? await TE().enrichHTML(`@UUID[${origem}]{${String(it.name).replace(/[{}]/g, "")}}`) : esc(it.name);
     const de = f.de ? `<small class="jm-de">${esc(f.de)}</small>` : "";
@@ -24,10 +29,13 @@ async function listaItens(m, ed, modo, x = null) {
       const precoFinal = mult != null ? Math.round(preco * mult * 100) / 100 : preco;
       const etiqueta = mult != null && mult !== 1
         ? `<small class="jm-ajuste ${mult < 1 ? "bom" : "ruim"}">${mult < 1 ? "−" : "+"}${Math.round(Math.abs(1 - mult) * 100)}%</small>` : "";
-      colPreco = ed ? `<input type="number" step="0.01" min="0" data-item-campo="preco" data-id="${id}" value="${Math.round(preco * 100) / 100}" data-tooltip="${T("Janela.PrecoEmPo")}">`
-        : (mult != null && mult !== 1 ? `<s>${formatarPreco(preco)}</s> ${formatarPreco(precoFinal)}${etiqueta}` : formatarPreco(preco));
+      const etiquetaEco = gm && Math.abs(eco - 1) >= 0.01
+        ? `<small class="jm-ajuste jm-eco ${eco < 1 ? "bom" : "ruim"}" data-tooltip="${T("Economia.AjusteDica")}">${eco < 1 ? "−" : "+"}${Math.round(Math.abs(1 - eco) * 100)}%</small>` : "";
+      colPreco = ed ? `<input type="number" step="0.01" min="0" data-item-campo="preco" data-id="${id}" value="${Math.round(precoLoja * 100) / 100}" data-tooltip="${T("Economia.PrecoBaseDica")}">${etiquetaEco}`
+        : (mult != null && mult !== 1 ? `<s>${formatarPreco(preco)}</s> ${formatarPreco(precoFinal)}${etiqueta}` : formatarPreco(preco) + etiquetaEco);
       colQtd = gm ? `<input type="number" min="0" class="jm-estoque" data-item-campo="quantidade" data-id="${id}" value="${qtd ?? ""}" placeholder="∞" data-tooltip="${T("Janela.EstoqueDaLojaVazioIlimitado")}">`
-        : (qtd === 0 ? T("Janela.Esgotado") : (qtd == null ? T("Janela.AVontade") : `${qtd} ${T("Janela.Un")}`));
+        : (falta ? T("Economia.EmFalta") : qtd === 0 ? T("Janela.Esgotado") : (qtd == null ? T("Janela.AVontade") : `${qtd} ${T("Janela.Un")}`));
+      if (gm && falta) colQtd += `<small class="jm-ajuste ruim" data-tooltip="${T("Economia.EmFaltaDica")}">${T("Economia.EmFalta")}</small>`;
       const pendente = neg && mult == null;
       const botaoNeg = esgotado || neg ? (pendente ? `<span class="jm-neg-pendente" data-tooltip="${T("Janela.PechinchaEmAndamentoNoChat")}"><i class="fa-solid fa-hourglass-half"></i></span>` : "")
         : `<button type="button" class="sec" data-action="negociarCompra" data-id="${id}" data-nome="${esc(it.name)}" data-tooltip="${T("Janela.PechincharPersuasaoContraOVendedor")}"><i class="fa-solid fa-handshake"></i></button>`;

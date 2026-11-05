@@ -48,6 +48,7 @@ Hooks.on("updateWorldTime", async () => {
         Sessao.registrar("dia", `${T("Tempo.Chegou")} <b>${esc(Tempo.texto(hoje))}</b>${hoje - antes > 1 ? ` (${TF("Tempo.PassaramNDias", { n: hoje - antes })})` : ""}.${eventos.length ? ` ${T("Comum.Eventos")}: ${eventos.map((j) => esc(j.name)).join(", ")}.` : ""}`);
       }
       await verificarPrazos(hoje);
+      if (hoje > antes) await Jornal.gerarEdicoesAutomaticas(hoje).catch((err) => relatarErro(T("Comum.EdicoesProgramadas"), err));
       await Jornal.verificarProgramadas().catch((err) => relatarErro(T("Comum.EdicoesProgramadas"), err));
     }
     return atualizarTudo();
@@ -82,6 +83,14 @@ for (const h of ["createSetting", "updateSetting"]) {
   Hooks.on(h, (doc) => { if (CAL_CHAVES.has(doc?.key) && ["__linha", "__nexus"].includes(janela?.ativa)) atualizarTudo(); });
 }
 
+/* Monetização: a economia mudou (dia simulado, venda registrada...) → a loja aberta mostra os preços novos */
+for (const h of ["createSetting", "updateSetting"]) {
+  Hooks.on(h, (doc) => {
+    if (doc?.key !== "monetizacao.dados" || !janela?.rendered || !janela.ativa || janela.ativa.startsWith("__")) return;
+    const e = game.journal.get(janela.ativa);
+    if (e && analisar(e).tipo === "shop") atualizarTudo();
+  });
+}
 for (const h of ["createItem", "updateItem", "deleteItem", "updateActor"]) {
   Hooks.on(h, () => { if (janela?.rendered && janela.subLoja === "vender") atualizarTudo(); });
 }

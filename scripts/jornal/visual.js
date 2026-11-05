@@ -9,6 +9,7 @@ import {
 } from "./dados.js";
 import { segredosDe } from "./redacao.js";
 import { paginasEdicao } from "./leitura.js";
+import { painelAuto } from "./automatico.js";
 
 import { esc as e } from "../nucleo.js";
 
@@ -67,6 +68,8 @@ export async function corpoJornal(app, entry, secao) {
     `<span class="jm-detalhe"><small>${e(t("Jornal.EstiloVisual"))}</small><i class="${ESTILOS[id.estilo].icone}"></i> ${e(rotEstilo(id.estilo))}</span>`].join("");
   const descr = id.descricao ? `<div class="jm-texto">${await J.TE().enrichHTML(htmlSeguro(J.textoParaHtml(id.descricao)), { secrets: gm, relativeTo: entry })}</div>` : "";
   blocos.push(secao(e(t("Jornal.SobrePublicacao")), "fa-solid fa-newspaper", `<div class="jm-sub-linha">${info}</div>${descr}`, "jmj-sobre", "", gm ? `<a class="jm-mini-btn" data-action="jornal" data-op="identidade" data-id="${entry.id}" data-tooltip="${e(t("Jornal.EditarIdentidade"))}"><i class="fa-solid fa-pen"></i></a>` : ""));
+
+  if (gm) blocos.push(secao(e(t("Jornal.Auto.Titulo")), "fa-solid fa-wand-magic-sparkles", painelAuto(entry), "jmj-sec-auto"));
 
   const publicadas = lista.filter((x) => publicaEstado(x.ed.estado)).length;
   blocos.push(`<div class="jm-hist-barra jmj-barra">

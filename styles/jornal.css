@@ -367,3 +367,9 @@
   outline: 2px solid var(--jm-destaque); outline-offset: 1px;
 }
 .jm-janela.jmj-editor .jmj-editor-fallback p { margin: 0 0 0.65em; }
+
+/* 5.9.0 — edição automática */
+.jmj-auto { display: flex; flex-direction: column; gap: 6px; }
+.jmj-auto .jm-sub-linha { flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.jmj-auto.desligado > :not(:first-child) { opacity: .55; }
+.jmj-auto input[type="number"] { width: 64px; }

@@ -1,5 +1,26 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.9.0
+
+### Lojas ligadas à economia (Monetização)
+- Na aba **Configurar** da loja há a seção **Economia (Monetização)**: escolha em que cidade a loja fica. Só aparece com o módulo Monetização ativo.
+- **Preços seguem a cidade.** O preço que você digita no estoque é o preço normal; o jogador paga esse valor ajustado pela economia da cidade. O mestre vê o ajuste ao lado do preço (ex.: +20%) e uma linha no balcão com a situação da cidade; o jogador vê só o preço final. A oferta do dia e o valor pago na aba **Vender** seguem a mesma regra.
+- **Itens em falta.** Quando a mercadoria de um item está em falta na cidade, ele aparece como "Em falta" e não pode ser comprado.
+- **Compras e vendas entram na economia.** Quando um jogador compra ou vende na loja, a Monetização registra a transação: o estoque e o preço da cidade reagem.
+- **Renovação da semana puxa a região.** Ao renovar o estoque, a loja rola o dobro de itens da tabela e fica com os que combinam com o que a região produz; o que está em falta quase nunca entra.
+- Cada uma dessas quatro coisas pode ser desligada por loja. Sem a Monetização (ou sem cidade escolhida), a loja funciona exatamente como antes.
+
+### Jornal de Notícias: edição automática
+- Na página de cada jornal (só o mestre) há a seção **Edição automática**: ligue e escolha a cada quantos dias sai uma edição.
+- Na virada do dia, o Journal monta a edição com o que aconteceu no mundo: caravanas saqueadas, fome, eventos, mudança de estação e preços que dispararam (Monetização), os feitos do grupo como boato, os eventos do dia no calendário que os jogadores podem ver e as missões visíveis com prazo nos próximos 7 dias ("Procura-se").
+- A edição nasce como **rascunho** (você revisa e publica) ou sai **publicada direto**, conforme a configuração do jornal. Dia sem novidades pode não gerar edição.
+- Com facções na Monetização, cada jornal pode cobrir só a sua região.
+- Um pulo grande de tempo gera uma edição cobrindo o período, não uma por dia.
+- Botão **Gerar edição agora** para testar ou adiantar.
+
+### Testes
+- Teste novo `tests/economia.test.mjs` (compras, falta, vendas e edições automáticas), incluído no `npm test`.
+
 ## 5.8.1
 
 ### NPC com características

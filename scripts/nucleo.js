@@ -20,6 +20,7 @@
 import { VERSAO_DADOS } from "./partes/versao.js";
 import * as Jornal from "./jornal/index.js";
 import { configurarTabelasLojas, registrarTabelasLojas, tabelasDasLojas, tabelaDaLoja, nomeTabela } from "./lojas/tabelas.js";
+import { ECONOMIA_PADRAO, emFalta, multEco, registrarEco } from "./lojas/economia.js";
 
 /* ---------- idioma ----------
  * T("Area.Chave"), TF() e traduzirNoLugar() estão em idioma.js (textos em lang/pt-BR.json e lang/en.json).
@@ -277,6 +278,7 @@ function extrasPadrao() {
     },
     npc: Object.fromEntries([...CAMPOS_NPC, ...TEXTOS_NPC].map(([k]) => [k, ""])),
     semanal: { tabela: "", qtd: 6 },
+    economia: { ...ECONOMIA_PADRAO },
     diaria: { tabela: "", chances: { achado: 40, luxo: 35, escambo: 25 }, custos: T("Nucleo.CustosPadrao"), ofertas: {} }
   };
 }
@@ -1135,7 +1137,7 @@ async function executarRolagemDiaria({ entryId, userId }) {
   const { doc, ...info } = await resultadoParaItem(results[0]);
   const tipo = sortearTipo(x.diaria.chances);
   const cfg = OFERTAS[tipo];
-  const base = info.preco > 0 ? info.preco : 10;
+  const base = Math.round((info.preco > 0 ? info.preco : 10) * (doc ? multEco(x, doc) : 1) * 100) / 100;
   const preco = Math.max(0.01, Math.round(base * (cfg.min + Math.random() * (cfg.max - cfg.min)) * 100) / 100);
   const custos = String(x.diaria.custos || "").split("\n").map((s) => s.trim()).filter(Boolean);
   const custoOculto = tipo === "escambo"
@@ -1167,9 +1169,10 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
     const item = Object.fromEntries(comoLista(m.items))[itemId];
     const estoque = qtdDoItem(item);
     if (!item || estoque === 0 || item.hidden || item.lock) return aviso(userId, T("Nucleo.EsseItemNaoEstaDisponivel"), "warn");
+    if (emFalta(x, item)) return aviso(userId, T("Economia.EmFaltaAviso"), "warn");
     if (typeof estoque === "number" && n > estoque) return aviso(userId, `${T("Nucleo.SoRestam")} ${estoque} ${T("Nucleo.NaLoja")}`, "warn");
     nome = item.name;
-    preco = precoDoItem(item);
+    preco = Math.round(precoDoItem(item) * multEco(x, item) * 100) / 100;
     const neg = negociacaoDeHoje(x, userId, `c_${itemId}`);
     if (neg?.mult != null) preco = Math.round(preco * neg.mult * 100) / 100;
     preco = Math.round(preco * n * 100) / 100;
@@ -1213,6 +1216,7 @@ async function executarCompra({ entryId, origem, itemId, actorUuid, userId, quan
     throw marcarDesfeito(err, await desfazerPassos(passos, TF("Nucleo.CompraEmLoja", { loja: e.name })));
   }
 
+  await registrarEco(x, itemData, n, "compra");
   const linha = TF("Nucleo.QuemComprouNItemPor", { quem: `<b>${esc(ator.name)}</b>`, n: n > 1 ? `<b>${n}×</b> ` : "", item: `<b>${esc(nome)}</b>`, preco: formatarPreco(preco), loja: `<b>${esc(e.name)}</b>` });
   await chat(`<i class="fa-solid fa-coins"></i> ${linha}`, { ator });
   Sessao.registrar("loja", linha);
@@ -1768,7 +1772,7 @@ Hooks.once("ready", () => {
 /* ---------------- Jornal de Notícias: funções do Journal que ele usa ---------------- */
 Jornal.instalarContexto({
   MOD, CAL, CANAL, TIPOS, esc, TE, FP, Dialogo, LV, Tempo, Sessao, analisar, chat, idsGM, dup, naFila,
-  relatarErro, avisoUmaVez, textoParaHtml, ordemNova, souGMPrincipal,
+  relatarErro, avisoUmaVez, textoParaHtml, ordemNova, souGMPrincipal, calApi, estaVisivel,
   abrirJournal: () => obterJanela(),
   atualizarTudo: () => atualizarTudo()
 });
