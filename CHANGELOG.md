@@ -1,5 +1,9 @@
 # Histórico de versões — Journal da Mesa
 
+## 5.9.1
+
+- Atualizado para o Foundry VTT 14.370 e o D&D 5e 6.1.0 (versões mais recentes).
+
 ## 5.9.0
 
 ### Lojas ligadas à economia (Monetização)
